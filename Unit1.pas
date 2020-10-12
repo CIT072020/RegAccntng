@@ -3,9 +3,13 @@ unit Unit1;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, DateUtils,
+//  IdHTTP, //, IdIOHandler, IdIOHandlerSocket, IdSSLOpenSSL, IdSSLOpenSSLHeaders,
   nativexml, funcpr, superdate, superobject, StdCtrls, Mask, DBCtrlsEh, uDvigmen,
-  HTTPSend, DB, Grids, DBGridEh, adsdata, adsfunc, adstable, adscnnct; // ssl_openssl;
+  DB, Grids, DBGridEh, adsdata, adsfunc, adstable, adscnnct,
+//  IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
+  HTTPSend, ssl_openssl, ssl_openssl_lib;
+
 
 type
   TForm1 = class(TForm)
@@ -31,6 +35,8 @@ type
     DataSource2: TDataSource;
     tbTalonPrib: TAdsTable;
     tbTalonPribDeti: TAdsTable;
+    Button9: TButton;
+    cbCreateSO: TCheckBox;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
@@ -41,11 +47,13 @@ type
     procedure Button6Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
     procedure Button8Click(Sender: TObject);
+    procedure Button9Click(Sender: TObject);
   private
     { Private declarations }
   public
     { Public declarations }
     dm:TDvigMen;
+    function getHTTP(lIndy:Boolean):String;
   end;
 
 const
@@ -81,48 +89,110 @@ begin
   new_obj:=nil;
 end;
 
+//---------------------------------------------------
+function TForm1.getHTTP(lIndy:Boolean):String;
+var
+//  IdHttp:TIdHTTP;
+//  IdSSLIOHandlerSocket: TIdSSLIOHandlerSocket;
+  SStrm: TStringStream;
+  sURL:String;
+  HTTP: THTTPSend;
+begin
+  SStrm:=TStringStream.Create('');
+  sURL:=edURL.text;
+  if lIndy then begin
+//    IdHTTP:=TIdHTTP.Create(nil);
+//    IdHTTP.Request.BasicAuthentication:=false;
+//    IdSSLIOHandlerSocket:=TIdSSLIOHandlerSocket.Create(IdHTTP);
+//    IdSSLIOHandlerSocket.SSLOptions.Mode:=sslmClient;
+//    IdSSLIOHandlerSocket.SSLOptions.Method:=sslvTLSv1;
+//    IdHTTP.IOHandler:=IdSSLIOHandlerSocket;
+  //  IdHTTP.OnWork:=fmmain.IdHTTP1Work;
+  //  IdHTTP.OnWorkBegin:=fmmain.IdHTTP1WorkBegin;
+  //  IdHTTP.OnWorkEnd:=fmmain.IdHTTP1WorkEnd;
+//    IdHTTP1.Get(sURL, SStrm);
+//    FreeAndNil(IdSSLIOHandlerSocket);
+//    FreeAndNil(IdHTTP);
+//    WhichFailedToLoad;
+  end else begin
+    HTTP:=THTTPSend.Create;
+//    HTTP.Protocol:='1.1';
+//    HTTP.Sock.SSL.SSLType:=LT_TLSv1;
+    try
+      HTTP.HTTPMethod('GET', sURL);
+      edMemo.Lines.Add(IntToStr(HTTP.ResultCode)+'  '+HTTP.ResultString);
+      edMemo.Lines.Add(HTTP.Sock.LastErrorDesc);
+      SStrm.Seek(0, soFromBeginning);
+      SStrm.CopyFrom(HTTP.Document, 0);
+      Result:=SStrm.DataString;
+    finally
+      HTTP.Free;
+    end;
+  end;
+  FreeAndNil(SStrm);
+end;
+//---------------------------------------------------
+function UnixStrToDateTime(sDate:String):TDateTime;
+begin
+ try
+   if sDate='null'
+     then result:=0
+//     else result:=UnixToDateTime(StrToInt64(Copy(sDate,1,Length(sDate)-3)));
+     else result:=JavaToDelphiDateTime(StrToInt64(sDate));
+ except
+   result:=0;
+ end;
+end;
+//---------------------------------------------------
 procedure TForm1.Button2Click(Sender: TObject);
 var
   sl:TStringList;
-  SStrm:TStringStream;
+//  SStrm:TStringStream;
   s:String;
   new_obj, obj: ISuperObject;
   sw:WideString;
   i:Integer;
+  HTTP: THTTPSend;
 begin
   sl:=TStringList.Create;
-  SStrm:=TStringStream.Create('');
+  s:=getHTTP(false);
+//  SStrm:=TStringStream.Create('');
 //  HttpGetText(edURL.text, sl);
-  HttpGetBinary(edURL.text,SStrm);
-  s:=SStrm.DataString;
+//  HttpGetBinary(edURL.text,SStrm);
+//  s:=SStrm.DataString;
   MemoWrite('!!!.json',s);
 //  ed.Lines.Assign(sl);
   edMemo.lines.Add('---------------');
   edMemo.lines.Add(inttostr(length(s)));
+  if (Length(s)>0) and cbCreateSO.Checked then begin
+    sw:=Utf8Decode(s);
+  //  sw:=Utf8ToAnsi(s);
+    new_obj:=so(sw);
+    for i:=0 to new_obj.AsArray.Length-1 do begin
+      obj:=new_obj.AsArray.O[i];
+      edmemo.Lines.add('active="'+obj.S['active']+'"');
+      edmemo.Lines.add('pid="'+obj.S['pid']+'"');
+      edmemo.Lines.add('identif="'+obj.S['identif']+'"');
+      edmemo.Lines.add('surname="'+obj.S['surname']+'"');
+      edmemo.Lines.add('name="'+obj.S['name']+'"');
+      edmemo.Lines.add('docAppleDate='+obj.S['docAppleDate']+'  '+FormatDateTime('dd.mm.yyyy hh:nn',UnixStrToDateTime(obj.S['docAppleDate'])));
+      edmemo.Lines.add('dateBegin='+obj.S['dateBegin']+'  '+FormatDateTime('dd.mm.yyyy hh:nn',UnixStrToDateTime(obj.S['dateBegin'])));
+      edmemo.Lines.add('dateRec='+obj.S['dateRec']+'  '+FormatDateTime('dd.mm.yyyy hh:nn',UnixStrToDateTime(obj.S['dateRec'])));
+      edMemo.lines.Add('---------------------------------------------');
+      {
+      edmemo.Lines.add('sysOrganWhere.klUniPK.code="'+obj.O['sysOrganWhere'].O['klUniPK'].S['code']+'"');
+      edmemo.Lines.add('sysOrganWhere.klUniPK.code="'+obj.S['sysOrganWhere.klUniPK.code']+'"');
+      edmemo.Lines.add('sysOrganWhere.lex1="'+obj.O['sysOrganWhere'].S['lex1']+'"');
+      edmemo.Lines.add('sysOrganWhere.dateBegin="'+obj.O['sysOrganWhere'].S['dateBegin']+'"');
+      edmemo.Lines.add('sysOrganFrom.lex1="'+obj.O['sysOrganFrom'].S['lex1']+'"');
+      edmemo.Lines.add('sysOrganFrom.dateBegin="'+obj.O['sysOrganFrom'].S['dateBegin']+'"');
+      }
+    end;
 
-  sw:=Utf8Decode(s);
-//  sw:=Utf8ToAnsi(s);
-  new_obj:=so(sw);
-
-  for i:=0 to new_obj.AsArray.Length-1 do begin
-    obj:=new_obj.AsArray.O[i];
-    edmemo.Lines.add('identif="'+obj.S['identif']+'"');
-    edmemo.Lines.add('dateRec"'+obj.S['dateRec']+'"');
-    edmemo.Lines.add('sysOrganWhere.klUniPK.code="'+obj.O['sysOrganWhere'].O['klUniPK'].S['code']+'"');
-    edmemo.Lines.add('sysOrganWhere.klUniPK.code="'+obj.S['sysOrganWhere.klUniPK.code']+'"');
-    edmemo.Lines.add('sysOrganWhere.lex1="'+obj.O['sysOrganWhere'].S['lex1']+'"');
-    edmemo.Lines.add('sysOrganWhere.dateBegin="'+obj.O['sysOrganWhere'].S['dateBegin']+'"');
-    edmemo.Lines.add('sysOrganFrom.lex1="'+obj.O['sysOrganFrom'].S['lex1']+'"');
-    edmemo.Lines.add('sysOrganFrom.dateBegin="'+obj.O['sysOrganFrom'].S['dateBegin']+'"');
   end;
-
-
-
 //  edmemo.Lines.add(new_obj.AsJson(true, false));
   new_obj:=nil;
-
   sl.Free;
-  SStrm.Free;
 end;
 
 {
@@ -348,6 +418,25 @@ begin
   }
 end;
 
+
+procedure TForm1.Button9Click(Sender: TObject);
+var
+  HTTP: THTTPSend;
+begin
+  HTTP := THTTPSend.Create;
+  try
+    //HTTP.ProxyHost := Edit8.Text;
+    //HTTP.ProxyPort := Edit9.Text;
+    HTTP.HTTPMethod('GET', edURL.text);
+    edMemo.Lines.Assign(HTTP.Headers);
+    edMemo.Lines.LoadFromStream(HTTP.Document);
+    edMemo.Lines.Add('--------------------------------------');
+    edMemo.Lines.Add(IntToStr(HTTP.ResultCode)+'  '+HTTP.ResultString);
+    edMemo.Lines.Add(inttostr(HTTP.Sock.LastError)+'   '+HTTP.Sock.LastErrorDesc);
+  finally
+    HTTP.Free;
+  end;
+end;
 
 end.
 

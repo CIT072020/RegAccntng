@@ -51,8 +51,8 @@ object Form1: TForm1
     EditButtons = <>
     TabOrder = 3
     Text = 
-      'http://www.todes.by:8086/cxf/vcouncil/movements?sysOrgan=26&sinc' +
-      'e=01.01.2015'
+      'https://a.todes.by:13555/village-council-service/v1/data?identif' +
+      'ier=3140462K000VF6'
     Visible = True
   end
   object Button2: TButton
@@ -200,6 +200,23 @@ object Form1: TForm1
     TitleFont.Height = -11
     TitleFont.Name = 'Tahoma'
     TitleFont.Style = []
+  end
+  object Button9: TButton
+    Left = 704
+    Top = 88
+    Width = 75
+    Height = 25
+    Caption = 'Button9'
+    TabOrder = 17
+    OnClick = Button9Click
+  end
+  object cbCreateSO: TCheckBox
+    Left = 896
+    Top = 60
+    Width = 153
+    Height = 17
+    Caption = 'Create Super Object'
+    TabOrder = 18
   end
   object DataSource1: TDataSource
     Left = 112
