@@ -1,0 +1,408 @@
+﻿{
+   "identif": "2222940B011PB5",
+   "view":    {
+      "klUniPK":       {
+         "type": -3,
+         "code": 10
+      }
+   
+     },
+   "sysDocType":    {
+      "klUniPK":       {
+         "type": -2,
+         "code": 8
+      },
+      "lex1": "ФОРМА 19-20 (ПРОПИСКА, ВЫПИСКА)",
+      "lex2": "ASB",
+      "lex3": "ADDRESS",
+      "dateBegin": 1240672051000,
+      "active": 1
+   },
+   "surname": "КРИ",
+   "name": "РАДЖЕШ",
+   "sname": "КОГУТАЕВ",
+   "sex":    {
+      "klUniPK":       {
+         "type": 32,
+         "code": 0
+      },
+      "lex1": null,
+      "lex2": null,
+      "lex3": null,
+      "dateBegin": 1240674288000,
+      "active": 1
+   },
+   "citizenship":    {
+      "klUniPK":       {
+         "type": 8,
+         "code": 11200001
+      },
+      "lex1": "РЕСПУБЛИКА БЕЛАРУСЬ",
+      "lex2": "РЭСПУБЛІКА БЕЛАРУСЬ",
+      "lex3": "BLR",
+      "dateBegin": 1026177363000,
+      "active": 1
+   },
+   "sysOrgan":    {
+      "klUniPK":       {
+         "type": -5,
+         "code": 26
+      },
+      "lex1": "АСБ ГУВД МИНГОРИСПОЛКОМА",
+      "lex2": null,
+      "lex3": null,
+      "dateBegin": 1240674553000,
+      "active": 1
+   },
+   "bdate": "19400909",
+   "dsdDateRec": null,
+   "docSery": "MC",
+   "docNum": "0922732",
+   "docDateIssue": 1012183200000,
+   "docAppleDate": 1544065200000,
+   "dateRec": 1544045783000,
+   "countryB":    {
+      "klUniPK":       {
+         "type": 8,
+         "code": 11200001
+      },
+      "lex1": "РЕСПУБЛИКА БЕЛАРУСЬ",
+      "lex2": "РЭСПУБЛІКА БЕЛАРУСЬ",
+      "lex3": "BLR",
+      "dateBegin": 1026177363000,
+      "active": 1
+   },
+   "areaB": "МИНСКАЯ ОБЛАСТЬ",
+   "regionB": "ПУХОВИЧСКИЙ",
+   "typeCityB":    {
+      "klUniPK":       {
+         "type": 35,
+         "code": 11100009
+      },
+      "lex1": "Д",
+      "lex2": "В",
+      "lex3": null,
+      "dateBegin": 1240674289000,
+      "active": 1
+   },
+   "cityB": "ПРУЦК",
+   "docType":    {
+      "klUniPK":       {
+         "type": 37,
+         "code": 54100015
+      },
+      "lex1": "ВИД НА ЖИТЕЛЬСТВО ЛИЦА БЕЗ ГРАЖДАНСТВА",
+      "lex2": "ПАСВЕДЧАННЕ НА ЖЫХАРСТВА АСОБЫ БЕЗ ГРАМАДЗЯНСТВА",
+      "lex3": null,
+      "dateBegin": 1240674292000,
+      "active": 1
+   },
+   "docOrgan": null,
+   "contryL":    {
+      "klUniPK":       {
+         "type": 8,
+         "code": 0
+      },
+      "lex1": null,
+      "lex2": null,
+      "lex3": "0",
+      "dateBegin": 1010758146000,
+      "active": 1
+   },
+   "areaL":    {
+      "klUniPK":       {
+         "type": 1,
+         "code": 11300006
+      },
+      "lex1": "МИНСКАЯ ОБЛАСТЬ",
+      "lex2": "МІНСКАЯ ВОБЛАСЦЬ",
+      "lex3": "17041",
+      "dateBegin": 1240674297000,
+      "active": 1
+   },
+   "regionL":    {
+      "klUniPK":       {
+         "type": 29,
+         "code": 11800088
+      },
+      "lex1": "ПУХОВИЧСКИЙ",
+      "lex2": "ПУХАВІЦКІ",
+      "lex3": null,
+      "dateBegin": 1240673183000,
+      "active": 1
+   },
+   "typeCityL":    {
+      "klUniPK":       {
+         "type": 35,
+         "code": 11100009
+      },
+      "lex1": "Д",
+      "lex2": "В",
+      "lex3": null,
+      "dateBegin": 1240674289000,
+      "active": 1
+   },
+   "cityL":    {
+      "klUniPK":       {
+         "type": 7,
+         "code": 11903466
+      },
+      "lex1": "ЗАДОЩЕНЬЕ",
+      "lex2": "ЗАДАШЧЭННЕ",
+      "lex3": null,
+      "dateBegin": 1240674127000,
+      "active": 1
+   },
+   "typeStreetL":    {
+      "klUniPK":       {
+         "type": 38,
+         "code": 0
+      },
+      "lex1": null,
+      "lex2": null,
+      "lex3": null,
+      "dateBegin": 1240674292000,
+      "active": 1
+   },
+   "streetL":    {
+      "klUniPK":       {
+         "type": 34,
+         "code": 0
+      },
+      "lex1": null,
+      "lex2": null,
+      "lex3": null,
+      "dateBegin": 1240674288000,
+      "active": 1
+   },
+   "house": "32",
+   "korps": null,
+   "app": null,
+   "organDoc":    {
+      "klUniPK":       {
+         "type": 24,
+         "code": 17608347
+      },
+      "lex1": "ШАЦКИЙ С/С",
+      "lex2": null,
+      "lex3": null,
+      "dateBegin": 1240674396000,
+      "active": 1
+   },
+   "workPlace": null,
+   "workPosition": "ПЕНСИОНЕР",
+   "docIssueOrgan":    {
+      "klUniPK":       {
+         "type": 24,
+         "code": 17608931
+      },
+      "lex1": "АЗИНСКИЙ С/С",
+      "lex2": null,
+      "lex3": null,
+      "dateBegin": 1240674420000,
+      "active": 1
+   },
+   "surnameBel": "КРЫ",
+   "nameBel": "РАДЖЭШ",
+   "snameBel": "КУТРАПАНСАН",
+   "surnameEn": "CREE",
+   "nameEn": "RAJESH",
+   "areaBBel": null,
+   "regionBBel": null,
+   "cityBBel": null,
+   "villageCouncil":    {
+      "klUniPK":       {
+         "type": 98,
+         "code": 0
+      },
+      "lex1": null,
+      "lex2": null,
+      "lex3": null,
+      "dateBegin": 1337022497000,
+      "active": 1
+   },
+   "intracityRegion":    {
+      "klUniPK":       {
+         "type": 99,
+         "code": 0
+      },
+      "lex1": null,
+      "lex2": null,
+      "lex3": null,
+      "dateBegin": 1337022497000,
+      "active": 1
+   },
+   "ateAddress": null,
+   "expireDate": null,
+   "aisPasspDocStatus": null,
+   "form19_20":    {
+      "form19_20Base": "form19_20",
+      "pid": 90017000,
+      "signAway": true,
+      "countryPu":       {
+         "klUniPK":          {
+            "type": 8,
+            "code": 11200241
+         },
+         "lex1": "АВСТРАЛИЯ",
+         "lex2": "АЎСТРАЛІЯ",
+         "lex3": "AUS",
+         "dateBegin": 1026177363000,
+         "active": 1
+      },
+      "areaPu": "АБХАЗСКАЯ АССР",
+      "regionPu": "МСТИСЛАВЛЬСКИЙ",
+      "cityPu": "\"ВАСИЛЁК\"",
+      "datePu": null,
+      "marks":       {
+         "klUniPK":          {
+            "type": 2,
+            "code": 0
+         },
+         "lex1": null,
+         "lex2": null,
+         "lex3": null,
+         "dateBegin": 1240672053000,
+         "active": 1
+      },
+      "notes": null,
+      "reason":       {
+         "klUniPK":          {
+            "type": 3,
+            "code": 2
+         },
+         "lex1": "ВРЕМЕННАЯ РЕГИСТРАЦИЯ",
+         "lex2": null,
+         "lex3": null,
+         "dateBegin": 1240674556000,
+         "active": 1
+      },
+      "term": null,
+      "dateRec": 1543978800000,
+      "typeCityPu":       {
+         "klUniPK":          {
+            "type": 35,
+            "code": 11100068
+         },
+         "lex1": "АГРОГОРОДОК",
+         "lex2": "АГРАГАРАДОК",
+         "lex3": null,
+         "dateBegin": 1240674590000,
+         "active": 1
+      },
+      "typeStreetPu":       {
+         "klUniPK":          {
+            "type": 38,
+            "code": 0
+         },
+         "lex1": null,
+         "lex2": null,
+         "lex3": null,
+         "dateBegin": 1240674292000,
+         "active": 1
+      },
+      "streetPu": null,
+      "housePu": null,
+      "korpsPu": null,
+      "appPu": null,
+      "dateReg": null,
+      "termReg":       {
+         "klUniPK":          {
+            "type": 27,
+            "code": 4
+         },
+         "lex1": "ДО 6-ТИ МЕСЯЦЕВ",
+         "lex2": null,
+         "lex3": null,
+         "dateBegin": 1240674586000,
+         "active": 1
+      },
+      "dateRegTill": null,
+      "causeIssue":       {
+         "klUniPK":          {
+            "type": 39,
+            "code": 59200021
+         },
+         "lex1": "ДОКУМЕНТИРОВАНИЕ",
+         "lex2": "ДАКУМЕНТАВАННЕ",
+         "lex3": null,
+         "dateBegin": 1240672094000,
+         "active": 1
+      },
+      "deathDate": null,
+      "signNoTake": false,
+      "signNoReg": false,
+      "signDestroy": false,
+      "noAddrPu":       {
+         "klUniPK":          {
+            "type": 70,
+            "code": 12
+         },
+         "lex1": "АННУЛИРОВАНИЕ РАЗРЕШЕНИЯ НА ПМЖ",
+         "lex2": null,
+         "lex3": null,
+         "dateBegin": 1240674587000,
+         "active": 1
+      },
+      "regType":       {
+         "klUniPK":          {
+            "type": 500,
+            "code": 2
+         },
+         "lex1": null,
+         "lex2": null,
+         "lex3": null,
+         "dateBegin": 1539226800000,
+         "active": 1
+      },
+      "maritalStatus":       {
+         "klUniPK":          {
+            "type": 501,
+            "code": 3
+         },
+         "lex1": "ВДОВЕЦ (ВДОВА)",
+         "lex2": null,
+         "lex3": null,
+         "dateBegin": 1539572400000,
+         "active": 1
+      },
+      "education":       {
+         "klUniPK":          {
+            "type": 502,
+            "code": 0
+         },
+         "lex1": null,
+         "lex2": null,
+         "lex3": null,
+         "dateBegin": 1539399600000,
+         "active": 1
+      },
+      "student": false,
+      "infants": []
+   },
+   "dsdAddressLive":    {
+      "dsdAddressLiveBase": "dsdAddressLive",
+      "pid": 90017000,
+      "areaL": "МИНСКАЯ ОБЛАСТЬ",
+      "areaObjNum": 17041,
+      "regionL": "ПУХОВИЧСКИЙ",
+      "regionObjNum": 20965,
+      "villageCouncil": null,
+      "vilCouncilObjNum": 21290,
+      "typeCityL": "Д",
+      "cityL": "ЗАДОЩЕНЬЕ",
+      "typeStreetL": null,
+      "streetL": null,
+      "house": "32",
+      "korps": null,
+      "app": null,
+      "ateObjectNum": 21293,
+      "ateElementUid": null,
+      "ateAddrNum": null
+   },
+   "getPassportDate": null,
+   "images": [],
+   "addressLast": null,
+   "dossieStatus": null,
+   "status": null
+}

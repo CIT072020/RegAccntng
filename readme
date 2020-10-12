@@ -1,0 +1,5 @@
+http://www.todes.by:8086/cxf                    Это список всех сервисов
+http://www.todes.by:8086/cxf/vcouncil?_wadl     Это проект для SOAP UI
+
+http://jsonviewer.stack.hu/
+

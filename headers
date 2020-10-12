@@ -1,0 +1,10 @@
+POST /cxf/vcouncil HTTP/1.0
+Host: www.todes.by:8086
+Keep-Alive: 300
+Connection: keep-alive
+User-Agent: Mozilla/4.0 (compatible; Synapse)
+Content-Type: application/json;charset=UTF-8
+Content-Length: 3723
+sign:amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h
+certificate:109uu21nu0t17togdy70-fuib
+
