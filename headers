@@ -1,4 +1,4 @@
-GET /village-council-service/v1/data?identifier=3140462K000VF6 HTTP/1.0
+GET /village-council-service/service/status HTTP/1.0
 Host: a.todes.by:13555
 Keep-Alive: 300
 Connection: keep-alive

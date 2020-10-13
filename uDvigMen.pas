@@ -19,11 +19,11 @@ const
   RESOURCE_GETDOC=2;
   RESOURCE_SAVEDOC=3;
 
-  DEF_HOST='http://www.todes.by';
-  DEF_PORT='8086';
-  DEF_Movements='/cxf/vcouncil/movements';
-  DEF_getDoc='/cxf/vcouncil';
-  DEF_saveDoc='/cxf/vcouncil';
+  DEF_HOST = 'https://a.todes.by';
+  DEF_PORT = '13555';
+  DEF_Movements = '/cxf/vcouncil/movements';
+  DEF_getDoc    = '/cxf/vcouncil';
+  DEF_saveDoc   = '/cxf/vcouncil';
 
   TEXT_NOT=0;
   TEXT_ERROR=1;
@@ -143,8 +143,8 @@ uses StrUtils;
 
 { TDvigMen }
 const
-  FILE_NAME='dvigmen.ini';
-  LOG_FILE='dvigmen';
+  FILE_NAME = 'dvigmen.ini';
+  LOG_FILE  = 'dvigmen';
 
 //-------------------------------------------------------------------------------------
 constructor TDvigMen.Create;
