@@ -273,7 +273,7 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   dm:=TDvigMen.Create;
-  dm.ReadParams;
+  //dm.ReadParams;
   AdsConnection.IsConnected:=true;
   tbTalonPrib.Open;
   tbTalonPribDeti.Open;
