@@ -68,6 +68,8 @@ var
   Form1: TForm1;
 
 implementation
+uses
+  uExchg;
 
 {$R *.dfm}
 
@@ -229,16 +231,25 @@ end;
 }
 procedure TForm1.Button3Click(Sender: TObject);
 var
-  slPar:TStringList;
+  sP : string;
+  slPar : TStringList;
 begin
-  slPar:=TStringList.Create;
-  slPar.Add('sysOrgan=26');
-  slPar.Add('since=01.01.2015');
-//  slPar.Add('till=');
-//  slPar.Add('first=');
-//  slPar.Add('count=');
+  slPar := TStringList.Create;
+  //sys_organ
+  slPar.Add('26');
+  //since
+  slPar.Add('01.01.2015');
+  //till
+  slPar.Add('01.01.2015');
+
+  //first
+  slPar.Add('');
+  //count
+  slPar.Add('');
+  sP := SetPars4GetList(slPar);
   dm.getMovements(slPar);
-  DataSource1.DataSet:=dm.tbMovements;
+
+  DataSource1.DataSet := dm.tbMovements;
   slPar.Free;
 end;
 

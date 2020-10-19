@@ -21,10 +21,11 @@ const
 
   DEF_HOST = 'https://a.todes.by';
   DEF_PORT = '13555';
-  DEF_Movements = '/cxf/vcouncil/movements';
-  DEF_getDoc    = '/cxf/vcouncil';
-  DEF_saveDoc   = '/cxf/vcouncil';
 
+  DEF_Movements = '/village-council-service/v1/movements';
+  DEF_getDoc    = '/village-council-service/v1/data';
+  DEF_saveDoc   = '/village-council-service/v1/data/save';
+  
   TEXT_NOT=0;
   TEXT_ERROR=1;
   TEXT_OK=2;
