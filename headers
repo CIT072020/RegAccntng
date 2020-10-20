@@ -1,5 +1,5 @@
-GET /village-council-service/v1/data?identifier=3140462K000VF6 HTTP/1.0
-Host: a.todes.by:13555
+GET /users HTTP/1.0
+Host: jsonplaceholder.typicode.com
 Keep-Alive: 300
 Connection: keep-alive
 User-Agent: Mozilla/4.0 (compatible; Synapse)

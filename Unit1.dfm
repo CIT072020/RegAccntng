@@ -218,6 +218,15 @@ object Form1: TForm1
     Caption = 'Create Super Object'
     TabOrder = 18
   end
+  object btnGetList: TButton
+    Left = 1112
+    Top = 24
+    Width = 75
+    Height = 25
+    Caption = 'GET '#1057#1087#1080#1089#1086#1082
+    TabOrder = 19
+    OnClick = btnGetListClick
+  end
   object DataSource1: TDataSource
     Left = 112
     Top = 381

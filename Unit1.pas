@@ -37,6 +37,8 @@ type
     tbTalonPribDeti: TAdsTable;
     Button9: TButton;
     cbCreateSO: TCheckBox;
+    btnGetList: TButton;
+    procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
@@ -243,7 +245,7 @@ begin
   slPar.Add('01.01.2015');
 
   //first
-  slPar.Add('');
+  slPar.Add('1');
   //count
   slPar.Add('');
   sP := SetPars4GetList(slPar);
@@ -448,6 +450,33 @@ begin
     HTTP.Free;
   end;
 end;
+
+
+//---***---
+// :sys_organ
+// :since
+// :till
+// first=
+// count=
+procedure TForm1.btnGetListClick(Sender: TObject);
+var
+  i : Integer;
+  Pars : TStringList;
+  SOA,
+  SOList : ISuperObject;
+begin
+  Pars := TStringList.Create;
+  Pars.Add('26');
+  Pars.Add('01.01.2016');
+  Pars.Add('01.10.2020');
+  Pars.Add('1');
+  Pars.Add('');
+  SOList := GetListDoc(Pars);
+  i := SOList.AsInteger;
+  i := SOA.AsInteger;
+
+end;
+
 
 end.
 
