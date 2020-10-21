@@ -1,5 +1,5 @@
-GET /users HTTP/1.0
-Host: jsonplaceholder.typicode.com
+GET /CIT072020/demo/posts HTTP/1.0
+Host: my-json-server.typicode.com:443
 Keep-Alive: 300
 Connection: keep-alive
 User-Agent: Mozilla/4.0 (compatible; Synapse)

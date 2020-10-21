@@ -18,6 +18,7 @@ type
     FIDs : TkbmMemTable;
   protected
   public
+    Meta : TSasaIniFile;
     property IDs : TkbmMemTable read FIDs write FIDs;
     //constructor Create; override;
     constructor Create(Pars : TConnPars);
@@ -45,6 +46,7 @@ const
 
 function SetPars4GetList(Pars : TStringList) : string;
 function GetListDoc(Pars: TStringList): ISuperObject;
+function FillIDList(SOArr: ISuperObject; IDs: TkbmMemTable): Integer;
 
 implementation
 
@@ -158,7 +160,8 @@ begin
   Result := nil;
   HTTP := THTTPSend.Create;
   //sPars := FullPath(GET_LIST_DOC, SetPars4GetList(Pars));
-  sPars := 'http://jsonplaceholder.typicode.com/users';
+  //sPars := 'http://jsonplaceholder.typicode.com/users';
+  sPars := 'https://my-json-server.typicode.com/CIT072020/demo/posts';
   try
     try
       Ret := HTTP.HTTPMethod('GET', sPars);
@@ -184,41 +187,49 @@ begin
 
 end;
 
-function ParseSOFromListDoc(SO : ISuperObject) : Integer;
+function ParseSOFromListDoc(SO : ISuperObject; MTableIDs : TkbmMemTable) : Integer;
 begin
 
 end;
 
-{
-function MTList(SOArr : ISuperObject) : Integer;
+
+function FillIDList(SOArr: ISuperObject; IDs: TkbmMemTable): Integer;
+
+  function CT(s: string): string;
+  begin
+    Result := s;
+  end;
+
 var
-  SOMax : Integer;
-  SO    : ISuperObject;
+  i, SOMax: Integer;
+  SO: ISuperObject;
 begin
   try
 
-        //ClearMemTable(tbMovements);
-        for i:=0 to SOArr.AsArray.Length-1 do begin
-          SO := SOArr.AsArray.O[i];
-          IDs.Append;
-          tbMovements.FieldByName('PID').AsString:=obj.S[CT('pid')];
-          tbMovements.FieldByName('IDENTIF').AsString:=obj.S[CT('identif')];
-          tbMovements.FieldByName('DATEREC').AsDateTime:=sdDateTimeFromString(obj.S[CT('dateRec')], false);
-          tbMovements.FieldByName('ORG_WHERE_TYPE').AsString:=obj.O[CT('sysOrganWhere')].O[CT('klUniPK')].S[CT('type')];
-          tbMovements.FieldByName('ORG_WHERE_CODE').AsString:=obj.O[CT('sysOrganWhere')].O[CT('klUniPK')].S[CT('code')];
-          tbMovements.FieldByName('ORG_WHERE_NAME').AsString:=obj.O[CT('sysOrganWhere')].S[CT('lex1')];
-          tbMovements.FieldByName('ORG_FROM_TYPE').AsString:=obj.O[CT('sysOrganFrom')].O[CT('klUniPK')].S[CT('type')];
-          tbMovements.FieldByName('ORG_FROM_CODE').AsString:=obj.O[CT('sysOrganFrom')].O[CT('klUniPK')].S[CT('code')];
-          tbMovements.FieldByName('ORG_FROM_NAME').AsString:=obj.O[CT('sysOrganFrom')].S[CT('lex1')];
-          tbMovements.Post;
-        end;
+    IDs.EmptyTable;
+    i := 0;
+    while (i <= SOArr.AsArray.Length - 1) do begin
+      SO := SOArr.AsArray.O[i];
+      IDs.Append;
+      IDs.FieldByName('PID').AsString := SO.S[CT('pid')];
+      IDs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
+      IDs.FieldByName('DATEREC').AsDateTime := sdDateTimeFromString(SO.S[CT('dateRec')], false);
+      IDs.FieldByName('ORG_WHERE_TYPE').AsString := SO.O[CT('sysOrganWhere')].O[CT('klUniPK')].s[CT('type')];
+      IDs.FieldByName('ORG_WHERE_CODE').AsString := SO.O[CT('sysOrganWhere')].O[CT('klUniPK')].s[CT('code')];
+      IDs.FieldByName('ORG_WHERE_NAME').AsString := SO.O[CT('sysOrganWhere')].s[CT('lex1')];
+      IDs.FieldByName('ORG_FROM_TYPE').AsString := SO.O[CT('sysOrganFrom')].O[CT('klUniPK')].s[CT('type')];
+      IDs.FieldByName('ORG_FROM_CODE').AsString := SO.O[CT('sysOrganFrom')].O[CT('klUniPK')].s[CT('code')];
+      IDs.FieldByName('ORG_FROM_NAME').AsString := SO.O[CT('sysOrganFrom')].s[CT('lex1')];
+      IDs.Post;
+      i := i + 1;
+    end;
 
-
-    except
-      end;
+  except
+  end;
+  Result := i;
 
 end;
-}
+
 
 end.
 

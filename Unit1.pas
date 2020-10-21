@@ -71,6 +71,8 @@ var
 
 implementation
 uses
+  kbmMemTable,
+  uService,
   uExchg;
 
 {$R *.dfm}
@@ -464,6 +466,7 @@ var
   Pars : TStringList;
   SOA,
   SOList : ISuperObject;
+  IDs : TkbmMemTable;
 begin
   Pars := TStringList.Create;
   Pars.Add('26');
@@ -472,8 +475,18 @@ begin
   Pars.Add('1');
   Pars.Add('');
   SOList := GetListDoc(Pars);
-  i := SOList.AsInteger;
-  i := SOA.AsInteger;
+  // должен вернуться массив ИН
+  if Assigned(SOList) and (SOList.DataType = stArray) then begin
+    IDs := TkbmMemTable(CreateMemTable('IDs', dm.Meta, 'TABLE_MOVEMENTS'));
+    if ( Assigned(IDs) ) then
+      i := FillIDList(SOList, IDs);
+      if (i > 0) then begin
+        DataSource1.DataSet := IDs;
+
+      end;
+
+  end;
+
 
 end;
 
