@@ -1,4 +1,4 @@
-GET /CIT072020/demo/posts HTTP/1.0
+GET /CIT072020/TestData4RegAcc/Departs HTTP/1.0
 Host: my-json-server.typicode.com:443
 Keep-Alive: 300
 Connection: keep-alive

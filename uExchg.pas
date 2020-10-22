@@ -161,7 +161,8 @@ begin
   HTTP := THTTPSend.Create;
   //sPars := FullPath(GET_LIST_DOC, SetPars4GetList(Pars));
   //sPars := 'http://jsonplaceholder.typicode.com/users';
-  sPars := 'https://my-json-server.typicode.com/CIT072020/demo/posts';
+  //sPars := 'https://my-json-server.typicode.com/CIT072020/TestData4RegAcc/posts';
+  sPars := 'https://my-json-server.typicode.com/CIT072020/TestData4RegAcc/Departs';
   try
     try
       Ret := HTTP.HTTPMethod('GET', sPars);
