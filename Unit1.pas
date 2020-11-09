@@ -470,10 +470,10 @@ var
 begin
   Pars := TStringList.Create;
   Pars.Add('26');
-  Pars.Add('01.01.2016');
-  Pars.Add('01.10.2020');
-  Pars.Add('1');
-  Pars.Add('');
+  Pars.Add('05.10.2020');
+  Pars.Add('07.10.2020');
+  Pars.Add('0');
+  Pars.Add('10');
   SOList := GetListDoc(Pars);
   // должен вернуться массив ИН
   if Assigned(SOList) and (SOList.DataType = stArray) then begin

@@ -36,7 +36,7 @@ const
   DEF_HOST = 'https://a.todes.by';
   DEF_PORT = '13555';
 
-  RESOURCE_GEN_POINT = '/village-council-service';
+  RESOURCE_GEN_POINT = '/village-council-service/api';
   RESOURCE_VER       = '/v1';
 
   RESOURCE_LISTDOC_PATH = '/movements';
@@ -122,7 +122,7 @@ begin
   end;
 
   if ( Length(s) > 0) then
-    s := DEF_HOST + '' + DEF_PORT +
+    s := DEF_HOST + ':' + DEF_PORT +
     RESOURCE_GEN_POINT +
     RESOURCE_VER + s + Pars;
 
@@ -159,10 +159,12 @@ var
 begin
   Result := nil;
   HTTP := THTTPSend.Create;
-  //sPars := FullPath(GET_LIST_DOC, SetPars4GetList(Pars));
+  sPars := FullPath(GET_LIST_DOC, SetPars4GetList(Pars));
+
   //sPars := 'http://jsonplaceholder.typicode.com/users';
   //sPars := 'https://my-json-server.typicode.com/CIT072020/TestData4RegAcc/posts';
-  sPars := 'https://my-json-server.typicode.com/CIT072020/TestData4RegAcc/Departs';
+  //sPars := 'https://my-json-server.typicode.com/CIT072020/TestData4RegAcc/Departs';
+
   try
     try
       Ret := HTTP.HTTPMethod('GET', sPars);

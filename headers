@@ -1,5 +1,5 @@
-GET /CIT072020/TestData4RegAcc/Departs HTTP/1.0
-Host: my-json-server.typicode.com:443
+GET /village-council-service/api/v1/movements/sys_organ/26/period/05.10.2020/07.10.2020?first=0&count=10 HTTP/1.0
+Host: a.todes.by:13555
 Keep-Alive: 300
 Connection: keep-alive
 User-Agent: Mozilla/4.0 (compatible; Synapse)
