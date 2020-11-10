@@ -4,11 +4,21 @@ interface
 
 uses
  Classes, DB,
+ StdCtrls,
  kbmMemTable,
  DBFunc,
  SasaINiFile, FuncPr;
 
+const
+  DEB_CLEAR    = 1;
+  DEB_NEWLINE  = 2;
+  DEB_SAMELINE = 3;
+
 function CreateMemTable(sTableName: string; Meta : TSasaIniFile; MetaSect: String; AutoCreate: Boolean = True; AutoOpen: Boolean = True): TDataSet;
+procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
+
+var
+  ShowM : TMemo;
 
 implementation
 
@@ -113,5 +123,20 @@ begin
   MetaDef.Free;
 end;
 
+procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
+var
+  AddS : string;
+begin
+
+  AddS := '';
+  case Mode of
+    DEB_CLEAR   : ShowM.Text := '';
+    //DEB_NEWLINE : AddS := Char(13) + Char(10);
+    DEB_NEWLINE : AddS := #13#10;
+  end;
+
+  ShowM.Text := ShowM.Text + AddS + s;
+
+end;
 
 end.

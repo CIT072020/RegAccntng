@@ -13,6 +13,7 @@ type
   end;
 
 type
+  // "черный ящик" обмена с REST-сервисом
   TExchReg = class(THTTPSend)
   private
     FIDs : TkbmMemTable;
@@ -20,17 +21,15 @@ type
   public
     Meta : TSasaIniFile;
     property IDs : TkbmMemTable read FIDs write FIDs;
-    //constructor Create; override;
+
     constructor Create(Pars : TConnPars);
     destructor Destroy; override;
-
-
   published
   end;
 
 const
-  GET_LIST_DOC = 1;
-  GET_DOC      = 2;
+  GET_LIST_ID  = 1;
+  GET_LIST_DOC = 2;
   POST_DOC     = 3;
 
   DEF_HOST = 'https://a.todes.by';
@@ -39,16 +38,21 @@ const
   RESOURCE_GEN_POINT = '/village-council-service/api';
   RESOURCE_VER       = '/v1';
 
-  RESOURCE_LISTDOC_PATH = '/movements';
-  RESOURCE_GETDOC_PATH  = '/data';
+  RESOURCE_LISTID_PATH = '/movements';
+  RESOURCE_LISTDOC_PATH  = '/data';
   RESOURCE_POSTDOC_PATH = '/data/save';
 
 
-function SetPars4GetList(Pars : TStringList) : string;
-function GetListDoc(Pars: TStringList): ISuperObject;
+function SetPars4GetIDs(Pars : TStringList) : string;
+function GetListID(Pars: TStringList): ISuperObject;
+function GetListDOC(Pars: TStringList): ISuperObject;
 function FillIDList(SOArr: ISuperObject; IDs: TkbmMemTable): Integer;
+function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
 
 implementation
+
+uses
+  uService;
 
 constructor TExchReg.Create(Pars : TConnPars);
 begin
@@ -66,26 +70,22 @@ end;
 //
 // Example:
 // /v1/movements/sys_organ/:sys_organ/period/:since/:till?first=1&count=1
-// :sys_organ
-// :since
-// :till
-// first=
-// count=
-function SetPars4GetList(Pars : TStringList) : string;
+// :sys_organ - required
+// :since - required
+// :till - required
+// first=[0]
+// count=[500]
+function SetPars4GetIDs(Pars : TStringList) : string;
 var
   s : string;
 begin
-  s :=
-    '/sys_organ/' + Pars[0] +
-    '/period/'    + Pars[1] +
-    '/'           + Pars[2] +
-    '?first='     + Pars[3] +
-    '&count='     + Pars[4];
+  s := Format( '/sys_organ/%s/period/%s/%s?first=%s&count=%s',
+    [Pars[0], Pars[1], Pars[2], Pars[3], Pars[4]]);
   Result := s;
 end;
 
 
-// установка параметров для GET : получения документа по ID
+// установка параметров для GET : получения документов по ID
 //
 // identifier=3140462K000VF6
 // name=
@@ -93,10 +93,13 @@ end;
 // patronymic=
 // first=
 // count=
-procedure SetPars4GetDoc;
-
+function SetPars4GetDocs(Pars : TStringList) : string;
+var
+  s : string;
 begin
-
+  s := Format('?identifier=%s&name=%s&surname=%s&patronymic=%s&first=%s&count=%s',
+    [ Pars[0], Pars[1], Pars[2], Pars[3], Pars[4], Pars[5] ]);
+  Result := s;
 end;
 
 // установка параметров для POST : сохранение документа (форма)
@@ -116,16 +119,14 @@ var
 begin
   s := '';
   case Func of
-    GET_LIST_DOC  : s := RESOURCE_LISTDOC_PATH;
-    GET_DOC       : s := RESOURCE_GETDOC_PATH;
-    POST_DOC      : s := RESOURCE_POSTDOC_PATH;
+    GET_LIST_ID  : s := RESOURCE_LISTID_PATH;
+    GET_LIST_DOC : s := RESOURCE_LISTDOC_PATH;
+    POST_DOC     : s := RESOURCE_POSTDOC_PATH;
   end;
-
   if ( Length(s) > 0) then
     s := DEF_HOST + ':' + DEF_PORT +
     RESOURCE_GEN_POINT +
     RESOURCE_VER + s + Pars;
-
   Result := s;
 end;
 
@@ -148,22 +149,23 @@ begin
     Result := ADefault;
 end;
 
-function GetListDoc(Pars: TStringList): ISuperObject;
+// Перемещение граждан за период
+function GetListID(Pars: TStringList): ISuperObject;
 var
   Ret : Boolean;
   sDoc,
   sErr, sPars: string;
   Docs : ISuperObject;
-
   HTTP: THTTPSend;
 begin
   Result := nil;
   HTTP := THTTPSend.Create;
-  sPars := FullPath(GET_LIST_DOC, SetPars4GetList(Pars));
+  sPars := FullPath(GET_LIST_ID, SetPars4GetIDs(Pars));
 
   //sPars := 'http://jsonplaceholder.typicode.com/users';
   //sPars := 'https://my-json-server.typicode.com/CIT072020/TestData4RegAcc/posts';
   //sPars := 'https://my-json-server.typicode.com/CIT072020/TestData4RegAcc/Departs';
+  ShowDeb(sPars, DEB_CLEAR);
 
   try
     try
@@ -173,6 +175,7 @@ begin
           sErr := HTTP.Headers.Text;
           raise Exception.Create(sErr);
         end;
+        ShowDeb(IntToStr(HTTP.ResultCode) + ' ' + HTTP.ResultString);
         sDoc := MemStream2Str(HTTP.Document);
         Result := SO(Utf8Decode(sDoc));
       end
@@ -197,7 +200,6 @@ end;
 
 
 function FillIDList(SOArr: ISuperObject; IDs: TkbmMemTable): Integer;
-
   function CT(s: string): string;
   begin
     Result := s;
@@ -208,7 +210,100 @@ var
   SO: ISuperObject;
 begin
   try
+    IDs.EmptyTable;
+    i := 0;
+    while (i <= SOArr.AsArray.Length - 1) do begin
+      SO := SOArr.AsArray.O[i];
+      IDs.Append;
+      //IDs.FieldByName('PID').AsString := SO.S[CT('pid')];
+      IDs.FieldByName('IDENTIF').AsString        := SO.S[CT('IDENTIFIER')];
+      IDs.FieldByName('DATEREC').AsDateTime      := sdDateTimeFromString(SO.S[CT('REG_DATE')], false);
+      IDs.FieldByName('ORG_WHERE_CODE').AsString := SO.O[CT('SYS_ORGAN_WHERE')].S[CT('CODE')];
+      IDs.FieldByName('ORG_WHERE_NAME').AsString := SO.O[CT('SYS_ORGAN_WHERE')].S[CT('LEX')];
+      IDs.FieldByName('ORG_FROM_CODE').AsString  := SO.O[CT('SYS_ORGAN_FROM')].S[CT('CODE')];
+      IDs.FieldByName('ORG_FROM_NAME').AsString  := SO.O[CT('SYS_ORGAN_FROM')].S[CT('LEX')];
+      IDs.Post;
+      i := i + 1;
+    end;
+  except
+  end;
+  Result := i;
+end;
 
+// Плучить документы для текущего в списке ID
+function GetListDOC(Pars: TStringList): ISuperObject;
+var
+  Ret : Boolean;
+  sDoc,
+  sErr, sPars: string;
+  ws : WideString;
+  Docs : ISuperObject;
+  HTTP: THTTPSend;
+begin
+  Result := nil;
+  HTTP := THTTPSend.Create;
+  sPars := FullPath(GET_LIST_DOC, SetPars4GetDocs(Pars));
+  ShowDeb(sPars);
+
+  try
+    try
+      Ret := HTTP.HTTPMethod('GET', sPars);
+      if (Ret = True) then begin
+        if (HTTP.ResultCode < 200) or (HTTP.ResultCode >= 400) then begin
+          sErr := HTTP.Headers.Text;
+          raise Exception.Create(sErr);
+        end;
+        ShowDeb(IntToStr(HTTP.ResultCode) + ' ' + HTTP.ResultString);
+        sDoc := MemStream2Str(HTTP.Document);
+        //Result := SO(Utf8Decode(sDoc));
+        ws   := Utf8Decode(sDoc);
+        Result := SO(ws);
+      end
+      else begin
+        sErr := IntToStr(HTTP.sock.LastError) + ' ' + HTTP.sock.LastErrorDesc;
+          raise Exception.Create(sErr);
+      end;
+    except
+
+
+    end;
+  finally
+    HTTP.Free;
+  end;
+
+end;
+
+function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
+
+  function CT(s: string): string;
+  begin
+    Result := s;
+  end;
+
+  procedure FillChild(SOA: ISuperObject; Chs: TkbmMemTable; MasterI: integer);
+  var
+    j: Integer;
+    SO: ISuperObject;
+  begin
+    for j := 0 to SOA.AsArray.Length - 1 do begin
+      SO := SO.AsArray.O[j];
+      Chs.Append;
+      Chs.FieldByName('ID').AsInteger := MasterI;
+      Chs.FieldByName('PID').AsString := SO.S[CT('pid')];
+      Chs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
+      Chs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
+      Chs.FieldByName('NAME').AsString := SO.S[CT('name')];
+      Chs.FieldByName('BDATE').AsString := SO.S[CT('bdate')];
+      Chs.FieldByName('DATER').AsDateTime := sdDateTimeFromString(SO.S[CT('dateRec')], false);
+      Chs.Post;
+    end;
+  end;
+
+var
+  i, SOMax: Integer;
+  SOChild, SO: ISuperObject;
+begin
+  try
     IDs.EmptyTable;
     i := 0;
     while (i <= SOArr.AsArray.Length - 1) do begin
@@ -216,21 +311,20 @@ begin
       IDs.Append;
       IDs.FieldByName('PID').AsString := SO.S[CT('pid')];
       IDs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
-      IDs.FieldByName('DATEREC').AsDateTime := sdDateTimeFromString(SO.S[CT('dateRec')], false);
-      IDs.FieldByName('ORG_WHERE_TYPE').AsString := SO.O[CT('sysOrganWhere')].O[CT('klUniPK')].s[CT('type')];
-      IDs.FieldByName('ORG_WHERE_CODE').AsString := SO.O[CT('sysOrganWhere')].O[CT('klUniPK')].s[CT('code')];
-      IDs.FieldByName('ORG_WHERE_NAME').AsString := SO.O[CT('sysOrganWhere')].s[CT('lex1')];
-      IDs.FieldByName('ORG_FROM_TYPE').AsString := SO.O[CT('sysOrganFrom')].O[CT('klUniPK')].s[CT('type')];
-      IDs.FieldByName('ORG_FROM_CODE').AsString := SO.O[CT('sysOrganFrom')].O[CT('klUniPK')].s[CT('code')];
-      IDs.FieldByName('ORG_FROM_NAME').AsString := SO.O[CT('sysOrganFrom')].s[CT('lex1')];
+      IDs.FieldByName('sysDocType').AsString := SO.O[CT('sysDocType')].O[CT('klUniPK')].s[CT('type')];
+      IDs.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].s[CT('lex1')];
+      IDs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
+      IDs.FieldByName('NAME').AsString := SO.S[CT('name')];
       IDs.Post;
+      SOChild := SO.O[CT('infants')];
+      if (Assigned(SOChild)) then begin
+        FillChild(SOChild, Chs, i);
+      end;
       i := i + 1;
     end;
-
   except
   end;
   Result := i;
-
 end;
 
 

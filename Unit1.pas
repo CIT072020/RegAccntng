@@ -19,7 +19,7 @@ type
     edURL: TDBEditEh;
     Button2: TButton;
     edMetod: TDBComboBoxEh;
-    Grid: TDBGridEh;
+    gdIDs: TDBGridEh;
     DataSource1: TDataSource;
     Button3: TButton;
     Button4: TButton;
@@ -35,9 +35,13 @@ type
     DataSource2: TDataSource;
     tbTalonPrib: TAdsTable;
     tbTalonPribDeti: TAdsTable;
-    Button9: TButton;
+    btnGetCurID: TButton;
     cbCreateSO: TCheckBox;
     btnGetList: TButton;
+    gdDocs: TDBGridEh;
+    dsDocs: TDataSource;
+    gdChild: TDBGridEh;
+    dsChild: TDataSource;
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -49,7 +53,7 @@ type
     procedure Button6Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
     procedure Button8Click(Sender: TObject);
-    procedure Button9Click(Sender: TObject);
+    procedure btnGetCurIDClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -250,7 +254,7 @@ begin
   slPar.Add('1');
   //count
   slPar.Add('');
-  sP := SetPars4GetList(slPar);
+  //sP := SetPars4GetList(slPar);
   dm.getMovements(slPar);
 
   DataSource1.DataSet := dm.tbMovements;
@@ -292,6 +296,7 @@ begin
   AdsConnection.IsConnected:=true;
   tbTalonPrib.Open;
   tbTalonPribDeti.Open;
+  ShowM := edMemo;
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
@@ -434,25 +439,6 @@ begin
 end;
 
 
-procedure TForm1.Button9Click(Sender: TObject);
-var
-  HTTP: THTTPSend;
-begin
-  HTTP := THTTPSend.Create;
-  try
-    //HTTP.ProxyHost := Edit8.Text;
-    //HTTP.ProxyPort := Edit9.Text;
-    HTTP.HTTPMethod('GET', edURL.text);
-    edMemo.Lines.Assign(HTTP.Headers);
-    edMemo.Lines.LoadFromStream(HTTP.Document);
-    edMemo.Lines.Add('--------------------------------------');
-    edMemo.Lines.Add(IntToStr(HTTP.ResultCode)+'  '+HTTP.ResultString);
-    edMemo.Lines.Add(inttostr(HTTP.Sock.LastError)+'   '+HTTP.Sock.LastErrorDesc);
-  finally
-    HTTP.Free;
-  end;
-end;
-
 
 //---***---
 // :sys_organ
@@ -460,6 +446,7 @@ end;
 // :till
 // first=
 // count=
+// ѕеремещение граждан за период
 procedure TForm1.btnGetListClick(Sender: TObject);
 var
   i : Integer;
@@ -471,10 +458,10 @@ begin
   Pars := TStringList.Create;
   Pars.Add('26');
   Pars.Add('05.10.2020');
-  Pars.Add('07.10.2020');
-  Pars.Add('0');
-  Pars.Add('10');
-  SOList := GetListDoc(Pars);
+  Pars.Add('08.10.2020');
+  Pars.Add('');
+  Pars.Add('');
+  SOList := GetListID(Pars);
   // должен вернутьс€ массив »Ќ
   if Assigned(SOList) and (SOList.DataType = stArray) then begin
     IDs := TkbmMemTable(CreateMemTable('IDs', dm.Meta, 'TABLE_MOVEMENTS'));
@@ -482,14 +469,54 @@ begin
       i := FillIDList(SOList, IDs);
       if (i > 0) then begin
         DataSource1.DataSet := IDs;
-
       end;
-
   end;
-
-
 end;
 
+// ѕлучить документы дл€ текущего в списке ID
+procedure TForm1.btnGetCurIDClick(Sender: TObject);
+var
+  RecN, i: Integer;
+  s : string;
+  Pars: TStringList;
+  SOA, SOList: ISuperObject;
+  Child,
+  Docs: TkbmMemTable;
+  DS : TDataSet;
+begin
+  try
+    RecN := gdIDs.DataSource.DataSet.RecNo;
+    if (RecN >= 0) then begin
+      DS := gdIDs.DataSource.DataSet;
+      s  := DS.FieldValues['IDENTIF'];
+
+      Pars := TStringList.Create;
+      Pars.Add(s);
+      Pars.Add('');
+      Pars.Add('');
+      Pars.Add('');
+      Pars.Add('');
+      Pars.Add('');
+
+      SOList := GetListDoc(Pars);
+      // должен вернутьс€ массив установочных документов
+      if Assigned(SOList) and (SOList.DataType = stArray) then begin
+        Docs   := TkbmMemTable(CreateMemTable('Docs', dm.Meta, 'TABLE_DVIGMEN'));
+        Child  := TkbmMemTable(CreateMemTable('Child', dm.Meta, 'TABLE_CHILD'));
+        if (Assigned(Docs)) then
+          i := FillDocList(SOList, Docs, Child);
+        if (i > 0) then begin
+          dsDocs.DataSet := Docs;
+          dsChild.DataSet := Child;
+        end;
+      end;
+    end;
+  except
+    on E:Exception do begin
+      ShowDeb(E.Message);
+    end;
+  end;
+end;
 
 end.
 

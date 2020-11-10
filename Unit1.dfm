@@ -80,11 +80,11 @@ object Form1: TForm1
     Text = 'GET'
     Visible = True
   end
-  object Grid: TDBGridEh
+  object gdIDs: TDBGridEh
     Left = 8
     Top = 357
-    Width = 1201
-    Height = 120
+    Width = 465
+    Height = 128
     DataSource = DataSource1
     FooterColor = clWindow
     FooterFont.Charset = DEFAULT_CHARSET
@@ -201,14 +201,14 @@ object Form1: TForm1
     TitleFont.Name = 'Tahoma'
     TitleFont.Style = []
   end
-  object Button9: TButton
-    Left = 704
-    Top = 88
-    Width = 75
+  object btnGetCurID: TButton
+    Left = 1088
+    Top = 64
+    Width = 121
     Height = 25
-    Caption = 'Button9'
+    Caption = 'GET '#1090#1077#1082#1091#1097#1080#1081' ID'
     TabOrder = 17
-    OnClick = Button9Click
+    OnClick = btnGetCurIDClick
   end
   object cbCreateSO: TCheckBox
     Left = 896
@@ -219,13 +219,51 @@ object Form1: TForm1
     TabOrder = 18
   end
   object btnGetList: TButton
-    Left = 1112
+    Left = 1088
     Top = 24
-    Width = 75
+    Width = 121
     Height = 25
-    Caption = 'GET '#1057#1087#1080#1089#1086#1082
+    Caption = 'GET '#1057#1087#1080#1089#1086#1082' ID'
     TabOrder = 19
     OnClick = btnGetListClick
+  end
+  object gdDocs: TDBGridEh
+    Left = 487
+    Top = 357
+    Width = 320
+    Height = 128
+    DataSource = dsDocs
+    FooterColor = clWindow
+    FooterFont.Charset = DEFAULT_CHARSET
+    FooterFont.Color = clWindowText
+    FooterFont.Height = -11
+    FooterFont.Name = 'Tahoma'
+    FooterFont.Style = []
+    TabOrder = 20
+    TitleFont.Charset = DEFAULT_CHARSET
+    TitleFont.Color = clWindowText
+    TitleFont.Height = -11
+    TitleFont.Name = 'Tahoma'
+    TitleFont.Style = []
+  end
+  object gdChild: TDBGridEh
+    Left = 819
+    Top = 357
+    Width = 320
+    Height = 128
+    DataSource = dsChild
+    FooterColor = clWindow
+    FooterFont.Charset = DEFAULT_CHARSET
+    FooterFont.Color = clWindowText
+    FooterFont.Height = -11
+    FooterFont.Name = 'Tahoma'
+    FooterFont.Style = []
+    TabOrder = 21
+    TitleFont.Charset = DEFAULT_CHARSET
+    TitleFont.Color = clWindowText
+    TitleFont.Height = -11
+    TitleFont.Name = 'Tahoma'
+    TitleFont.Style = []
   end
   object DataSource1: TDataSource
     Left = 112
@@ -263,5 +301,13 @@ object Form1: TForm1
     IndexCollationMismatch = icmIgnore
     Left = 792
     Top = 8
+  end
+  object dsDocs: TDataSource
+    Left = 616
+    Top = 408
+  end
+  object dsChild: TDataSource
+    Left = 992
+    Top = 424
   end
 end
