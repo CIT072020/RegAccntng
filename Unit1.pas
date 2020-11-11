@@ -26,7 +26,7 @@ type
     Edit1: TEdit;
     Edit2: TEdit;
     ComboBox1: TComboBox;
-    Button5: TButton;
+    btnSort: TButton;
     Button6: TButton;
     Button7: TButton;
     Button8: TButton;
@@ -42,6 +42,7 @@ type
     dsDocs: TDataSource;
     gdChild: TDBGridEh;
     dsChild: TDataSource;
+    btnGetWithPars: TButton;
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -49,11 +50,12 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure Button4Click(Sender: TObject);
-    procedure Button5Click(Sender: TObject);
+    procedure btnSortClick(Sender: TObject);
     procedure Button6Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
     procedure Button8Click(Sender: TObject);
     procedure btnGetCurIDClick(Sender: TObject);
+    procedure btnGetWithParsClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -76,6 +78,7 @@ var
 implementation
 uses
   kbmMemTable,
+  SasaINiFile,
   uService,
   uExchg;
 
@@ -333,7 +336,22 @@ function ISO8601DateToDelphiDateTime(const str: SOString; var dt: TDateTime): Bo
  end;
 end;
 
-procedure TForm1.Button5Click(Sender: TObject);
+
+// установка сортировки списка таблиц по статусу
+procedure SetIDSort;
+const
+  IDX_ID = 'IDTF';
+var
+  mt : TkbmMemTable;
+  ds : TDataSet;
+begin
+  mt := TkbmMemTable(Form1.gdIDs.DataSource.DataSet);
+  //mt.AddIndex(IDX_ID, 'IDENTIF', [ixDescending]);
+  mt.AddIndex(IDX_ID, 'IDENTIF', []);
+  mt.IndexName := IDX_ID;
+end;
+
+procedure TForm1.btnSortClick(Sender: TObject);
 var
   i:Integer;
   sp:TStringStream;
@@ -342,25 +360,25 @@ var
     result:=chr(13)+chr(10);
   end;
 begin
-  sp:=TStringStream.Create('');
-  sp.WriteString('{'+crlf);
-  sp.WriteString('"1111111111",'#13#10);
-  sp.WriteString('"2222222222222222", '#13#10);
-  sp.WriteString('"44444444444444444", '#13#10);
-  sp.WriteString('}');
-  ShowMessage(sp.DataString);
-  sp.Free;
-{
-  if dm.CreateTableDvigMens then begin
-    DataSource1.DataSet:=dm.tbDvigMens;
-    edMemo.Clear;
-    for i:=0 to dm.tbDvigMens.Fields.Count-1 do begin
-      edMemo.Lines.Add(dm.tbDvigMens.Fields[i].FieldName+'='+dm.getPathField(dm.tbDvigMens.Fields[i]));
-    end;
-  end else begin
-    ShowMessage(dm.getLastError);
-  end;
-  }
+//  sp:=TStringStream.Create('');
+//  sp.WriteString('{'+crlf);
+//  sp.WriteString('"1111111111",'#13#10);
+//  sp.WriteString('"2222222222222222", '#13#10);
+//  sp.WriteString('"44444444444444444", '#13#10);
+//  sp.WriteString('}');
+//  ShowMessage(sp.DataString);
+//  sp.Free;
+//  if dm.CreateTableDvigMens then begin
+//    DataSource1.DataSet:=dm.tbDvigMens;
+//    edMemo.Clear;
+//    for i:=0 to dm.tbDvigMens.Fields.Count-1 do begin
+//      edMemo.Lines.Add(dm.tbDvigMens.Fields[i].FieldName+'='+dm.getPathField(dm.tbDvigMens.Fields[i]));
+//    end;
+//  end else begin
+//    ShowMessage(dm.getLastError);
+//  end;
+
+  SetIDSort;
 end;
 
 function UnEscape(s: AnsiString): WideString;
@@ -440,6 +458,48 @@ end;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Вызов GET with UI or HARD Pars
+procedure GetWithVarPars(SOList : ISuperObject; Meta4kbm : TSasaIniFile; DS : TDataSource);
+var
+  i : Integer;
+  sP : string;
+  Pars : TStringList;
+  IDs : TkbmMemTable;
+begin
+  // должен быть массив ИН
+  if Assigned(SOList) and (SOList.DataType = stArray) then begin
+    IDs := TkbmMemTable(CreateMemTable('IDs', Meta4kbm, 'TABLE_MOVEMENTS'));
+    if ( Assigned(IDs) ) then
+      i := FillIDList(SOList, IDs);
+      if (i > 0) then begin
+        DS.DataSet := IDs;
+      end;
+  end;
+end;
+
+
 //---***---
 // :sys_organ
 // :since
@@ -447,30 +507,24 @@ end;
 // first=
 // count=
 // Перемещение граждан за период
+procedure TForm1.btnGetWithParsClick(Sender: TObject);
+begin
+  GetWithVarPars(GetListID(nil, edURL.Text), dm.Meta, DataSource1);
+end;
+
+// Перемещение граждан за период
 procedure TForm1.btnGetListClick(Sender: TObject);
 var
-  i : Integer;
   Pars : TStringList;
-  SOA,
-  SOList : ISuperObject;
-  IDs : TkbmMemTable;
 begin
   Pars := TStringList.Create;
   Pars.Add('26');
   Pars.Add('05.10.2020');
-  Pars.Add('08.10.2020');
-  Pars.Add('');
-  Pars.Add('');
-  SOList := GetListID(Pars);
-  // должен вернуться массив ИН
-  if Assigned(SOList) and (SOList.DataType = stArray) then begin
-    IDs := TkbmMemTable(CreateMemTable('IDs', dm.Meta, 'TABLE_MOVEMENTS'));
-    if ( Assigned(IDs) ) then
-      i := FillIDList(SOList, IDs);
-      if (i > 0) then begin
-        DataSource1.DataSet := IDs;
-      end;
-  end;
+  Pars.Add('31.10.2020');
+  Pars.Add('1');
+  Pars.Add('800');
+
+  GetWithVarPars( GetListID(Pars), dm.Meta, DataSource1 );
 end;
 
 // Плучить документы для текущего в списке ID
@@ -517,6 +571,7 @@ begin
     end;
   end;
 end;
+
 
 end.
 

@@ -26,6 +26,7 @@ uses
   SysUtils,
   StrUtils;
 
+
 //---------------------------------------------
 function CreateMemTable(sTableName: string; Meta : TSasaIniFile; MetaSect: String; AutoCreate: Boolean = True; AutoOpen: Boolean = True): TDataSet;
 

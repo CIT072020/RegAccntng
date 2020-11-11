@@ -44,7 +44,8 @@ const
 
 
 function SetPars4GetIDs(Pars : TStringList) : string;
-function GetListID(Pars: TStringList): ISuperObject;
+function GetListID(Pars: TStringList; StrPars : string = ''): ISuperObject;
+
 function GetListDOC(Pars: TStringList): ISuperObject;
 function FillIDList(SOArr: ISuperObject; IDs: TkbmMemTable): Integer;
 function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
@@ -53,6 +54,13 @@ implementation
 
 uses
   uService;
+
+function UnixStrToDateTime(sDate:String):TDateTime;
+begin
+   Result := 0;
+   if (sDate <> 'null') then
+     Result := JavaToDelphiDateTime(StrToInt64(sDate));
+end;
 
 constructor TExchReg.Create(Pars : TConnPars);
 begin
@@ -150,22 +158,27 @@ begin
 end;
 
 // Перемещение граждан за период
-function GetListID(Pars: TStringList): ISuperObject;
+function GetListID(Pars: TStringList; StrPars: string = ''): ISuperObject;
 var
-  Ret : Boolean;
-  sDoc,
-  sErr, sPars: string;
-  Docs : ISuperObject;
+  Ret: Boolean;
+  sDoc, sErr, sPars: string;
+  Docs: ISuperObject;
   HTTP: THTTPSend;
 begin
   Result := nil;
   HTTP := THTTPSend.Create;
-  sPars := FullPath(GET_LIST_ID, SetPars4GetIDs(Pars));
 
+  if (Length(StrPars) = 0) then begin
   //sPars := 'http://jsonplaceholder.typicode.com/users';
   //sPars := 'https://my-json-server.typicode.com/CIT072020/TestData4RegAcc/posts';
   //sPars := 'https://my-json-server.typicode.com/CIT072020/TestData4RegAcc/Departs';
-  ShowDeb(sPars, DEB_CLEAR);
+    sPars := FullPath(GET_LIST_ID, SetPars4GetIDs(Pars));
+  end
+  else begin
+    sPars := StrPars;
+  end;
+
+  ShowDeb(sPars);
 
   try
     try
@@ -181,10 +194,9 @@ begin
       end
       else begin
         sErr := IntToStr(HTTP.sock.LastError) + ' ' + HTTP.sock.LastErrorDesc;
-          raise Exception.Create(sErr);
+        raise Exception.Create(sErr);
       end;
     except
-
 
     end;
   finally
@@ -286,7 +298,7 @@ function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
     SO: ISuperObject;
   begin
     for j := 0 to SOA.AsArray.Length - 1 do begin
-      SO := SO.AsArray.O[j];
+      SO := SOA.AsArray.O[j];
       Chs.Append;
       Chs.FieldByName('ID').AsInteger := MasterI;
       Chs.FieldByName('PID').AsString := SO.S[CT('pid')];
@@ -294,13 +306,13 @@ function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
       Chs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
       Chs.FieldByName('NAME').AsString := SO.S[CT('name')];
       Chs.FieldByName('BDATE').AsString := SO.S[CT('bdate')];
-      Chs.FieldByName('DATER').AsDateTime := sdDateTimeFromString(SO.S[CT('dateRec')], false);
+      Chs.FieldByName('DATER').AsDateTime := UnixStrToDateTime(SO.S[CT('dateRec')]);
       Chs.Post;
     end;
   end;
 
 var
-  i, SOMax: Integer;
+  i, NCh: Integer;
   SOChild, SO: ISuperObject;
 begin
   try
@@ -315,6 +327,19 @@ begin
       IDs.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].s[CT('lex1')];
       IDs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
       IDs.FieldByName('NAME').AsString := SO.S[CT('name')];
+
+      try
+        SOChild := SO.O[CT('form19_20')].O[CT('infants')];
+        NCh := SOChild.AsArray.Length;
+      except
+        NCh := 0;
+      end;
+
+      if (Assigned(SOChild)) and (NCh > 0) then begin
+        FillChild(SOChild, Chs, i);
+      end;
+      IDs.FieldByName('NCHILD').AsInteger := NCh;
+
       IDs.Post;
       SOChild := SO.O[CT('infants')];
       if (Assigned(SOChild)) then begin
