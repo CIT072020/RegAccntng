@@ -312,38 +312,45 @@ function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
   end;
 
 var
+  IsF20 : Boolean;
   i, NCh: Integer;
-  SOChild, SO: ISuperObject;
+  v     : Variant;
+  SOf20, SOChild, SO: ISuperObject;
 begin
   try
     IDs.EmptyTable;
     i := 0;
     while (i <= SOArr.AsArray.Length - 1) do begin
       SO := SOArr.AsArray.O[i];
-      IDs.Append;
-      IDs.FieldByName('PID').AsString := SO.S[CT('pid')];
-      IDs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
-      IDs.FieldByName('sysDocType').AsString := SO.O[CT('sysDocType')].O[CT('klUniPK')].s[CT('type')];
-      IDs.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].s[CT('lex1')];
-      IDs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
-      IDs.FieldByName('NAME').AsString := SO.S[CT('name')];
+      SOf20 := SO.O[CT('form19_20')];
+      if ( Assigned(SOf20) and (Not SOf20.IsType(stNull)) ) then begin
+        IDs.Append;
+        IDs.FieldByName('PID').AsString := SO.S[CT('pid')];
+        IsF20 := SOf20.B[CT('signAway')];
+        if (IsF20 = True) then
+          IDs.FieldByName('signAway').AsInteger := 1
+        else
+          IDs.FieldByName('signAway').AsInteger := 0;
 
-      try
-        SOChild := SO.O[CT('form19_20')].O[CT('infants')];
-        NCh := SOChild.AsArray.Length;
-      except
-        NCh := 0;
-      end;
+        IDs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
+        IDs.FieldByName('sysDocType').AsString := SO.O[CT('sysDocType')].O[CT('klUniPK')].s[CT('type')];
+        IDs.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].S[CT('lex1')];
+        IDs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
+        IDs.FieldByName('NAME').AsString := SO.S[CT('name')];
 
-      if (Assigned(SOChild)) and (NCh > 0) then begin
-        FillChild(SOChild, Chs, i);
-      end;
-      IDs.FieldByName('NCHILD').AsInteger := NCh;
+        try
+          SOChild := SO.O[CT('form19_20')].O[CT('infants')];
+          NCh := SOChild.AsArray.Length;
+        except
+          NCh := 0;
+        end;
 
-      IDs.Post;
-      SOChild := SO.O[CT('infants')];
-      if (Assigned(SOChild)) then begin
-        FillChild(SOChild, Chs, i);
+        if (Assigned(SOChild)) and (NCh > 0) then begin
+          FillChild(SOChild, Chs, i);
+        end;
+        IDs.FieldByName('NCHILD').AsInteger := NCh;
+
+        IDs.Post;
       end;
       i := i + 1;
     end;

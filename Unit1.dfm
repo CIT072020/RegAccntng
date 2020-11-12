@@ -52,7 +52,7 @@ object Form1: TForm1
     TabOrder = 3
     Text = 
       'https://a.todes.by:13555/village-council-service/api/v1/movement' +
-      's/sys_organ/11/period/05.10.2020/31.10.2020?first=1&count=80'
+      's/sys_organ/11/period/06.10.2020/08.10.2020?first=1&count=7'
     Visible = True
   end
   object Button2: TButton
