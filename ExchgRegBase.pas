@@ -3,12 +3,19 @@ unit ExchgRegBase;
 interface
 
 type
-  // параметры для GetDocs
-  TParsGet = class
-    DBeg: TDateTime;
-    DEnd: TDateTime;
+  // параметры для создания объекта
+  TParsExchg = class
+  // путь к сервису
+    URL : string;
   end;
 
+  // параметры для GetDocs
+  TParsGet = class
+    DBeg : TDateTime;
+    DEnd : TDateTime;
+  end;
+
+  // параметры для SetDocs
   TParsSet = class
   end;
 
@@ -19,15 +26,21 @@ type
   end;
 
   { Обмен данными с базой регистрации}
-  TExchRegBase = class(TObject)
+  TExchRegCitizens = class(TObject)
   private
   protected
   public
+  
     (* Получить список документов [убытия]
 
 
     *)
     function GetRegDocs(): TResultGet;
+
+    (* Записать сведения о регистрации
+
+
+    *)
     function SetRegDocs(): TResultSet;
     constructor Create;
     destructor Destroy;
@@ -38,23 +51,23 @@ type
 
 implementation
 
-constructor TExchRegBase.Create;
+constructor TExchRegCitizens.Create;
 begin
 
 end;
 
-destructor TExchRegBase.Destroy;
+destructor TExchRegCitizens.Destroy;
 begin
 
 end;
 
 
-function TExchRegBase.GetRegDocs(): TResultGet;
+function TExchRegCitizens.GetRegDocs(): TResultGet;
 begin
   Result := TResultGet.Create;
 end;
 
-function TExchRegBase.SetRegDocs(): TResultSet;
+function TExchRegCitizens.SetRegDocs(): TResultSet;
 begin
   Result := TResultSet.Create;
 end;

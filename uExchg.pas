@@ -7,26 +7,6 @@ uses
   {$IFDEF SYNA} httpsend,  {$ENDIF}
   superobject, supertypes, superdate, kbmMemTable, DbFunc, FuncPr, SasaINiFile;
 
-
-type
-  TConnPars = class(TObject)
-  end;
-
-type
-  // "черный ящик" обмена с REST-сервисом
-  TExchReg = class(THTTPSend)
-  private
-    FIDs : TkbmMemTable;
-  protected
-  public
-    Meta : TSasaIniFile;
-    property IDs : TkbmMemTable read FIDs write FIDs;
-
-    constructor Create(Pars : TConnPars);
-    destructor Destroy; override;
-  published
-  end;
-
 const
   GET_LIST_ID  = 1;
   GET_LIST_DOC = 2;
@@ -42,6 +22,50 @@ const
   RESOURCE_LISTDOC_PATH  = '/data';
   RESOURCE_POSTDOC_PATH = '/data/save';
 
+type
+  TConnPars = class(TObject)
+  end;
+
+type
+  TExchgRegCitzn = class
+  private
+    Instance: TExchgRegCitzn;
+  public
+    class function NewInstance: TObject; override;
+  end;
+
+
+type
+
+  // параметры для создания объекта
+  TParsExchg = class
+
+  // путь к сервису
+    URL : string;
+    MetaMem : string;
+    SectIDs : string;
+    SectDocs : string;
+    SectChild : string;
+  end;
+
+  // "черный ящик" обмена с REST-сервисом
+  TExchReg = class(TInterfacedObject)
+  private
+    FMeta : TSasaIniFile;
+    FChild,
+    FDocs,
+    FIDs : TkbmMemTable;
+  protected
+  public
+    property IDs   : TkbmMemTable read FIDs write FIDs;
+    property Docs  : TkbmMemTable read FDocs write FDocs;
+    property Child : TkbmMemTable read FChild write FChild;
+
+    constructor Create(Pars : TParsExchg);
+    destructor Destroy; override;
+  published
+  end;
+
 
 function SetPars4GetIDs(Pars : TStringList) : string;
 function GetListID(Pars: TStringList; StrPars : string = ''): ISuperObject;
@@ -50,10 +74,21 @@ function GetListDOC(Pars: TStringList): ISuperObject;
 function FillIDList(SOArr: ISuperObject; IDs: TkbmMemTable): Integer;
 function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
 
+var
+  ExchInst : TExchgRegCitzn = nil;
+
 implementation
 
 uses
   uService;
+
+class function TExchgRegCitzn.NewInstance: TObject;
+begin
+  if not Assigned(ExchInst) then
+    ExchInst := TExchgRegCitzn(inherited NewInstance);
+  Result := ExchInst;
+end;
+
 
 function UnixStrToDateTime(sDate:String):TDateTime;
 begin
@@ -62,9 +97,10 @@ begin
      Result := JavaToDelphiDateTime(StrToInt64(sDate));
 end;
 
-constructor TExchReg.Create(Pars : TConnPars);
+constructor TExchReg.Create(Pars : TParsExchg);
 begin
   inherited Create;
+  //Docs := TkbmMemTable(CreateMemTable('Docs', dm.Meta, 'TABLE_DVIGMEN'));
 
 end;
 
@@ -166,7 +202,6 @@ var
   HTTP: THTTPSend;
 begin
   Result := nil;
-  HTTP := THTTPSend.Create;
 
   if (Length(StrPars) = 0) then begin
   //sPars := 'http://jsonplaceholder.typicode.com/users';
@@ -180,6 +215,7 @@ begin
 
   ShowDeb(sPars);
 
+  HTTP := THTTPSend.Create;
   try
     try
       Ret := HTTP.HTTPMethod('GET', sPars);

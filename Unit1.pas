@@ -293,13 +293,19 @@ begin
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
+var
+  Pars : TParsExchg;
 begin
   dm:=TDvigMen.Create;
   //dm.ReadParams;
   AdsConnection.IsConnected:=true;
   tbTalonPrib.Open;
   tbTalonPribDeti.Open;
+
   ShowM := edMemo;
+  Pars := TParsExchg.Create;
+  Pars.URL := 'https://a.todes.by:13555/village-council-service/api';
+
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
@@ -477,7 +483,10 @@ end;
 
 
 
+function NewMemT(sTableName: string; Meta : TSasaIniFile; MetaSect: String; AutoCreate: Boolean = True; AutoOpen: Boolean = True): TDataSet;
+begin
 
+end;
 
 
 // ֲûחמג GET with UI or HARD Pars
