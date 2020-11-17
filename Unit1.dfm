@@ -126,7 +126,7 @@ object Form1: TForm1
     Text = '2018-10-24T23:05:26.000+0300'
   end
   object Edit2: TEdit
-    Left = 896
+    Left = 856
     Top = 544
     Width = 185
     Height = 21
@@ -274,6 +274,15 @@ object Form1: TForm1
     TabOrder = 22
     OnClick = btnGetWithParsClick
   end
+  object btnGetDocs: TButton
+    Left = 613
+    Top = 8
+    Width = 121
+    Height = 25
+    Caption = 'GET-DOCS-BB'
+    TabOrder = 23
+    OnClick = btnGetDocsClick
+  end
   object DataSource1: TDataSource
     Left = 112
     Top = 414
@@ -285,8 +294,8 @@ object Form1: TForm1
     Username = 'adssys'
     Password = 'sysdba'
     StoreConnected = False
-    Left = 688
-    Top = 41
+    Left = 1088
+    Top = 545
   end
   object DataSource2: TDataSource
     DataSet = tbTalonPrib
@@ -299,8 +308,8 @@ object Form1: TForm1
     AdsConnection = AdsConnection
     TableName = #1058#1072#1083#1086#1085#1099#1055#1088#1080#1073#1099#1090#1080#1103
     IndexCollationMismatch = icmIgnore
-    Left = 744
-    Top = 41
+    Left = 1144
+    Top = 545
   end
   object tbTalonPribDeti: TAdsTable
     IndexName = 'ADS_DEFAULT'
@@ -308,8 +317,8 @@ object Form1: TForm1
     AdsConnection = AdsConnection
     TableName = #1058#1072#1083#1086#1085#1099#1055#1088#1080#1073#1099#1090#1080#1103#1044#1077#1090#1080
     IndexCollationMismatch = icmIgnore
-    Left = 792
-    Top = 41
+    Left = 1192
+    Top = 545
   end
   object dsDocs: TDataSource
     Left = 616

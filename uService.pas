@@ -10,6 +10,23 @@ uses
  SasaINiFile, FuncPr;
 
 const
+  // функции запросов к серверу
+  GET_LIST_ID  = 1;
+  GET_LIST_DOC = 2;
+  POST_DOC     = 3;
+
+  RESOURCE_GEN_POINT = '/village-council-service/api';
+  RESOURCE_VER       = '/v1';
+
+  RESOURCE_LISTID_PATH = '/movements';
+  RESOURCE_LISTDOC_PATH  = '/data';
+  RESOURCE_POSTDOC_PATH = '/data/save';
+
+
+  MT_INS   = 'INS';
+  MT_DOCS  = 'DOCS';
+  MT_CHILD = 'CHILD';
+
   DEB_CLEAR    = 1;
   DEB_NEWLINE  = 2;
   DEB_SAMELINE = 3;

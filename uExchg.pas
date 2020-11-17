@@ -8,63 +8,11 @@ uses
   superobject, supertypes, superdate, kbmMemTable, DbFunc, FuncPr, SasaINiFile;
 
 const
-  GET_LIST_ID  = 1;
-  GET_LIST_DOC = 2;
-  POST_DOC     = 3;
 
   DEF_HOST = 'https://a.todes.by';
   DEF_PORT = '13555';
 
-  RESOURCE_GEN_POINT = '/village-council-service/api';
-  RESOURCE_VER       = '/v1';
 
-  RESOURCE_LISTID_PATH = '/movements';
-  RESOURCE_LISTDOC_PATH  = '/data';
-  RESOURCE_POSTDOC_PATH = '/data/save';
-
-type
-  TConnPars = class(TObject)
-  end;
-
-type
-  TExchgRegCitzn = class
-  private
-    Instance: TExchgRegCitzn;
-  public
-    class function NewInstance: TObject; override;
-  end;
-
-
-type
-
-  // параметры для создания объекта
-  TParsExchg = class
-
-  // путь к сервису
-    URL : string;
-    MetaMem : string;
-    SectIDs : string;
-    SectDocs : string;
-    SectChild : string;
-  end;
-
-  // "черный ящик" обмена с REST-сервисом
-  TExchReg = class(TInterfacedObject)
-  private
-    FMeta : TSasaIniFile;
-    FChild,
-    FDocs,
-    FIDs : TkbmMemTable;
-  protected
-  public
-    property IDs   : TkbmMemTable read FIDs write FIDs;
-    property Docs  : TkbmMemTable read FDocs write FDocs;
-    property Child : TkbmMemTable read FChild write FChild;
-
-    constructor Create(Pars : TParsExchg);
-    destructor Destroy; override;
-  published
-  end;
 
 
 function SetPars4GetIDs(Pars : TStringList) : string;
@@ -74,20 +22,12 @@ function GetListDOC(Pars: TStringList): ISuperObject;
 function FillIDList(SOArr: ISuperObject; IDs: TkbmMemTable): Integer;
 function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
 
-var
-  ExchInst : TExchgRegCitzn = nil;
 
 implementation
 
 uses
   uService;
 
-class function TExchgRegCitzn.NewInstance: TObject;
-begin
-  if not Assigned(ExchInst) then
-    ExchInst := TExchgRegCitzn(inherited NewInstance);
-  Result := ExchInst;
-end;
 
 
 function UnixStrToDateTime(sDate:String):TDateTime;
@@ -97,18 +37,7 @@ begin
      Result := JavaToDelphiDateTime(StrToInt64(sDate));
 end;
 
-constructor TExchReg.Create(Pars : TParsExchg);
-begin
-  inherited Create;
-  //Docs := TkbmMemTable(CreateMemTable('Docs', dm.Meta, 'TABLE_DVIGMEN'));
 
-end;
-
-destructor TExchReg.Destroy;
-begin
-  inherited Destroy;
-
-end;
 
 // установка параметров для GET : получения списка документов по территории
 //

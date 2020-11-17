@@ -8,8 +8,9 @@ uses
   nativexml, funcpr, superdate, superobject, StdCtrls, Mask, DBCtrlsEh, uDvigmen,
   DB, Grids, DBGridEh, adsdata, adsfunc, adstable, adscnnct,
 //  IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
-  HTTPSend, ssl_openssl, ssl_openssl_lib;
-
+  HTTPSend, ssl_openssl, ssl_openssl_lib,
+  uExchg,
+  ExchgRegBase;
 
 type
   TForm1 = class(TForm)
@@ -43,6 +44,7 @@ type
     gdChild: TDBGridEh;
     dsChild: TDataSource;
     btnGetWithPars: TButton;
+    btnGetDocs: TButton;
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -55,6 +57,7 @@ type
     procedure Button7Click(Sender: TObject);
     procedure Button8Click(Sender: TObject);
     procedure btnGetCurIDClick(Sender: TObject);
+    procedure btnGetDocsClick(Sender: TObject);
     procedure btnGetWithParsClick(Sender: TObject);
   private
     { Private declarations }
@@ -79,8 +82,7 @@ implementation
 uses
   kbmMemTable,
   SasaINiFile,
-  uService,
-  uExchg;
+  uService;
 
 {$R *.dfm}
 
@@ -304,8 +306,8 @@ begin
 
   ShowM := edMemo;
   Pars := TParsExchg.Create;
-  Pars.URL := 'https://a.todes.by:13555/village-council-service/api';
-
+  Pars.MetaName := 'ExchgReg.ini';
+  BlackBox := TExchgRegCitizens.Create(Pars);
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
@@ -483,10 +485,6 @@ end;
 
 
 
-function NewMemT(sTableName: string; Meta : TSasaIniFile; MetaSect: String; AutoCreate: Boolean = True; AutoOpen: Boolean = True): TDataSet;
-begin
-
-end;
 
 
 // ֲûחמג GET with UI or HARD Pars
@@ -581,7 +579,16 @@ begin
   end;
 end;
 
+procedure TForm1.btnGetDocsClick(Sender: TObject);
+var
+  D1,
+  D2 : TDateTime;
+  Res : TResultGet;
+begin
+  Res := BlackBox.GetRegDocs(TParsGet.Create(D1, D2));
+end;
 
+//
 end.
 
 
