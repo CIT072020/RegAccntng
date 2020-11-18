@@ -305,8 +305,7 @@ begin
   tbTalonPribDeti.Open;
 
   ShowM := edMemo;
-  Pars := TParsExchg.Create;
-  Pars.MetaName := 'ExchgReg.ini';
+  Pars := TParsExchg.Create(INI_NAME);
   BlackBox := TExchgRegCitizens.Create(Pars);
 end;
 
@@ -544,10 +543,16 @@ var
   Child,
   Docs: TkbmMemTable;
   DS : TDataSet;
+  FH : THostReg;
 begin
   try
     RecN := gdIDs.DataSource.DataSet.RecNo;
     if (RecN >= 0) then begin
+      FH := THostReg.Create;
+      FH.URL := RES_HOST;
+      FH.GenPoint := RES_GENPOINT;
+      FH.Ver := RES_VER;
+
       DS := gdIDs.DataSource.DataSet;
       s  := DS.FieldValues['IDENTIF'];
 
@@ -559,7 +564,7 @@ begin
       Pars.Add('');
       Pars.Add('');
 
-      SOList := GetListDoc(Pars);
+      SOList := GetListDoc(FH, Pars);
       // должен вернуться массив установочных документов
       if Assigned(SOList) and (SOList.DataType = stArray) then begin
         Docs   := TkbmMemTable(CreateMemTable('Docs', dm.Meta, 'TABLE_DVIGMEN'));
@@ -583,9 +588,21 @@ procedure TForm1.btnGetDocsClick(Sender: TObject);
 var
   D1,
   D2 : TDateTime;
+  P : TParsGet;
   Res : TResultGet;
 begin
-  Res := BlackBox.GetRegDocs(TParsGet.Create(D1, D2));
+  edMemo.Clear;
+  D1 := StrToDate('06.10.2020');
+  D2 := StrToDate('08.10.2020');
+  P := TParsGet.Create(D1, D2);
+  P.Organ := '11';
+  Res := BlackBox.GetRegDocs(P);
+  if (Assigned(Res)) then begin
+    DataSource1.DataSet := Res.INs;
+    dsDocs.DataSet      := Res.Docs;
+    dsChild.DataSet     := Res.Child;
+  end;
+
 end;
 
 //

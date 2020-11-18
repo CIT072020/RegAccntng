@@ -7,32 +7,62 @@ uses
  StdCtrls,
  kbmMemTable,
  DBFunc,
+ superdate, superobject,
+ {$IFDEF SYNA} httpsend,  {$ENDIF}
  SasaINiFile, FuncPr;
 
 const
+  INI_NAME = 'ExchgPars.ini';
   // функции запросов к серверу
   GET_LIST_ID  = 1;
   GET_LIST_DOC = 2;
   POST_DOC     = 3;
 
-  RESOURCE_GEN_POINT = '/village-council-service/api';
-  RESOURCE_VER       = '/v1';
+  // Тип списочных данных для GET
+  TLIST_FIO = Integer(1);
+  TLIST_INS = Integer(2);
+
+  RES_HOST     = 'https://a.todes.by:13555';
+  RES_GENPOINT = '/village-council-service/api';
+  RES_NSI      = '/kluni-service';
+  RES_VER      = '/v1';
 
   RESOURCE_LISTID_PATH = '/movements';
   RESOURCE_LISTDOC_PATH  = '/data';
   RESOURCE_POSTDOC_PATH = '/data/save';
 
+  // Секции INI-файла для описания таблиц
+  SCT_TBL_INS = 'TABLE_INDNUM';
+  SCT_TBL_DOC = 'TABLE_DOCSET';
+  SCT_TBL_CLD = 'TABLE_CHILD';
 
+  // Имена таблиц
   MT_INS   = 'INS';
   MT_DOCS  = 'DOCS';
   MT_CHILD = 'CHILD';
 
+  // Режим вывода очередной отладочной записи
   DEB_CLEAR    = 1;
   DEB_NEWLINE  = 2;
   DEB_SAMELINE = 3;
 
+type
+  THostReg = class(TObject)
+  // путь к сервису
+    URL      : string;
+    GenPoint : string;
+    Ver      : string;
+  end;
+
+
+function UnixStrToDateTime(sDate:String):TDateTime;
 function CreateMemTable(sTableName: string; Meta : TSasaIniFile; MetaSect: String; AutoCreate: Boolean = True; AutoOpen: Boolean = True): TDataSet;
+function MemStream2Str(const MS: TMemoryStream; const FullStream: Boolean = True; const ADefault: string = ''): string;
 procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
+function FullPath(H : THostReg; Func : Integer; Pars : string) : string;
+
+function GetListDOC(Host : THostReg; Pars: TStringList): ISuperObject;
+function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
 
 var
   ShowM : TMemo;
@@ -43,6 +73,12 @@ uses
   SysUtils,
   StrUtils;
 
+function UnixStrToDateTime(sDate:String):TDateTime;
+begin
+   Result := 0;
+   if (sDate <> 'null') then
+     Result := JavaToDelphiDateTime(StrToInt64(sDate));
+end;
 
 //---------------------------------------------
 function CreateMemTable(sTableName: string; Meta : TSasaIniFile; MetaSect: String; AutoCreate: Boolean = True; AutoOpen: Boolean = True): TDataSet;
@@ -141,6 +177,25 @@ begin
   MetaDef.Free;
 end;
 
+function MemStream2Str(const MS: TMemoryStream; const FullStream: Boolean = True; const ADefault: string = ''): string;
+var
+  NeedLen: Integer;
+begin
+  if Assigned(MS) then
+  try
+    if (FullStream = True) then
+      MS.Position := 0;
+    NeedLen := MS.Size - MS.Position;
+    SetLength(Result, NeedLen);
+    MS.Read(Result[1], NeedLen);
+  except
+    Result := ADefault;
+  end
+  else
+    Result := ADefault;
+end;
+
+
 procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
 var
   AddS : string;
@@ -154,6 +209,156 @@ begin
   end;
 
   ShowM.Text := ShowM.Text + AddS + s;
+
+end;
+
+function FullPath(H : THostReg; Func : Integer; Pars : string) : string;
+var
+  s : string;
+begin
+  s := '';
+  case Func of
+    GET_LIST_ID  : s := RESOURCE_LISTID_PATH;
+    GET_LIST_DOC : s := RESOURCE_LISTDOC_PATH;
+    POST_DOC     : s := RESOURCE_POSTDOC_PATH;
+  end;
+  if ( Length(s) > 0) then
+    s := H.URL + H.GenPoint + H.Ver + s + Pars;
+  Result := s;
+end;
+
+
+
+function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
+
+  function CT(s: string): string;
+  begin
+    Result := s;
+  end;
+
+  procedure FillChild(SOA: ISuperObject; Chs: TkbmMemTable; MasterI: integer);
+  var
+    j: Integer;
+    SO: ISuperObject;
+  begin
+    for j := 0 to SOA.AsArray.Length - 1 do begin
+      SO := SOA.AsArray.O[j];
+      Chs.Append;
+      Chs.FieldByName('ID').AsInteger := MasterI;
+      Chs.FieldByName('PID').AsString := SO.S[CT('pid')];
+      Chs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
+      Chs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
+      Chs.FieldByName('NAME').AsString := SO.S[CT('name')];
+      Chs.FieldByName('BDATE').AsString := SO.S[CT('bdate')];
+      Chs.FieldByName('DATER').AsDateTime := UnixStrToDateTime(SO.S[CT('dateRec')]);
+      Chs.Post;
+    end;
+  end;
+
+var
+  IsF20 : Boolean;
+  i, NCh: Integer;
+  v     : Variant;
+  SOf20, SOChild, SO: ISuperObject;
+begin
+  try
+    i := 0;
+    while (i <= SOArr.AsArray.Length - 1) do begin
+      SO := SOArr.AsArray.O[i];
+      SOf20 := SO.O[CT('form19_20')];
+      if ( Assigned(SOf20) and (Not SOf20.IsType(stNull) or True) ) then begin
+        IDs.Append;
+        IDs.FieldByName('PID').AsString := SO.S[CT('pid')];
+        IsF20 := SOf20.B[CT('signAway')];
+        if (IsF20 = True) then
+          IDs.FieldByName('signAway').AsInteger := 1
+        else
+          IDs.FieldByName('signAway').AsInteger := 0;
+
+        IDs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
+        IDs.FieldByName('sysDocType').AsString := SO.O[CT('sysDocType')].O[CT('klUniPK')].s[CT('type')];
+        IDs.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].S[CT('lex1')];
+        IDs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
+        IDs.FieldByName('NAME').AsString := SO.S[CT('name')];
+
+        try
+          SOChild := SO.O[CT('form19_20')].O[CT('infants')];
+          NCh := SOChild.AsArray.Length;
+        except
+          NCh := 0;
+        end;
+
+        if (Assigned(SOChild)) and (NCh > 0) then begin
+          FillChild(SOChild, Chs, i);
+        end;
+        IDs.FieldByName('NCHILD').AsInteger := NCh;
+
+        IDs.Post;
+      end;
+      i := i + 1;
+    end;
+  except
+  end;
+  Result := i;
+end;
+
+
+// установка параметров для GET : получения документов по ID
+//
+// identifier=3140462K000VF6
+// name=
+// surname=
+// patronymic=
+// first=
+// count=
+function SetPars4GetDocs(Pars : TStringList) : string;
+var
+  s : string;
+begin
+  s := Format('?identifier=%s&name=%s&surname=%s&patronymic=%s&first=%s&count=%s',
+    [ Pars[0], Pars[1], Pars[2], Pars[3], Pars[4], Pars[5] ]);
+  Result := s;
+end;
+
+function GetListDOC(Host : THostReg; Pars: TStringList): ISuperObject;
+var
+  Ret : Boolean;
+  sDoc,
+  sErr, sPars: string;
+  ws : WideString;
+  Docs : ISuperObject;
+  HTTP: THTTPSend;
+begin
+  Result := nil;
+  HTTP := THTTPSend.Create;
+  sPars := FullPath(Host, GET_LIST_DOC, SetPars4GetDocs(Pars));
+  ShowDeb(sPars);
+
+  try
+    try
+      Ret := HTTP.HTTPMethod('GET', sPars);
+      if (Ret = True) then begin
+        if (HTTP.ResultCode < 200) or (HTTP.ResultCode >= 400) then begin
+          sErr := HTTP.Headers.Text;
+          raise Exception.Create(sErr);
+        end;
+        ShowDeb(IntToStr(HTTP.ResultCode) + ' ' + HTTP.ResultString);
+        sDoc := MemStream2Str(HTTP.Document);
+        //Result := SO(Utf8Decode(sDoc));
+        ws   := Utf8Decode(sDoc);
+        Result := SO(ws);
+      end
+      else begin
+        sErr := IntToStr(HTTP.sock.LastError) + ' ' + HTTP.sock.LastErrorDesc;
+          raise Exception.Create(sErr);
+      end;
+    except
+
+
+    end;
+  finally
+    HTTP.Free;
+  end;
 
 end;
 

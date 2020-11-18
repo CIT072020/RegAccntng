@@ -30,12 +30,6 @@ uses
 
 
 
-function UnixStrToDateTime(sDate:String):TDateTime;
-begin
-   Result := 0;
-   if (sDate <> 'null') then
-     Result := JavaToDelphiDateTime(StrToInt64(sDate));
-end;
 
 
 
@@ -97,9 +91,7 @@ begin
     POST_DOC     : s := RESOURCE_POSTDOC_PATH;
   end;
   if ( Length(s) > 0) then
-    s := DEF_HOST + ':' + DEF_PORT +
-    RESOURCE_GEN_POINT +
-    RESOURCE_VER + s + Pars;
+    s := RES_HOST + RES_GENPOINT + RES_VER + s + Pars;
   Result := s;
 end;
 
@@ -288,7 +280,7 @@ begin
     while (i <= SOArr.AsArray.Length - 1) do begin
       SO := SOArr.AsArray.O[i];
       SOf20 := SO.O[CT('form19_20')];
-      if ( Assigned(SOf20) and (Not SOf20.IsType(stNull)) ) then begin
+      if ( Assigned(SOf20) and (Not SOf20.IsType(stNull) or True) ) then begin
         IDs.Append;
         IDs.FieldByName('PID').AsString := SO.S[CT('pid')];
         IsF20 := SOf20.B[CT('signAway')];
