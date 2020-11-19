@@ -7,7 +7,9 @@ uses
   uDvigMen in 'uDvigMen.pas',
   uExchg in 'uExchg.pas',
   uService in 'uService.pas',
-  ExchgRegBase in 'ExchgRegBase.pas';
+  ExchgRegBase in 'ExchgRegBase.pas',
+  uPars in 'uPars.pas',
+  uDTO in 'uDTO.pas';
 
 {$R *.res}
 

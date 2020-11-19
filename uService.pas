@@ -62,7 +62,7 @@ procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
 function FullPath(H : THostReg; Func : Integer; Pars : string) : string;
 
 function GetListDOC(Host : THostReg; Pars: TStringList): ISuperObject;
-function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
+function FillDocList(SOArr: ISuperObject; Docs, Chs: TkbmMemTable): Integer;
 
 var
   ShowM : TMemo;
@@ -114,6 +114,7 @@ begin
     tb := TkbmMemTable.Create(nil);
     tb.Name := sTableName;
     tb.Tag := Integer(slAdd);
+    tb.AutoIncMinValue := 1;
 
     for I := 0 to MetaDef.Count - 1 do begin
       FieldName := MetaDef.Names[I];
@@ -229,7 +230,7 @@ end;
 
 
 
-function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
+function FillDocList(SOArr: ISuperObject; Docs, Chs: TkbmMemTable): Integer;
 
   function CT(s: string): string;
   begin
@@ -256,6 +257,7 @@ function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
   end;
 
 var
+  s : string;
   IsF20 : Boolean;
   i, NCh: Integer;
   v     : Variant;
@@ -267,19 +269,20 @@ begin
       SO := SOArr.AsArray.O[i];
       SOf20 := SO.O[CT('form19_20')];
       if ( Assigned(SOf20) and (Not SOf20.IsType(stNull) or True) ) then begin
-        IDs.Append;
-        IDs.FieldByName('PID').AsString := SO.S[CT('pid')];
+        Docs.Append;
+        Docs.FieldByName('PID').AsString := SO.S[CT('pid')];
         IsF20 := SOf20.B[CT('signAway')];
         if (IsF20 = True) then
-          IDs.FieldByName('signAway').AsInteger := 1
+          Docs.FieldByName('signAway').AsInteger := 1
         else
-          IDs.FieldByName('signAway').AsInteger := 0;
+          Docs.FieldByName('signAway').AsInteger := 0;
 
-        IDs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
-        IDs.FieldByName('sysDocType').AsString := SO.O[CT('sysDocType')].O[CT('klUniPK')].s[CT('type')];
-        IDs.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].S[CT('lex1')];
-        IDs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
-        IDs.FieldByName('NAME').AsString := SO.S[CT('name')];
+        s := SO.S[CT('identif')];
+        Docs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
+        Docs.FieldByName('sysDocType').AsString := SO.O[CT('sysDocType')].O[CT('klUniPK')].s[CT('type')];
+        Docs.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].S[CT('lex1')];
+        Docs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
+        Docs.FieldByName('NAME').AsString := SO.S[CT('name')];
 
         try
           SOChild := SO.O[CT('form19_20')].O[CT('infants')];
@@ -291,9 +294,9 @@ begin
         if (Assigned(SOChild)) and (NCh > 0) then begin
           FillChild(SOChild, Chs, i);
         end;
-        IDs.FieldByName('NCHILD').AsInteger := NCh;
+        Docs.FieldByName('NCHILD').AsInteger := NCh;
 
-        IDs.Post;
+        Docs.Post;
       end;
       i := i + 1;
     end;
@@ -361,5 +364,12 @@ begin
   end;
 
 end;
+
+{
+function NewMemT(sTableName: string; MetaSect: String; AutoCreate: Boolean = True; AutoOpen: Boolean = True): TDataSet;
+begin
+
+end;
+}
 
 end.

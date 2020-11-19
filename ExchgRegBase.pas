@@ -8,69 +8,10 @@ uses
   superobject,
   httpsend,
   SasaINiFile,
+  uPars,
   uService;
 
 type
-  // параметры для создания объекта
-  TParsExchg = class
-  private
-    FMeta : TSasaIniFile;
-  public
-    MetaName : string;
-    SectINs : string;
-    SectDocs : string;
-    SectChild : string;
-    // Код органа регистрации (с/совета)
-    Organ : string;
-
-    property Meta : TSasaIniFile read FMeta write FMeta;
-    constructor Create(MName : string);
-  end;
-
-  // параметры для GetDocs
-  TParsGet = class
-    DateBeg : TDateTime;
-    DateEnd : TDateTime;
-    Organ   : string;
-
-    TypeDoc : string;
-    FullURL : string;
-
-    FIOrINs  : TStrings;
-    // Тип данных во входном списке
-    ListType : Integer;
-
-    constructor Create(DBeg, DEnd : TDateTime); overload;
-    constructor Create(URL : string); overload;
-    constructor Create(INs : TStrings; LType : Integer = TLIST_FIO); overload;
-  end;
-
-  // параметры для SetDocs
-  TParsSet = class
-  end;
-  // Результат для GET
-  TResultGet = class
-  private
-    FChild,
-    FDocs,
-    FINs : TkbmMemTable;
-    FCode : Integer;
-    FMsg : string;
-  protected
-  public
-    property INs   : TkbmMemTable read FINs write FINs;
-    property Docs  : TkbmMemTable read FDocs write FDocs;
-    property Child : TkbmMemTable read FChild write FChild;
-
-    property ResCode : Integer read FCode write FCode;
-    property ResMsg : string read FMsg write FMsg;
-
-    constructor Create(Pars : TParsExchg);
-  end;
-
-  TResultSet = class
-  end;
-
 
   // "черный ящик" обмена с REST-сервисом
   TExchgRegCitizens = class(TInterfacedObject)
@@ -115,52 +56,12 @@ uses
   SysUtils,
   NativeXml;
 
-function NewMemT(sTableName: string; MetaSect: String; AutoCreate: Boolean = True; AutoOpen: Boolean = True): TDataSet;
-begin
-
-end;
-
-
-
-constructor TParsExchg.Create(MName : string);
-begin
-  MetaName  := MName;
-  SectINs   := SCT_TBL_INS;
-  SectDocs  := SCT_TBL_DOC;
-  SectChild := SCT_TBL_CLD;
-end;
-
-constructor TParsGet.Create(DBeg, DEnd : TDateTime);
-begin
-  DateBeg := DBeg;
-  DateEnd := DEnd;
-  FullURL := '';
-end;
-
-constructor TParsGet.Create(URL : string);
-begin
-  FullURL := URL;
-end;
-
-constructor TParsGet.Create(INs : TStrings; LType : Integer = TLIST_FIO);
-begin
-  FIOrINs := INs;
-  ListType := LType;
-end;
-
-
-constructor TResultGet.Create(Pars : TParsExchg);
-begin
-  INs   := TkbmMemTable(CreateMemTable(MT_INS, Pars.Meta, Pars.SectINs));
-  Docs  := TkbmMemTable(CreateMemTable(MT_DOCS, Pars.Meta, Pars.SectINs));
-  Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, Pars.SectINs));
-end;
 
 
 function TExchgRegCitizens.ReadIni: Boolean;
 begin
   try
-    FPars.FMeta := TSasaIniFile.Create(FPars.MetaName);
+    FPars.Meta := TSasaIniFile.Create(FPars.MetaName);
 
     Result := True;
   except
@@ -325,8 +226,8 @@ begin
     Pars.Add(ParsGet.Organ);
     Pars.Add(DateToStr(ParsGet.DateBeg));
     Pars.Add(DateToStr(ParsGet.DateEnd));
-    Pars.Add('1');
-    Pars.Add('8');
+    Pars.Add(IntToStr(ParsGet.First));
+    Pars.Add(IntToStr(ParsGet.Count));
     ParsGet.FullURL := FullPath(FHost, GET_LIST_ID, SetPars4GetIDs(Pars));
   end;
   SOList := GetListID(ParsGet.FullURL);
@@ -339,7 +240,7 @@ end;
 
 
 
-// Плучить документы для текущего в списке ID
+// Получить документы для текущего в списке ID
 procedure TExchgRegCitizens.Docs4CurIN(IndNum : string; IndNs: TStringList);
 var
   i: Integer;
@@ -358,7 +259,7 @@ begin
       SOList := GetListDoc(FHost, IndNs);
       // должен вернуться массив установочных документов
       if Assigned(SOList) and (SOList.DataType = stArray) then begin
-        i := FillDocList(SOList, ResGet.FDocs, FResGet.FChild);
+        i := FillDocList(SOList, ResGet.Docs, FResGet.Child);
       end;
     end;
   except
@@ -370,14 +271,16 @@ end;
 
 
 
-function TExchgRegCitizens.GetRegDocs(ParsGet : TParsGet) : TResultGet;
+// Получить документы для сельсовета за период
+function TExchgRegCitizens.GetRegDocs(ParsGet: TParsGet): TResultGet;
 var
   Ret: Boolean;
-  nINs : Integer;
+  nINs: Integer;
   sDoc, sErr, sPars: string;
   IndNs: TStringList;
   Docs: ISuperObject;
 begin
+  Result := nil;
   FResGet := TResultGet.Create(FPars);
 
   // Fill MemTable with IDs
@@ -385,17 +288,20 @@ begin
     nINs := StoreINsInMT(ParsGet)
   else
     nINs := GetINsFromSrv(ParsGet, FResGet.INs);
-  IndNs := TStringList.Create;
-  FResGet.INs.First;
-  while not FResGet.INs.Eof do begin
-    Docs4CurIN(FResGet.INs.FieldValues['IDENTIF'], IndNs);
-    FResGet.INs.Next;
+  if (nINs > 0) then begin
+    IndNs := TStringList.Create;
+    FResGet.INs.First;
+    while not FResGet.INs.Eof do begin
+      Docs4CurIN(FResGet.INs.FieldValues['IDENTIF'], IndNs);
+      FResGet.INs.Next;
+    end;
+    IndNs.Free;
+    FResGet.ResCode := 0;
+    Result := FResGet;
   end;
-  IndNs.Free;
-  FResGet.ResCode := 0;
-  Result := FResGet;
 end;
 
+// Передать документы регистрации
 function TExchgRegCitizens.SetRegDocs(): TResultSet;
 begin
   Result := TResultSet.Create;

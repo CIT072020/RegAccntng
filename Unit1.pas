@@ -45,6 +45,11 @@ type
     dsChild: TDataSource;
     btnGetWithPars: TButton;
     btnGetDocs: TButton;
+    dtBegin: TDBDateTimeEditEh;
+    dtEnd: TDBDateTimeEditEh;
+    edOrgan: TDBEditEh;
+    edFirst: TDBEditEh;
+    edCount: TDBEditEh;
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -82,6 +87,7 @@ implementation
 uses
   kbmMemTable,
   SasaINiFile,
+  uPars,
   uService;
 
 {$R *.dfm}
@@ -305,6 +311,12 @@ begin
   tbTalonPribDeti.Open;
 
   ShowM := edMemo;
+  edOrgan.Text  := '11';
+  dtEnd.Value   := StrToDate('08.10.2020');
+  dtBegin.Value := StrToDate('06.10.2020');
+  edFirst.Text  := '1';
+  edCount.Text  := '14';
+
   Pars := TParsExchg.Create(INI_NAME);
   BlackBox := TExchgRegCitizens.Create(Pars);
 end;
@@ -592,10 +604,11 @@ var
   Res : TResultGet;
 begin
   edMemo.Clear;
-  D1 := StrToDate('06.10.2020');
-  D2 := StrToDate('08.10.2020');
-  P := TParsGet.Create(D1, D2);
-  P.Organ := '11';
+  D1 := dtBegin.Value;
+  D2 := dtEnd.Value;
+  P := TParsGet.Create(D1, D2, edOrgan.Text);
+  P.First := edFirst.Value;
+  P.Count := edCount.Value;
   Res := BlackBox.GetRegDocs(P);
   if (Assigned(Res)) then begin
     DataSource1.DataSet := Res.INs;

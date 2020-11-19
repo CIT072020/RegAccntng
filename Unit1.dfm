@@ -17,7 +17,7 @@ object Form1: TForm1
   TextHeight = 13
   object Button1: TButton
     Left = 16
-    Top = 49
+    Top = 9
     Width = 75
     Height = 25
     Caption = #1079#1072#1075#1088#1091#1079#1080#1090#1100
@@ -27,15 +27,15 @@ object Form1: TForm1
   object edMemo: TMemo
     Left = 8
     Top = 153
-    Width = 1193
+    Width = 921
     Height = 225
     Lines.Strings = (
       'edMemo')
     TabOrder = 1
   end
   object edFile: TDBEditEh
-    Left = 152
-    Top = 49
+    Left = 104
+    Top = 11
     Width = 281
     Height = 21
     EditButtons = <>
@@ -44,8 +44,8 @@ object Form1: TForm1
     Visible = True
   end
   object edURL: TDBEditEh
-    Left = 223
-    Top = 91
+    Left = 178
+    Top = 51
     Width = 714
     Height = 21
     EditButtons = <>
@@ -56,8 +56,8 @@ object Form1: TForm1
     Visible = True
   end
   object Button2: TButton
-    Left = 24
-    Top = 89
+    Left = 16
+    Top = 49
     Width = 75
     Height = 25
     Caption = 'HTTP RUN'
@@ -65,8 +65,8 @@ object Form1: TForm1
     OnClick = Button2Click
   end
   object edMetod: TDBComboBoxEh
-    Left = 128
-    Top = 91
+    Left = 104
+    Top = 51
     Width = 65
     Height = 21
     EditButtons = <>
@@ -100,7 +100,7 @@ object Form1: TForm1
     TitleFont.Style = []
   end
   object Button3: TButton
-    Left = 24
+    Left = 16
     Top = 121
     Width = 121
     Height = 25
@@ -202,8 +202,8 @@ object Form1: TForm1
     TitleFont.Style = []
   end
   object btnGetCurID: TButton
-    Left = 1088
-    Top = 43
+    Left = 1096
+    Top = 355
     Width = 121
     Height = 25
     Caption = 'GET '#1090#1077#1082#1091#1097#1080#1081' ID'
@@ -219,8 +219,8 @@ object Form1: TForm1
     TabOrder = 18
   end
   object btnGetList: TButton
-    Left = 1088
-    Top = 8
+    Left = 1096
+    Top = 320
     Width = 121
     Height = 25
     Caption = 'GET '#1057#1087#1080#1089#1086#1082' ID'
@@ -266,8 +266,8 @@ object Form1: TForm1
     TitleFont.Style = []
   end
   object btnGetWithPars: TButton
-    Left = 931
-    Top = 8
+    Left = 939
+    Top = 320
     Width = 121
     Height = 25
     Caption = 'GET with Pars'
@@ -275,13 +275,63 @@ object Form1: TForm1
     OnClick = btnGetWithParsClick
   end
   object btnGetDocs: TButton
-    Left = 613
-    Top = 8
+    Left = 1045
+    Top = 208
     Width = 121
     Height = 25
     Caption = 'GET-DOCS-BB'
     TabOrder = 23
     OnClick = btnGetDocsClick
+  end
+  object dtBegin: TDBDateTimeEditEh
+    Left = 944
+    Top = 44
+    Width = 121
+    Height = 21
+    EditButtons = <>
+    Kind = dtkDateEh
+    TabOrder = 24
+    Visible = True
+  end
+  object dtEnd: TDBDateTimeEditEh
+    Left = 1088
+    Top = 44
+    Width = 121
+    Height = 21
+    EditButtons = <>
+    Kind = dtkDateEh
+    TabOrder = 25
+    Visible = True
+  end
+  object edOrgan: TDBEditEh
+    Left = 944
+    Top = 13
+    Width = 121
+    Height = 21
+    EditButtons = <>
+    TabOrder = 26
+    Text = '11'
+    Visible = True
+  end
+  object edFirst: TDBEditEh
+    Left = 944
+    Top = 90
+    Width = 121
+    Height = 21
+    EditButtons = <>
+    TabOrder = 27
+    Text = '1'
+    Visible = True
+  end
+  object edCount: TDBEditEh
+    Left = 1088
+    Top = 90
+    Width = 121
+    Height = 21
+    EditButtons = <>
+    TabOrder = 28
+    Text = '14'
+    Visible = True
   end
   object DataSource1: TDataSource
     Left = 112
