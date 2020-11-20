@@ -17,9 +17,10 @@ type
   end;
 
   // параметры для создания объекта
-  TParsExchg = class
+  TParsExchg = class(TObject)
   private
     FMeta : TSasaIniFile;
+    procedure PEGenCreate;
   public
     MetaName : string;
     SectINs : string;
@@ -29,7 +30,9 @@ type
     Organ : string;
 
     property Meta : TSasaIniFile read FMeta write FMeta;
-    constructor Create(MName : string);
+
+    constructor Create(MName : string); overload;
+    constructor Create(MetaINI : TSasaIniFile); overload;
   end;
 
   // параметры для GetDocs
@@ -53,7 +56,18 @@ type
   end;
 
   // параметры для SetDocs
-  TParsSet = class
+  TParsPost = class
+  private
+    FChild,
+    FDocs   : TkbmMemTable;
+  public
+    TypeDoc : string;
+    FullURL : string;
+
+    property Docs  : TkbmMemTable read FDocs write FDocs;
+    property Child : TkbmMemTable read FChild write FChild;
+
+    constructor Create(URL : string); overload;
   end;
 
 (*
@@ -90,14 +104,27 @@ uses
   SysUtils,
   NativeXml;
 
-constructor TParsExchg.Create(MName : string);
+procedure TParsExchg.PEGenCreate;
 begin
-  MetaName  := MName;
+  // Имена секций со структурами таблиц по умолчанию
   SectINs   := SCT_TBL_INS;
   SectDocs  := SCT_TBL_DOC;
   SectChild := SCT_TBL_CLD;
 end;
 
+constructor TParsExchg.Create(MName : string);
+begin
+  PEGenCreate;
+  MetaName := MName;
+end;
+
+constructor TParsExchg.Create(MetaINI : TSasaIniFile);
+begin
+  PEGenCreate;
+  Meta := MetaINI;
+end;
+
+// параметры для GetDocs
 constructor TParsGet.Create(DBeg, DEnd : TDateTime; OrgCode : string = '');
 begin
   DateBeg := DBeg;
@@ -125,5 +152,9 @@ begin
   Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, Pars.SectChild));
 end;
 
+constructor TParsPost.Create(URL : string);
+begin
+  FullURL := URL;
+end;
 
 end.

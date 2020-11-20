@@ -22,15 +22,10 @@ type
     FResSet : TResultSet;
     FHTTP   : THTTPSend;
 
-    //FChild,
-    //FDocs,
-    //FIDs : TkbmMemTable;
-
     function ReadIni : Boolean;
-    function StoreINsInMT(Pars : TParsGet) : integer;
+    function StoreINsInRes(Pars : TParsGet) : integer;
     function GetINsFromSrv(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
     procedure Docs4CurIN(IndNum : string; IndNs: TStringList);
-
   protected
   public
     property ResGet : TResultGet read FResGet write FResGet;
@@ -40,7 +35,7 @@ type
     function GetRegDocs(ParsGet : TParsGet) : TResultGet;
     (* Записать сведения о регистрации
     *)
-    function SetRegDocs(): TResultSet;
+    function SetRegDocs(ParsPost: TParsPost) : TResultSet;
 
     constructor Create(Pars : TParsExchg);
     destructor Destroy; override;
@@ -54,10 +49,10 @@ implementation
 
 uses
   SysUtils,
-  NativeXml;
+  NativeXml,
+  uDTO;
 
-
-
+// Заполнение параметров из INI-файла
 function TExchgRegCitizens.ReadIni: Boolean;
 begin
   try
@@ -69,7 +64,7 @@ begin
   end;
 end;
 
-constructor TExchgRegCitizens.Create(Pars : TParsExchg);
+constructor TExchgRegCitizens.Create(Pars: TParsExchg);
 begin
   inherited Create;
   FPars := Pars;
@@ -78,8 +73,9 @@ begin
   FHost.GenPoint := RES_GENPOINT;
   FHost.Ver := RES_VER;
 
-  if (Length(FPars.MetaName) > 0) then
-    ReadIni;
+  if (NOT Assigned(FPars.Meta)) then
+    if (Length(FPars.MetaName) > 0) then
+      ReadIni;
 end;
 
 destructor TExchgRegCitizens.Destroy;
@@ -111,30 +107,19 @@ end;
 
 
 
-
-
-
-
-
-
-
-
-function TExchgRegCitizens.StoreINsInMT(Pars : TParsGet) : integer;
+// Скопировать список ИН в выходную таблицу
+function TExchgRegCitizens.StoreINsInRes(Pars : TParsGet) : integer;
 var
   i : Integer;
-  t : TkbmMemTable;
 begin
-  Result := Pars.FIOrINs.Count;
   i := 1;
   while i <= Result do begin
-
-
-
+    FResGet.INs.Append;
+    FResGet.INs.FieldValues['IDENTIF'] := Pars.FIOrINs[i - 1];
+    FResGet.INs.Post;
     i := i + 1;
   end;
-
-
-
+  Result := Pars.FIOrINs.Count;
 end;
 
 
@@ -153,6 +138,7 @@ begin
   ShowDeb(StrPars);
 
   HTTP := THTTPSend.Create;
+  //FHTTP := THTTPSend.Create;
   try
     try
       Ret := HTTP.HTTPMethod('GET', StrPars);
@@ -179,41 +165,6 @@ begin
 end;
 
 
-
-function FillIDList(SOArr: ISuperObject; IDs: TkbmMemTable): Integer;
-  function CT(s: string): string;
-  begin
-    Result := s;
-  end;
-
-var
-  i, SOMax: Integer;
-  SO: ISuperObject;
-begin
-  try
-    IDs.EmptyTable;
-    i := 0;
-    while (i <= SOArr.AsArray.Length - 1) do begin
-      SO := SOArr.AsArray.O[i];
-      IDs.Append;
-      //IDs.FieldByName('PID').AsString := SO.S[CT('pid')];
-      IDs.FieldByName('IDENTIF').AsString        := SO.S[CT('IDENTIFIER')];
-      IDs.FieldByName('DATEREC').AsDateTime      := sdDateTimeFromString(SO.S[CT('REG_DATE')], false);
-      IDs.FieldByName('ORG_WHERE_CODE').AsString := SO.O[CT('SYS_ORGAN_WHERE')].S[CT('CODE')];
-      IDs.FieldByName('ORG_WHERE_NAME').AsString := SO.O[CT('SYS_ORGAN_WHERE')].S[CT('LEX')];
-      IDs.FieldByName('ORG_FROM_CODE').AsString  := SO.O[CT('SYS_ORGAN_FROM')].S[CT('CODE')];
-      IDs.FieldByName('ORG_FROM_NAME').AsString  := SO.O[CT('SYS_ORGAN_FROM')].S[CT('LEX')];
-      IDs.Post;
-      i := i + 1;
-    end;
-  except
-  end;
-  Result := i;
-end;
-
-
-
-
 // Индивидуальные номера граждан за период
 function TExchgRegCitizens.GetINsFromSrv(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
 var
@@ -232,12 +183,9 @@ begin
   end;
   SOList := GetListID(ParsGet.FullURL);
   if Assigned(SOList) and (SOList.DataType = stArray) then begin
-      Result := FillIDList(SOList, MT);
+      Result := TIndNomDTO.GetIndNumList(SOList, MT);
   end;
 end;
-
-
-
 
 
 // Получить документы для текущего в списке ID
@@ -259,7 +207,7 @@ begin
       SOList := GetListDoc(FHost, IndNs);
       // должен вернуться массив установочных документов
       if Assigned(SOList) and (SOList.DataType = stArray) then begin
-        i := FillDocList(SOList, ResGet.Docs, FResGet.Child);
+        i := TDocSetDTO.GetDocList(SOList, ResGet.Docs, FResGet.Child);
       end;
     end;
   except
@@ -268,7 +216,6 @@ begin
     end;
   end;
 end;
-
 
 
 // Получить документы для сельсовета за период
@@ -285,7 +232,7 @@ begin
 
   // Fill MemTable with IDs
   if (Assigned(ParsGet.FIOrINs) and (ParsGet.ListType = TLIST_INS)) then
-    nINs := StoreINsInMT(ParsGet)
+    nINs := StoreINsInRes(ParsGet)
   else
     nINs := GetINsFromSrv(ParsGet, FResGet.INs);
   if (nINs > 0) then begin
@@ -302,7 +249,7 @@ begin
 end;
 
 // Передать документы регистрации
-function TExchgRegCitizens.SetRegDocs(): TResultSet;
+function TExchgRegCitizens.SetRegDocs(ParsPost: TParsPost) : TResultSet;
 begin
   Result := TResultSet.Create;
 end;

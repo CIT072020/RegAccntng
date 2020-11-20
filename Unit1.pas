@@ -50,6 +50,7 @@ type
     edOrgan: TDBEditEh;
     edFirst: TDBEditEh;
     edCount: TDBEditEh;
+    btnPostDoc: TButton;
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -64,6 +65,7 @@ type
     procedure btnGetCurIDClick(Sender: TObject);
     procedure btnGetDocsClick(Sender: TObject);
     procedure btnGetWithParsClick(Sender: TObject);
+    procedure btnPostDocClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -614,6 +616,19 @@ begin
     DataSource1.DataSet := Res.INs;
     dsDocs.DataSet      := Res.Docs;
     dsChild.DataSet     := Res.Child;
+  end;
+
+end;
+
+procedure TForm1.btnPostDocClick(Sender: TObject);
+var
+  PPost : TParsPost;
+  Res : TResultSet;
+begin
+  edMemo.Clear;
+  PPost := TParsPost.Create;
+  Res := BlackBox.SetRegDocs(PPost);
+  if (Assigned(Res)) then begin
   end;
 
 end;

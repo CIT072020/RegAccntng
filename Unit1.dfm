@@ -275,8 +275,8 @@ object Form1: TForm1
     OnClick = btnGetWithParsClick
   end
   object btnGetDocs: TButton
-    Left = 1045
-    Top = 208
+    Left = 1088
+    Top = 184
     Width = 121
     Height = 25
     Caption = 'GET-DOCS-BB'
@@ -332,6 +332,15 @@ object Form1: TForm1
     TabOrder = 28
     Text = '14'
     Visible = True
+  end
+  object btnPostDoc: TButton
+    Left = 1088
+    Top = 223
+    Width = 121
+    Height = 25
+    Caption = 'POST-DOC-BB'
+    TabOrder = 29
+    OnClick = btnPostDocClick
   end
   object DataSource1: TDataSource
     Left = 112

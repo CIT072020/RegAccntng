@@ -1,4 +1,4 @@
-GET /village-council-service/api/v1/data?identifier=N33611861&name=&surname=&patronymic=&first=&count= HTTP/1.0
+GET /village-council-service/api/v1/data?identifier=B33566660&name=&surname=&patronymic=&first=&count= HTTP/1.0
 Host: a.todes.by:13555
 Keep-Alive: 300
 Connection: keep-alive

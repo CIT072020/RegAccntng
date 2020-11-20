@@ -62,7 +62,6 @@ procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
 function FullPath(H : THostReg; Func : Integer; Pars : string) : string;
 
 function GetListDOC(Host : THostReg; Pars: TStringList): ISuperObject;
-function FillDocList(SOArr: ISuperObject; Docs, Chs: TkbmMemTable): Integer;
 
 var
   ShowM : TMemo;
@@ -229,81 +228,6 @@ begin
 end;
 
 
-
-function FillDocList(SOArr: ISuperObject; Docs, Chs: TkbmMemTable): Integer;
-
-  function CT(s: string): string;
-  begin
-    Result := s;
-  end;
-
-  procedure FillChild(SOA: ISuperObject; Chs: TkbmMemTable; MasterI: integer);
-  var
-    j: Integer;
-    SO: ISuperObject;
-  begin
-    for j := 0 to SOA.AsArray.Length - 1 do begin
-      SO := SOA.AsArray.O[j];
-      Chs.Append;
-      Chs.FieldByName('ID').AsInteger := MasterI;
-      Chs.FieldByName('PID').AsString := SO.S[CT('pid')];
-      Chs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
-      Chs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
-      Chs.FieldByName('NAME').AsString := SO.S[CT('name')];
-      Chs.FieldByName('BDATE').AsString := SO.S[CT('bdate')];
-      Chs.FieldByName('DATER').AsDateTime := UnixStrToDateTime(SO.S[CT('dateRec')]);
-      Chs.Post;
-    end;
-  end;
-
-var
-  s : string;
-  IsF20 : Boolean;
-  i, NCh: Integer;
-  v     : Variant;
-  SOf20, SOChild, SO: ISuperObject;
-begin
-  try
-    i := 0;
-    while (i <= SOArr.AsArray.Length - 1) do begin
-      SO := SOArr.AsArray.O[i];
-      SOf20 := SO.O[CT('form19_20')];
-      if ( Assigned(SOf20) and (Not SOf20.IsType(stNull) or True) ) then begin
-        Docs.Append;
-        Docs.FieldByName('PID').AsString := SO.S[CT('pid')];
-        IsF20 := SOf20.B[CT('signAway')];
-        if (IsF20 = True) then
-          Docs.FieldByName('signAway').AsInteger := 1
-        else
-          Docs.FieldByName('signAway').AsInteger := 0;
-
-        s := SO.S[CT('identif')];
-        Docs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
-        Docs.FieldByName('sysDocType').AsString := SO.O[CT('sysDocType')].O[CT('klUniPK')].s[CT('type')];
-        Docs.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].S[CT('lex1')];
-        Docs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
-        Docs.FieldByName('NAME').AsString := SO.S[CT('name')];
-
-        try
-          SOChild := SO.O[CT('form19_20')].O[CT('infants')];
-          NCh := SOChild.AsArray.Length;
-        except
-          NCh := 0;
-        end;
-
-        if (Assigned(SOChild)) and (NCh > 0) then begin
-          FillChild(SOChild, Chs, i);
-        end;
-        Docs.FieldByName('NCHILD').AsInteger := NCh;
-
-        Docs.Post;
-      end;
-      i := i + 1;
-    end;
-  except
-  end;
-  Result := i;
-end;
 
 
 // установка параметров для GET : получения документов по ID
