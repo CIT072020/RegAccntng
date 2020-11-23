@@ -25,7 +25,8 @@ implementation
 
 uses
   SysUtils,
-  NativeXml;
+  NativeXml,
+  FuncPr;
 
 class function TIndNomDTO.GetIndNumList(SOArr: ISuperObject; IndNum : TkbmMemTable; EmpTbl : Boolean = True): Integer;
   function CT(s: string): string;
@@ -180,6 +181,49 @@ begin
 end;
 
 
+
+
+function VarKey(nType:Integer; nValue:Int64):String;
+begin
+  Result := Format('{"klUniPK":{"type":%d,"code":%d}}', [nType, nValue]);
+end;
+
+// Тип документа
+function VarKeyDocType(sType : string = '8') : String;
+var
+  n : Int64;
+begin
+  if (sType = '8') then n := 8 else n = StrToInt(sType);
+  Result := VarKey(-2, n);
+end;
+
+// Мужской/женский
+function VarKeyPol(sType : string = 'М') : String;
+var
+  n : Int64;
+begin
+  if (sType = 'М') then n := 21000001 else n = 21000002;
+  Result := VarKey(32, n);
+end;
+
+// Код гражданства
+function VarKeyCtzn(sType : string = '11200001') : String;
+var
+  n : Int64;
+begin
+  n = StrToInt(sType);
+  Result := VarKey(8, n);
+end;
+
+// Код регистрирующего органа
+function VarKeySysOrgan(sType : string = '') : String;
+var
+  n : Int64;
+begin
+  n = StrToInt(sType);
+  Result := VarKey(-5, n);
+end;
+
 //
 function TDocSetDTO.MemDoc2JSON(slPar:TStringList; dsDoc:TDataSet; dsChild:TDataSet): Boolean;
 var
@@ -222,14 +266,16 @@ var
   function getFldI(sField:String):Integer;
   begin Result := dsDoc.FieldByName(sField).AsInteger; end;
 
-  procedure addstd(ss1,ss2:String);
+  // Вставить число
+  procedure Addstd(ss1,ss2:String);
   begin
-    spDoc.WriteString(smesh+'"'+ss1+'": '+ss2+','#13#10);
+    spDoc.WriteString('"' + ss1 + '":' + ss2 +',');
   end;
-  procedure addstdS(ss1,ss2:String);
+  // Вставить строку
+  procedure AddstdS(const ss1 : string; ss2 : String = '');
   begin
-    if ss2='' then ss2:='null' else ss2:='"'+ss2+'"';
-    spDoc.WriteString(smesh+'"'+ss1+'": '+ss2+','#13#10);
+    if ss2='' then ss2 := 'null' else ss2 := '"' + ss2 + '"';
+    spDoc.WriteString('"'+ss1+'": '+ss2+','#13#10);
   end;
   procedure addDJ(ss1:String; dValue:TDateTime);
   begin
@@ -238,22 +284,23 @@ var
   end;
 begin
 
-  spDoc:=TStringStream.Create('');
-  spDoc.WriteString('{'#13#10);
+  spDoc := TStringStream.Create('');
+  spDoc.WriteString('{');
 
-  smesh:='  ';
-  addstd( 'view', createSpr(-3, 10));
-  addstd( 'sysDocType', createSpr(-2, 8));
-  addstdS('identif', getFld('LICH_NOMER'));
-  addstdS('surname', getFld('FAMILIA'));
-  addstdS('name', getFld('NAME'));
-  addstdS('sname', getFld('OTCH'));
+  Addstd(  'pid', getFld('pid') );
+  AddstdS( 'identif', getFld('IDENTIF') );
+  //addstd( 'view', createSpr(-3, 10));
+  Addstd(  'view' );
+  Addstd(  'sysDocType', VarKeyDocType(-2, getFld('sysDocType')) );
+  AddstdS( 'surname', getFld('FAMILIA') );
+  AddstdS( 'name', getFld('NAME') );
+  AddstdS( 'sname', getFld('OTCH') );
+  Addstd(  'sex', VarKeyPol(32, getFld('POL')) );
+  Addstd(  'citizenship', VarKeyCtzn(getFldI('CITIZENSHIP')) );
+  Addstd(  'sysOrgan', VarKeySysOrgan(getFldI('sysOrgan')) );    //###  код органа откуда отправляются данные !!!
 
-  addstd( 'sex', createPol(getFld('POL') ));
-  addstd( 'citizenship', createGrag(getFldI('CITIZEN')) );
-  addstd( 'bdate', DTOSDef(getFldD('DATER'), tdClipper, '')); // 19650111
-  addstd( 'sysOrgan', createSpr(-5, 26));    //###  код органа откуда отправляются данные !!!
-  addstd( 'dsdDateRec', 'null');  // дата записи
+  AddstdS( 'bdate', DTOSDef(getFldD('BDATE'), tdClipper, '') ); // 19650111
+  AddstdS(  'dsdDateRec' );                                     // дата записи
 
   addstd( 'docType', createTypeDoc(getFldI('PASP_UDOST')));   // тип основного документа
   addstd( 'docOrgan', 'null'); // ###      PASP_ORGAN              орган выдачи основного документа
