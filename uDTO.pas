@@ -188,8 +188,8 @@ begin
   Result := Format('{"klUniPK":{"type":%d,"code":%d}}', [nType, nValue]);
 end;
 
-// “ип документа
-function VarKeyDocType(sType : string = '8') : String;
+// SYS-“ип документа
+function VarKeySysDocType(sType : string = '8') : String;
 var
   n : Int64;
 begin
@@ -207,7 +207,7 @@ begin
 end;
 
 //  од гражданства
-function VarKeyCtzn(sType : string = '11200001') : String;
+function VarKeyCountry(sType : string = '11200001') : String;
 var
   n : Int64;
 begin
@@ -223,6 +223,27 @@ begin
   n = StrToInt(sType);
   Result := VarKey(-5, n);
 end;
+
+//  од типа населенного пункта
+function VarKeyCountry(sType : string = '11200001') : String;
+var
+  n : Int64;
+begin
+  n = StrToInt(sType);
+  Result := VarKey(8, n);
+end;
+
+// “ип документа
+function VarKeyDocType(sType : string = '8') : String;
+var
+  n : Int64;
+begin
+  if (sType = '8') then n := 8 else n = StrToInt(sType);
+  Result := VarKey(37, n);
+end;
+
+
+
 
 //
 function TDocSetDTO.MemDoc2JSON(slPar:TStringList; dsDoc:TDataSet; dsChild:TDataSet): Boolean;
@@ -275,12 +296,12 @@ var
   procedure AddstdS(const ss1 : string; ss2 : String = '');
   begin
     if ss2='' then ss2 := 'null' else ss2 := '"' + ss2 + '"';
-    spDoc.WriteString('"'+ss1+'": '+ss2+','#13#10);
+    spDoc.WriteString('"'+ss1+'": '+ss2+',');
   end;
-  procedure addDJ(ss1:String; dValue:TDateTime);
+  procedure AddDJ(ss1:String; dValue:TDateTime);
   begin
-    if dValue=0 then sss:='null' else sss:=IntToStr(createJavaDate(dValue));
-    spDoc.WriteString(smesh+'"'+ss1+'": '+sss+','#13#10);
+    if (dValue=0) then sss := 'null' else sss := IntToStr(createJavaDate(dValue));
+    spDoc.WriteString(smesh+'"'+ss1+'": '+sss+',');
   end;
 begin
 
@@ -291,26 +312,34 @@ begin
   AddstdS( 'identif', getFld('IDENTIF') );
   //addstd( 'view', createSpr(-3, 10));
   Addstd(  'view' );
-  Addstd(  'sysDocType', VarKeyDocType(-2, getFld('sysDocType')) );
+  Addstd(  'sysDocType', VarKeySysDocType(-2, getFld('sysDocType')) );
   AddstdS( 'surname', getFld('FAMILIA') );
   AddstdS( 'name', getFld('NAME') );
   AddstdS( 'sname', getFld('OTCH') );
   Addstd(  'sex', VarKeyPol(32, getFld('POL')) );
-  Addstd(  'citizenship', VarKeyCtzn(getFldI('CITIZENSHIP')) );
+  Addstd(  'citizenship', VarKeyCountry(getFldI('CITIZENSHIP')) );
   Addstd(  'sysOrgan', VarKeySysOrgan(getFldI('sysOrgan')) );    //###  код органа откуда отправл€ютс€ данные !!!
 
   AddstdS( 'bdate', DTOSDef(getFldD('BDATE'), tdClipper, '') ); // 19650111
-  AddstdS(  'dsdDateRec' );                                     // дата записи
+  AddstdS( 'dsdDateRec' );                                      // дата записи ???
+  AddstdS( 'docSery', getFldD('docSer') );                       // сери€ основного документа
+  AddstdS( 'docNum', getFldD('docNum') );                       // номер основного документа
+  AddDJ(   'docDateIssue', getFldD('docDateIssue') );           // дата выдачи основного документа
+  AddDJ(   'docAppleDate', getFldD('docAppleDate'));            // дата подачи документа  ???
+  AddDJ(   'dateRec', getFldD('dateRec'));                      // системна€ дата записи  ???
+  Addstd(  'ateAddress' );                                      // ???
+  AddDJ(   'expireDate', getFldD('expireDate'));                // дата действи€  ???
+  Addstd(  'aisPasspDocStatus' );                               // ???
+  Addstd(  'identifCheckResult' );                               // ???
 
-  addstd( 'docType', createTypeDoc(getFldI('PASP_UDOST')));   // тип основного документа
-  addstd( 'docOrgan', 'null'); // ###      PASP_ORGAN              орган выдачи основного документа
-  addDJ(  'docDateIssue', getFldD('PASP_DATE'));  // дата выдачи основного документа
-  addDJ(  'docAppleDate', getFldD('DATEZ'));      // дата подачи документа  ???
-  addDJ(  'dateRec', getFldD('DATEZ'));           // системна€ дата записи  ???
+  // место рождени€
+  Addstd(  'countryB', VarKeyCountry(getFldI('countryB')) );
+  AddstdS( 'areaB', getFld('areaB') );
+  Addstd(  'typeCityB', VarKeyCity(getFldI('typeCityB')) );
+  Addstd(  'docType', VarKeyDocType(37, getFld('docType')) );  // тип основного документа
+  AddstdS( 'docOrgan' );                                       // орган выдачи основного документа
 
-  addstd( 'countryB', createCountry(getFldI('GOSUD_R')));
-  addstdS('areaB', createObl(getFld('OBL_R'), dsDoc.FieldByName('B_OBL_R')));
-  addstd( 'typeCityB', createTypeCity(getFldI('GOROD_R_B')));
+  Addstd(  'contryL', VarKeyCountry(getFldI('countryL')) );
 
   //----- ‘орма 19-20 ------------------------------------------------
   spDoc.WriteString(smesh+'"form19_20": {'#13#10);
