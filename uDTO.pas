@@ -4,20 +4,30 @@ interface
 
 uses
   Classes,
-  //DB,
+  DB,
   kbmMemTable,
   superobject,
   //httpsend,
   uService;
 
 type
+  // Чтение списка ИН
   TIndNomDTO = class
   public
     class function GetIndNumList(SOArr: ISuperObject; IndNum : TkbmMemTable; EmpTbl : Boolean = True): Integer;
   end;
 
+  // Чтение/Запись установочных данных
   TDocSetDTO = class
+  private
+    function CheckUP(s:String):String;
   public
+    NeedUpper : Boolean;
+
+    function MemDoc2JSON(dsDoc:TDataSet; dsChild:TDataSet): string;
+
+    constructor Create(ChkUp : Boolean);
+    
     class function GetDocList(SOArr: ISuperObject; Docs, Chs: TkbmMemTable): Integer;
   end;
 
@@ -47,11 +57,11 @@ begin
       SO := SOArr.AsArray.O[i];
       IndNum.Append;
       IndNum.FieldByName('IDENTIF').AsString        := SO.S[CT('IDENTIFIER')];
-      IndNum.FieldByName('DATEREC').AsDateTime      := sdDateTimeFromString(SO.S[CT('REG_DATE')], false);
       IndNum.FieldByName('ORG_WHERE_CODE').AsString := SO.O[CT('SYS_ORGAN_WHERE')].S[CT('CODE')];
       IndNum.FieldByName('ORG_WHERE_NAME').AsString := SO.O[CT('SYS_ORGAN_WHERE')].S[CT('LEX')];
       IndNum.FieldByName('ORG_FROM_CODE').AsString  := SO.O[CT('SYS_ORGAN_FROM')].S[CT('CODE')];
       IndNum.FieldByName('ORG_FROM_NAME').AsString  := SO.O[CT('SYS_ORGAN_FROM')].S[CT('LEX')];
+      IndNum.FieldByName('DATEREC').AsDateTime      := sdDateTimeFromString(SO.S[CT('REG_DATE')], false);
       IndNum.Post;
       i := i + 1;
     end;
@@ -142,59 +152,51 @@ begin
   end;
 end;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-procedure TStringStream.WriteString(const AString: string);
+constructor TDocSetDTO.Create(ChkUp: Boolean);
 begin
-  Write(PChar(AString)^, Length(AString));
+  inherited Create;
+  NeedUpper := ChkUp;
 end;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //-------------------------------------------------------
-function CheckUP(s:String):String;
+function TDocSetDTO.CheckUP(s:String):String;
 begin
-  if FCharUpper
-    then Result:=ANSIUpperCase(s)
-    else Result:=s;
-end;
-
-function createSpr(nType:Integer; nValue:Int64):String;
-begin
-  Result:=Format('{ "klUniPK": { "type": %d, "code": %d } }', [nType, nValue]);
+  if NeedUpper
+    then Result := ANSIUpperCase(s)
+    else Result := s;
 end;
 
 
 
-
-function VarKey(nType:Integer; nValue:Int64):String;
+function VarKey(nType : Integer; nValue : Int64) : String;
 begin
+  //Result := Format('{"klUniPK":{"type":%d,"code":%d},"lex1":null,"lex2":null,"lex3":null,"dateBegin":null,"active":true}', [nType, nValue]);
   Result := Format('{"klUniPK":{"type":%d,"code":%d}}', [nType, nValue]);
 end;
 
 // SYS-Тип документа
 function VarKeySysDocType(sType : string = '8') : String;
-var
-  n : Int64;
 begin
-  if (sType = '8') then n := 8 else n = StrToInt(sType);
-  Result := VarKey(-2, n);
+  Result := VarKey(-2, StrToInt64(sType));
 end;
 
 // Мужской/женский
@@ -202,7 +204,7 @@ function VarKeyPol(sType : string = 'М') : String;
 var
   n : Int64;
 begin
-  if (sType = 'М') then n := 21000001 else n = 21000002;
+  if (sType = 'М') then n := 21000001 else n := 21000002;
   Result := VarKey(32, n);
 end;
 
@@ -211,7 +213,7 @@ function VarKeyCountry(sType : string = '11200001') : String;
 var
   n : Int64;
 begin
-  n = StrToInt(sType);
+  n := StrToInt64(sType);
   Result := VarKey(8, n);
 end;
 
@@ -220,33 +222,101 @@ function VarKeySysOrgan(sType : string = '') : String;
 var
   n : Int64;
 begin
-  n = StrToInt(sType);
+  n := StrToInt64(sType);
   Result := VarKey(-5, n);
 end;
 
 // Код типа населенного пункта
-function VarKeyCountry(sType : string = '11200001') : String;
+function VarKeyTypeCity(sType : string) : String;
 var
   n : Int64;
 begin
-  n = StrToInt(sType);
-  Result := VarKey(8, n);
+  n := StrToInt64(sType);
+  Result := VarKey(35, n);
 end;
 
 // Тип документа
-function VarKeyDocType(sType : string = '8') : String;
+function VarKeyDocType(sType : string) : String;
 var
   n : Int64;
 begin
-  if (sType = '8') then n := 8 else n = StrToInt(sType);
+  n := StrToInt64(sType);
   Result := VarKey(37, n);
 end;
 
+// Территория/область
+function VarKeyArea(sType : string) : String;
+var
+  n : Int64;
+begin
+  n := StrToInt64(sType);
+  Result := VarKey(1, n);
+end;
+
+// Регион
+function VarKeyRegion(sType : string) : String;
+var
+  n : Int64;
+begin
+  n := StrToInt64(sType);
+  Result := VarKey(29, n);
+end;
+
+// Населенный пункт
+function VarKeyCity(sType : string) : String;
+var
+  n : Int64;
+begin
+  n := StrToInt64(sType);
+  Result := VarKey(7, n);
+end;
+
+// Улица
+function VarKeyStreet(sType : string) : String;
+var
+  n : Int64;
+begin
+  n := StrToInt64(sType);
+  Result := VarKey(34, n);
+end;
+
+// Орган выдачи документа
+function VarKeyOrgan(sType : string) : String;
+var
+  n : Int64;
+begin
+  n := StrToInt64(sType);
+  Result := VarKey(24, n);
+end;
 
 
+// Сельсовет
+function VarKeyVilage(sType : string) : String;
+var
+  n : Int64;
+begin
+  n := StrToInt64(sType);
+  Result := VarKey(98, n);
+end;
 
-//
-function TDocSetDTO.MemDoc2JSON(slPar:TStringList; dsDoc:TDataSet; dsChild:TDataSet): Boolean;
+// IntrRegion
+function VarKeyIntrRegion(sType : string) : String;
+var
+  n : Int64;
+begin
+  n := StrToInt64(sType);
+  Result := VarKey(99, n);
+end;
+
+
+// Форма 19-20
+function PrepForm1920(sType : string) : String;
+begin
+  Result := 'null';
+end;
+
+// Тело документа для POST
+function TDocSetDTO.MemDoc2JSON(dsDoc:TDataSet; dsChild:TDataSet): string;
 var
   spDoc : TStringStream;
 
@@ -275,9 +345,6 @@ var
   lOk
   :Boolean;
 
-  nType
-  :SuperInt;
-
   function getFld(sField:String):String;
   begin Result := CheckUP(dsDoc.FieldByName(sField).AsString); end;
 
@@ -295,8 +362,8 @@ var
   // Вставить строку
   procedure AddstdS(const ss1 : string; ss2 : String = '');
   begin
-    if ss2='' then ss2 := 'null' else ss2 := '"' + ss2 + '"';
-    spDoc.WriteString('"'+ss1+'": '+ss2+',');
+    if (ss2 = '') then ss2 := 'null' else ss2 := '"' + ss2 + '"';
+    spDoc.WriteString('"' + ss1 + '": ' + ss2 + ',');
   end;
   procedure AddDJ(ss1:String; dValue:TDateTime);
   begin
@@ -308,7 +375,7 @@ begin
   spDoc := TStringStream.Create('');
   spDoc.WriteString('{');
 
-  Addstd(  'pid', getFld('pid') );
+  //Addstd(  'pid', getFld('pid') );
   AddstdS( 'identif', getFld('IDENTIF') );
   //addstd( 'view', createSpr(-3, 10));
   Addstd(  'view' );
@@ -340,156 +407,38 @@ begin
   AddstdS( 'docOrgan' );                                       // орган выдачи основного документа
 
   Addstd(  'contryL', VarKeyCountry(getFldI('countryL')) );
+  Addstd(  'areaL', VarKeyArea(getFldI('areaL')) );
+  Addstd(  'regionL', VarKeyRegion(getFldI('regionL')) );
+  Addstd(  'typeCityL', VarKeyTypeCity(35, getFldI('typeCityL')) );
+  Addstd(  'cityL', VarKeyCity(35, getFldI('cityL')) );
+  Addstd(  'typeStreetL', VarKeyTypeStreet(35, getFldI('typeStreetL')) );
+  Addstd(  'streetL', VarKeyStreet(35, getFldI('streetL')) );
 
-  //----- Форма 19-20 ------------------------------------------------
-  spDoc.WriteString(smesh+'"form19_20": {'#13#10);
-    smesh:='    ';
-    addstdS('form19_20Base', 'form19_20');   //
-    addstd( 'pid', '0');           //
-    addstd( 'signAway', 'true');   //  прибыл-убыл(0- прибыл, 1 - убыл)  в примере false true ???
-    // отку прибыл - куда убыл
-    addstd( 'countryPu', createCountry(getFldI('GOSUD_O')));
-    addstdS('areaPu', createObl(getFld('OBL_O'), dsDoc.FieldByName('B_OBL_O')));
-    addstdS('regionPu', getFld('RAION_O'));
-    addstd( 'typeCityPu', createTypeCity(getFldI('GOROD_O_B')));
-    addstdS('cityPu', getFld('GOROD_O'));
-    //--- сейчас только реквизит UL_O ---   ###
-    addstd( 'typeStreetPu', createSpr(38, 0));
-    addstd( 'streetPu', 'null');
-    addstd( 'housePu', 'null');
-    addstd( 'korpsPu', 'null');
-    addstd( 'appPu', 'null');
-    //-------------------------------------------------
-    addstd( 'datePu', 'null');    // ###   дата убытия-прибытия
-    addstd( 'marks', createSpr(2, 0));   // ###  особые отметки
-    addstd( 'notes', 'null');   // ###
-    addstd( 'term', 'null');    // ###  срок
-    addstd( 'reason', createSpr(3, 2));    // ###  цель прибытия-убытия
-    addDJ(  'dateRec', Now);    // ###  системная дата записи
-    addDJ(  'dateReg', Date);   // ###  дата прописки
-    addstd( 'termReg', createSpr( 27, 4));  // ###  срок прописки  1-ПОСТОЯННО 2-ДО ПОЛУЧЕНИЯ ЖИЛПЛОЩАДИ 3-ДО 3-Х МЕСЯЦЕВ 4-ДО 6-ТИ МЕСЯЦЕВ 5-ДО КОНКРЕТНОЙ ДАТЫ
-    addDJ(  'dateRegTill', getFldD('DATE_SROK'));  // если пусто то nil   дата до
-    addstd( 'causeIssue', createSpr( 39, 59200021));  // ###  причина выдачи документа
-    addstd( 'deathDate', 'null');     // дата смерти (в талоне прибытия нет такого реквизита)
-    addstd( 'signNoTake', 'false');  // отметка о неполучении паспорта (в талоне прибытия нет такого реквизита)
-    addstd( 'signNoReg', 'false');   // отметка о получении паспорта без прописки (в талоне прибытия нет такого реквизита)
-    addstd( 'signDestroy', 'false'); // отметка паспорт уничтожен как невостребованный (в талоне прибытия нет такого реквизита)
-    addstd( 'noAddrPu', createSpr( 70,  0));  // ###  прибытие-убытие без адреса
-    addstd( 'regType', createSpr(500, 2));  // ### TYPEREG 1-постоянная рег. 2-временная рег.
-    addstd( 'maritalStatus', createSem(getFldI('SEM')));  // семейное положение
-    addstd( 'education', createObraz(getFldI('OBRAZ')));  // образование
-    addstd( 'student', 'false');  // ### студент  нет такого реквизита
-    //------ дети ----------------------------
-//    addstd( 'infants', '[]'); // дети
-    spDoc.WriteString(smesh+'"infants": []'#13#10);
-    //----------------------------------------
-  smesh:='  ';
-    spDoc.WriteString(smesh+'},'#13#10);
-  spDoc.WriteString(smesh+'"dsdAddressLive": {'#13#10);
-    smesh:='    ';
-    addstdS('dsdAddressLiveBase', 'dsdAddressLive');
-    addstd( 'pid', '0');
-    addstdS('house', '32');
-    addstdS('korps', '');
-    addstdS('app', '');
-    addstd( 'ateObjectNum', '21293');
-    addstd( 'ateElementUid', 'null');
-//    addstdS('ateAddrNum', ''); 4998243
-    spDoc.WriteString(smesh+'"ateAddrNum": null'#13#10);
-  smesh:='  ';
-    spDoc.WriteString(smesh+'},'#13#10);
-  addstd('getPassportDate', 'null');  // дата получения паспорта
-  addstd('images', '[]');
-  addstd('addressLast', 'null');      // последний адрес ???
-  addstd('dossieStatus', 'null');     // статус документа
-  spDoc.WriteString(smesh+'"status": null'#13#10);  // статус
-  spDoc.WriteString('}');
+  AddstdS( 'house', getFld('house') );
+  AddstdS( 'korps', getFld('korps') );
+  AddstdS( 'app', getFld('app') );
 
-  sPostDoc:=AnsiToUtf8(spDoc.DataString);
+  AddstdS( 'organDoc', VarKeyOrgan(getFldI('organDoc')) );    //###  код органа
+  AddstdS( 'workplace', getFld('workplace') );
+  AddstdS( 'workposition', getFld('workposition') );
 
-  MemoWrite('1', sPostDoc);
-  spDoc.Free;
-//  new_obj.SaveTo('2',false,false);
-  //============================================
-//  ws:=new_obj.AsJSon(true,false);
-//  sPostDoc:=UTF8Encode(ws);
-//  MemoWrite('1', sPostDoc); // файл в кодировке UTF-8
-//  new_obj:=nil;
+  AddstdS( 'docIssueOrgan', VarKeyOrgan(getFldI('docIssueOrgan')) );    //###  код органа
+  AddstdS( 'surnameBel', getFld('FAMILIA') );
+  AddstdS( 'nameBel', getFld('NAME') );
+  AddstdS( 'snameBel', getFld('OTCH') );
 
-//  exit;
-  MemoRead('SaveDocTest.json', sPostDoc); // файл в кодировке UTF-8
+  AddstdS( 'surnameEn', getFld('FAMILIA') );
+  AddstdS( 'nameEn', getFld('NAME') );
 
-  sStrm:=TStringStream.Create(sPostDoc);
-  sStrm.Seek(0, soFromBeginning);
-  HTTP.Document.CopyFrom(sStrm, 0);
-  new_obj:=nil;
-  try
-    Result:=HTTP.HTTPMethod('POST', sURL+sPar);
-    if Result then begin
-      sStrmG:=TStringStream.Create(sPostDoc);
-      sStrmG.Seek(0, soFromBeginning);
-      sStrmG.CopyFrom(HTTP.Document, 0);
-      sResponse:=sStrmG.DataString;
-      sStrmG.Free;
-      if (HTTP.ResultCode<200) or (HTTP.ResultCode>=400) then begin
-        Result:=false;
-        FLastError:=HTTP.Headers.Text;
-      end;
-    end else begin
-      FLastError:=inttostr(HTTP.sock.LastError)+' '+HTTP.sock.LastErrorDesc;
-    end;
-  finally
-    HTTP.Free;
-    slHeader.Free;
-    sStrm.Free;
-  end;
-  if not Result then begin
-    WriteTextLog('отправка данных:'#13#10+FLastError, TEXT_ERROR);
-  end else begin
-    sw:=Utf8Decode(sResponse);
-//  {  "status": 1, "id": 90021850,  "error": null  }
-//  {  "status": 0, "id": null,      "error": "Не удалось сохранить запись в БД" }
-    lOk:=true;
-    try
-      new_obj:=so(sw);
-    except
-      on E:Exception do begin
-        lOK:=false;
-        WriteTextLog('Невозможно разобрать ответ сервера:'#13#10+Utf8ToAnsi(sResponse), TEXT_ERROR);
-      end;
-    end;
-    if lOk and (new_obj<>nil) then begin
-      WriteDebugFile('_saveDoc.json',Utf8ToAnsi(sResponse));
-      sStatus:=new_obj.S['status'];
-      if sStatus='1' then begin
-        sId:=new_obj.S['id'];
-        sError:='';
-        WriteTextLog('Запись '+getIDSave(dsDoc)+' успешно отправлена', TEXT_OK);
-//        ShowMessageCont(,nil);
-      end else begin
-        sId:='';
-        sError:=new_obj.S['error'];
-        FLastError:=sError+', запись '+getIDSave(dsDoc);
-        WriteTextLog(FLastError, TEXT_ERROR);
-        Result:=false;
-      end;
-    end;
-    new_obj:=nil;
-  end;
-  sl.Free;
-end;
+  AddstdS( 'areaBBel', getFld('areaB') );
+  Addstd(  'regionBBelL', getFldI('regionL')) );
+  Addstd(  'cityBBel', getFldI('cityL')) );
 
+  AddstdS( 'villageCouncil', VarKeyOrgan(getFldI('organDoc')) );    //###  код органа
+  AddstdS( 'intracityRegion', VarKeyOrgan(getFldI('organDoc')) );    //###  код органа
 
-
-
-
-
-
-
-
-
-
-
-
-
+  AddstdS( 'dsdAddressLive', getFldI('organDoc')) );    //###  код органа
+  AddstdS( 'images', VarKeyOrgan(getFldI('organDoc')) );    //###  код органа
+  AddstdS( 'status', VarKeyOrgan(getFldI('organDoc')) );    //###  код органа
+  AddstdS( 'intracityRegion', VarKeyOrgan(getFldI('organDoc')) );    //###  код органа
 end.

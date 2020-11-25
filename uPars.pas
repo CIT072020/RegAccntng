@@ -63,6 +63,8 @@ type
   public
     TypeDoc : string;
     FullURL : string;
+    USign   : string;
+    USert   : string;
 
     property Docs  : TkbmMemTable read FDocs write FDocs;
     property Child : TkbmMemTable read FChild write FChild;

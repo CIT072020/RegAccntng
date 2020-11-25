@@ -30,6 +30,7 @@ type
   public
     property ResGet : TResultGet read FResGet write FResGet;
     property ResSet : TResultGet read FResGet write FResGet;
+
     (* Получить список документов [убытия]
     *)
     function GetRegDocs(ParsGet : TParsGet) : TResultGet;
@@ -218,6 +219,44 @@ begin
 end;
 
 
+
+
+
+// Индивидуальные номера граждан за период
+function TExchgRegCitizens.PostPrepPars(ParsPost: TParsPost; MT : TkbmMemTable) : Integer;
+var
+  Pars : TStringList;
+  SOList : ISuperObject;
+begin
+  Result := 0;
+
+  sURL:=getURL(RESOURCE_SAVEDOC);
+  slHeader:=TStringList.Create;
+  sl:=TStringList.Create;
+  HTTP:=THTTPSend.Create;
+  HTTP.Headers.Clear;
+  sPar:=CreatePar(slPar,slHeader);
+  HTTP.Headers.Add('sign:amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h');
+  HTTP.Headers.Add('certificate:109uu21nu0t17togdy70-fuib');
+  HTTP.MimeType:='application/json;charset=UTF-8';
+
+
+
+  if (Length(ParsGet.FullURL) = 0) then begin
+    Pars := TStringList.Create;
+    Pars.Add(ParsGet.Organ);
+    Pars.Add(DateToStr(ParsGet.DateBeg));
+    Pars.Add(DateToStr(ParsGet.DateEnd));
+    Pars.Add(IntToStr(ParsGet.First));
+    Pars.Add(IntToStr(ParsGet.Count));
+    ParsGet.FullURL := FullPath(FHost, GET_LIST_ID, SetPars4GetIDs(Pars));
+  end;
+  SOList := GetListID(ParsGet.FullURL);
+  if Assigned(SOList) and (SOList.DataType = stArray) then begin
+      Result := TIndNomDTO.GetIndNumList(SOList, MT);
+  end;
+end;
+
 // Получить документы для сельсовета за период
 function TExchgRegCitizens.GetRegDocs(ParsGet: TParsGet): TResultGet;
 var
@@ -250,8 +289,59 @@ end;
 
 // Передать документы регистрации
 function TExchgRegCitizens.SetRegDocs(ParsPost: TParsPost) : TResultSet;
+var
+  Header : TStringList;
+
 begin
   Result := TResultSet.Create;
+
+
+  FHTTP := THTTPSend.Create;
+  try
+    try
+    FHTTP.Headers.Clear;
+
+    ParsPost.FullURL := FullPath(FHost, POST, SetPars4GetIDs(Pars));
+
+    ParsPost.Docs.First;
+    while not ParsPost.Docs.Eof do begin
+
+
+      if (TDocSetDTO.MemDoc2JSON(ParsPost.Docs, ParsPost.Child) = True) then begin
+
+
+
+      Ret := FHTTP.HTTPMethod('POST', StrPars);
+      if (Ret = True) then begin
+        if (FHTTP.ResultCode < 200) or (FHTTP.ResultCode >= 400) then begin
+          sErr := FHTTP.Headers.Text;
+          raise Exception.Create(sErr);
+        end;
+        ShowDeb(IntToStr(FHTTP.ResultCode) + ' ' + HTTP.ResultString);
+        sDoc := MemStream2Str(FHTTP.Document);
+        Result := SO(Utf8Decode(sDoc));
+      end
+      else begin
+        sErr := IntToStr(FHTTP.sock.LastError) + ' ' + FHTTP.sock.LastErrorDesc;
+        raise Exception.Create(sErr);
+      end;
+
+
+
+      end;
+
+      ParsPost.Docs.Next;
+    end;
+
+
+    except
+
+    end;
+  finally
+    FHTTP.Free;
+  end;
+
+
 end;
 
 end.
