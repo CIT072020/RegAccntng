@@ -55,21 +55,21 @@ type
     constructor Create(INs : TStrings; LType : Integer = TLIST_FIO); overload;
   end;
 
-  // параметры для SetDocs
+  // параметры для PostDocs
   TParsPost = class
   private
     FChild,
     FDocs   : TkbmMemTable;
   public
-    TypeDoc : string;
-    FullURL : string;
     USign   : string;
     USert   : string;
+    TypeDoc : string;
+    FullURL : string;
 
     property Docs  : TkbmMemTable read FDocs write FDocs;
     property Child : TkbmMemTable read FChild write FChild;
 
-    constructor Create(URL : string); overload;
+    constructor Create(DSign, Cert : string; URL : string = '');
   end;
 
 (*
@@ -96,7 +96,15 @@ type
     constructor Create(Pars : TParsExchg);
   end;
 
-  TResultSet = class
+  TResultPost = class
+  private
+    FCode : Integer;
+    FMsg : string;
+  protected
+  public
+
+    property ResCode : Integer read FCode write FCode;
+    property ResMsg : string read FMsg write FMsg;
   end;
 
 
@@ -154,8 +162,10 @@ begin
   Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, Pars.SectChild));
 end;
 
-constructor TParsPost.Create(URL : string);
+constructor TParsPost.Create(DSign, Cert : string; URL : string = '');
 begin
+  USign := DSign;
+  USert := Cert;
   FullURL := URL;
 end;
 

@@ -20,15 +20,14 @@ type
   // „тение/«апись установочных данных
   TDocSetDTO = class
   private
-    function CheckUP(s:String):String;
   public
     NeedUpper : Boolean;
 
-    function MemDoc2JSON(dsDoc:TDataSet; dsChild:TDataSet): string;
 
     constructor Create(ChkUp : Boolean);
-    
+
     class function GetDocList(SOArr: ISuperObject; Docs, Chs: TkbmMemTable): Integer;
+    class function MemDoc2JSON(dsDoc: TDataSet; dsChild: TDataSet; StreamDoc: TStringStream; NeedUp : Boolean): Boolean;
   end;
 
 implementation
@@ -178,15 +177,6 @@ end;
 
 
 //-------------------------------------------------------
-function TDocSetDTO.CheckUP(s:String):String;
-begin
-  if NeedUpper
-    then Result := ANSIUpperCase(s)
-    else Result := s;
-end;
-
-
-
 function VarKey(nType : Integer; nValue : Int64) : String;
 begin
   //Result := Format('{"klUniPK":{"type":%d,"code":%d},"lex1":null,"lex2":null,"lex3":null,"dateBegin":null,"active":true}', [nType, nValue]);
@@ -271,6 +261,15 @@ begin
   Result := VarKey(7, n);
 end;
 
+// “ип ”лицы
+function VarKeyTypeStreet(sType : string) : String;
+var
+  n : Int64;
+begin
+  n := StrToInt64(sType);
+  Result := VarKey(38, n);
+end;
+
 // ”лица
 function VarKeyStreet(sType : string) : String;
 var
@@ -316,129 +315,137 @@ begin
 end;
 
 // “ело документа дл€ POST
-function TDocSetDTO.MemDoc2JSON(dsDoc:TDataSet; dsChild:TDataSet): string;
+class function TDocSetDTO.MemDoc2JSON(dsDoc: TDataSet; dsChild: TDataSet; StreamDoc: TStringStream; NeedUp : Boolean): Boolean;
 var
-  spDoc : TStringStream;
+  sUTF, s, sURL, sPar, sss, sF, sFld, sPath, sPostDoc, sResponse, sError, sStatus, sId: String;
+  new_obj, obj: ISuperObject;
+  nSpr, n, i, j: Integer;
+  lOk: Boolean;
 
-  smesh,
-  s,sURL,sPar,sss,sF,
-  sFld,sPath,sPostDoc,sResponse,sError,sStatus,sId
-  :String;
+  function getFld(sField: String): String;
+  begin
+    Result := dsDoc.FieldByName(sField).AsString;
+    if NeedUp then Result := ANSIUpperCase(Result);
+  end;
 
-  sl, slHeader,
-  slFld
-  :TStringList;
+  function getFldD(sField: String): TDateTime;
+  begin
+    Result := dsDoc.FieldByName(sField).AsDateTime;
+  end;
 
-  sStrm,sStrmG
-  :TStringStream;
-
-  new_obj, obj
-  : ISuperObject;
-
-  sw,
-  ws
-  :WideString;
-
-  nSpr,n,i,j
-  :Integer;
-
-  lOk
-  :Boolean;
-
-  function getFld(sField:String):String;
-  begin Result := CheckUP(dsDoc.FieldByName(sField).AsString); end;
-
-  function getFldD(sField:String):TDateTime;
-  begin Result := dsDoc.FieldByName(sField).AsDateTime; end;
-
-  function getFldI(sField:String):Integer;
-  begin Result := dsDoc.FieldByName(sField).AsInteger; end;
+  function getFldI(sField: String): String;
+  begin
+    Result := IntToStr(dsDoc.FieldByName(sField).AsInteger);
+  end;
 
   // ¬ставить число
-  procedure Addstd(ss1,ss2:String);
+  procedure AddNum(const ss1: string; ss2: String = '');
   begin
-    spDoc.WriteString('"' + ss1 + '":' + ss2 +',');
+    if (ss2 = '') then
+      ss2 := 'null';
+    StreamDoc.WriteString('"' + ss1 + '":' + ss2 + ',');
   end;
   // ¬ставить строку
-  procedure AddstdS(const ss1 : string; ss2 : String = '');
+
+  procedure AddStr(const ss1: string; ss2: String = '');
   begin
-    if (ss2 = '') then ss2 := 'null' else ss2 := '"' + ss2 + '"';
-    spDoc.WriteString('"' + ss1 + '": ' + ss2 + ',');
+    if (ss2 = '') then
+      ss2 := 'null'
+    else
+      ss2 := '"' + ss2 + '"';
+    StreamDoc.WriteString('"' + ss1 + '": ' + ss2 + ',');
   end;
-  procedure AddDJ(ss1:String; dValue:TDateTime);
+  // ¬ставить дату
+
+  procedure AddDJ(ss1: String; dValue: TDateTime);
   begin
-    if (dValue=0) then sss := 'null' else sss := IntToStr(createJavaDate(dValue));
-    spDoc.WriteString(smesh+'"'+ss1+'": '+sss+',');
+    if (dValue = 0) then
+      sss := 'null'
+    else
+      sss := IntToStr(Delphi2JavaDate(dValue));
+    StreamDoc.WriteString('"' + ss1 + '": ' + sss + ',');
   end;
+
 begin
+  Result := False;
+  try
+    StreamDoc.WriteString('{');
 
-  spDoc := TStringStream.Create('');
-  spDoc.WriteString('{');
+  //AddNum(  'pid', getFld('pid') );
+    AddStr('identif', getFld('IDENTIF'));
+  //AddNum( 'view', createSpr(-3, 10));
+    AddNum('view');
+    AddNum('sysDocType', VarKeySysDocType(getFld('sysDocType')));
+    AddStr('surname', getFld('FAMILIA'));
+    AddStr('name', getFld('NAME'));
+    AddStr('sname', getFld('OTCH'));
+    AddNum('sex', VarKeyPol(getFld('POL')));
+    AddNum('citizenship', VarKeyCountry(getFld('CITIZENSHIP')));
+    AddNum('sysOrgan', VarKeySysOrgan(getFld('sysOrgan')));    //###  код органа откуда отправл€ютс€ данные !!!
 
-  //Addstd(  'pid', getFld('pid') );
-  AddstdS( 'identif', getFld('IDENTIF') );
-  //addstd( 'view', createSpr(-3, 10));
-  Addstd(  'view' );
-  Addstd(  'sysDocType', VarKeySysDocType(-2, getFld('sysDocType')) );
-  AddstdS( 'surname', getFld('FAMILIA') );
-  AddstdS( 'name', getFld('NAME') );
-  AddstdS( 'sname', getFld('OTCH') );
-  Addstd(  'sex', VarKeyPol(32, getFld('POL')) );
-  Addstd(  'citizenship', VarKeyCountry(getFldI('CITIZENSHIP')) );
-  Addstd(  'sysOrgan', VarKeySysOrgan(getFldI('sysOrgan')) );    //###  код органа откуда отправл€ютс€ данные !!!
-
-  AddstdS( 'bdate', DTOSDef(getFldD('BDATE'), tdClipper, '') ); // 19650111
-  AddstdS( 'dsdDateRec' );                                      // дата записи ???
-  AddstdS( 'docSery', getFldD('docSer') );                       // сери€ основного документа
-  AddstdS( 'docNum', getFldD('docNum') );                       // номер основного документа
-  AddDJ(   'docDateIssue', getFldD('docDateIssue') );           // дата выдачи основного документа
-  AddDJ(   'docAppleDate', getFldD('docAppleDate'));            // дата подачи документа  ???
-  AddDJ(   'dateRec', getFldD('dateRec'));                      // системна€ дата записи  ???
-  Addstd(  'ateAddress' );                                      // ???
-  AddDJ(   'expireDate', getFldD('expireDate'));                // дата действи€  ???
-  Addstd(  'aisPasspDocStatus' );                               // ???
-  Addstd(  'identifCheckResult' );                               // ???
-
+    AddStr('bdate', DTOSDef(getFldD('BDATE'), tdClipper, '')); // 19650111
+    AddStr('dsdDateRec');                                      // дата записи ???
+    AddStr('docSery', getFld('docSer'));                       // сери€ основного документа
+    AddStr('docNum', getFld('docNum'));                       // номер основного документа
+    AddDJ('docDateIssue', getFldD('docDateIssue'));           // дата выдачи основного документа
+    AddDJ('docAppleDate', getFldD('docAppleDate'));            // дата подачи документа  ???
+    AddDJ('dateRec', getFldD('dateRec'));                      // системна€ дата записи  ???
+    AddNum('ateAddress');                                      // ???
+    AddDJ('expireDate', getFldD('expireDate'));                // дата действи€  ???
+    AddNum('aisPasspDocStatus');                               // ???
+    AddNum('identifCheckResult');                               // ???
   // место рождени€
-  Addstd(  'countryB', VarKeyCountry(getFldI('countryB')) );
-  AddstdS( 'areaB', getFld('areaB') );
-  Addstd(  'typeCityB', VarKeyCity(getFldI('typeCityB')) );
-  Addstd(  'docType', VarKeyDocType(37, getFld('docType')) );  // тип основного документа
-  AddstdS( 'docOrgan' );                                       // орган выдачи основного документа
+    AddNum('countryB', VarKeyCountry(getFldI('countryB')));
+    AddStr('areaB', getFld('areaB'));
+    AddNum('typeCityB', VarKeyCity(getFldI('typeCityB')));
+    AddNum('docType', VarKeyDocType(getFld('docType')));  // тип основного документа
+    AddStr('docOrgan');                                       // орган выдачи основного документа
 
-  Addstd(  'contryL', VarKeyCountry(getFldI('countryL')) );
-  Addstd(  'areaL', VarKeyArea(getFldI('areaL')) );
-  Addstd(  'regionL', VarKeyRegion(getFldI('regionL')) );
-  Addstd(  'typeCityL', VarKeyTypeCity(35, getFldI('typeCityL')) );
-  Addstd(  'cityL', VarKeyCity(35, getFldI('cityL')) );
-  Addstd(  'typeStreetL', VarKeyTypeStreet(35, getFldI('typeStreetL')) );
-  Addstd(  'streetL', VarKeyStreet(35, getFldI('streetL')) );
+    AddNum('contryL', VarKeyCountry(getFldI('countryL')));
+    AddNum('areaL', VarKeyArea(getFldI('areaL')));
+    AddNum('regionL', VarKeyRegion(getFldI('regionL')));
+    AddNum('typeCityL', VarKeyTypeCity(getFldI('typeCityL')));
+    AddNum('cityL', VarKeyCity(getFldI('cityL')));
+    AddNum('typeStreetL', VarKeyTypeStreet(getFldI('typeStreetL')));
+    AddNum('streetL', VarKeyStreet(getFldI('streetL')));
 
-  AddstdS( 'house', getFld('house') );
-  AddstdS( 'korps', getFld('korps') );
-  AddstdS( 'app', getFld('app') );
+    AddStr('house', getFld('house'));
+    AddStr('korps', getFld('korps'));
+    AddStr('app', getFld('app'));
 
-  AddstdS( 'organDoc', VarKeyOrgan(getFldI('organDoc')) );    //###  код органа
-  AddstdS( 'workplace', getFld('workplace') );
-  AddstdS( 'workposition', getFld('workposition') );
+    AddStr('organDoc', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
+    AddStr('workplace', getFld('workplace'));
+    AddStr('workposition', getFld('workposition'));
 
-  AddstdS( 'docIssueOrgan', VarKeyOrgan(getFldI('docIssueOrgan')) );    //###  код органа
-  AddstdS( 'surnameBel', getFld('FAMILIA') );
-  AddstdS( 'nameBel', getFld('NAME') );
-  AddstdS( 'snameBel', getFld('OTCH') );
+    AddStr('docIssueOrgan', VarKeyOrgan(getFldI('docIssueOrgan')));    //###  код органа
+    AddStr('surnameBel', getFld('FAMILIA'));
+    AddStr('nameBel', getFld('NAME'));
+    AddStr('snameBel', getFld('OTCH'));
 
-  AddstdS( 'surnameEn', getFld('FAMILIA') );
-  AddstdS( 'nameEn', getFld('NAME') );
+    AddStr('surnameEn', getFld('FAMILIA'));
+    AddStr('nameEn', getFld('NAME'));
 
-  AddstdS( 'areaBBel', getFld('areaB') );
-  Addstd(  'regionBBelL', getFldI('regionL')) );
-  Addstd(  'cityBBel', getFldI('cityL')) );
+    AddStr('areaBBel', getFld('areaB'));
+    AddNum('regionBBelL', getFldI('regionL'));
+    AddNum('cityBBel', getFldI('cityL'));
 
-  AddstdS( 'villageCouncil', VarKeyOrgan(getFldI('organDoc')) );    //###  код органа
-  AddstdS( 'intracityRegion', VarKeyOrgan(getFldI('organDoc')) );    //###  код органа
+    AddStr('villageCouncil', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
+    AddStr('intracityRegion', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
 
-  AddstdS( 'dsdAddressLive', getFldI('organDoc')) );    //###  код органа
-  AddstdS( 'images', VarKeyOrgan(getFldI('organDoc')) );    //###  код органа
-  AddstdS( 'status', VarKeyOrgan(getFldI('organDoc')) );    //###  код органа
-  AddstdS( 'intracityRegion', VarKeyOrgan(getFldI('organDoc')) );    //###  код органа
+    AddStr('dsdAddressLive', getFldI('organDoc'));    //###  код органа
+    AddStr('images', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
+    AddStr('status', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
+    AddStr('intracityRegion', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
+  // ѕоследней была зап€та€, вернемс€ дл€ записи конца объекта
+    StreamDoc.Seek(-1, soCurrent);
+    StreamDoc.WriteString('}');
+    sUTF := AnsiToUtf8(StreamDoc.DataString);
+    StreamDoc.Seek(0, soBeginning);
+    StreamDoc.WriteString(sUTF);
+    Result := True;
+  except
+    Result := False;
+  end;
+end;
+
 end.

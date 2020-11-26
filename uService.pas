@@ -7,7 +7,7 @@ uses
  StdCtrls,
  kbmMemTable,
  DBFunc,
- superdate, superobject,
+ superdate, superobject, supertypes,
  {$IFDEF SYNA} httpsend,  {$ENDIF}
  SasaINiFile, FuncPr;
 
@@ -56,8 +56,10 @@ type
 
 
 function UnixStrToDateTime(sDate:String):TDateTime;
-function CreateMemTable(sTableName: string; Meta : TSasaIniFile; MetaSect: String; AutoCreate: Boolean = True; AutoOpen: Boolean = True): TDataSet;
+function Delphi2JavaDate(d:TDateTime):SuperInt;
 function MemStream2Str(const MS: TMemoryStream; const FullStream: Boolean = True; const ADefault: string = ''): string;
+
+function CreateMemTable(sTableName: string; Meta : TSasaIniFile; MetaSect: String; AutoCreate: Boolean = True; AutoOpen: Boolean = True): TDataSet;
 procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
 function FullPath(H : THostReg; Func : Integer; Pars : string) : string;
 
@@ -77,6 +79,29 @@ begin
    Result := 0;
    if (sDate <> 'null') then
      Result := JavaToDelphiDateTime(StrToInt64(sDate));
+end;
+
+function Delphi2JavaDate(d:TDateTime):SuperInt;
+begin
+  Result := DelphiToJavaDateTime(d);
+end;
+
+function MemStream2Str(const MS: TMemoryStream; const FullStream: Boolean = True; const ADefault: string = ''): string;
+var
+  NeedLen: Integer;
+begin
+  if Assigned(MS) then
+  try
+    if (FullStream = True) then
+      MS.Position := 0;
+    NeedLen := MS.Size - MS.Position;
+    SetLength(Result, NeedLen);
+    MS.Read(Result[1], NeedLen);
+  except
+    Result := ADefault;
+  end
+  else
+    Result := ADefault;
 end;
 
 //---------------------------------------------
@@ -175,24 +200,6 @@ begin
     FLastError := 'Meta-Описание не найдено!';
 
   MetaDef.Free;
-end;
-
-function MemStream2Str(const MS: TMemoryStream; const FullStream: Boolean = True; const ADefault: string = ''): string;
-var
-  NeedLen: Integer;
-begin
-  if Assigned(MS) then
-  try
-    if (FullStream = True) then
-      MS.Position := 0;
-    NeedLen := MS.Size - MS.Position;
-    SetLength(Result, NeedLen);
-    MS.Read(Result[1], NeedLen);
-  except
-    Result := ADefault;
-  end
-  else
-    Result := ADefault;
 end;
 
 

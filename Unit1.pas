@@ -10,6 +10,7 @@ uses
 //  IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
   HTTPSend, ssl_openssl, ssl_openssl_lib,
   uExchg,
+  uPars,
   ExchgRegBase;
 
 type
@@ -84,12 +85,14 @@ const
 
 var
   Form1: TForm1;
+  // для отладки POST
+  GETRes : TResultGet;
+
 
 implementation
 uses
   kbmMemTable,
   SasaINiFile,
-  uPars,
   uService;
 
 {$R *.dfm}
@@ -313,11 +316,11 @@ begin
   tbTalonPribDeti.Open;
 
   ShowM := edMemo;
-  edOrgan.Text  := '11';
-  dtEnd.Value   := StrToDate('08.10.2020');
-  dtBegin.Value := StrToDate('06.10.2020');
-  edFirst.Text  := '1';
-  edCount.Text  := '14';
+  edOrgan.Text  := '26';
+  dtEnd.Value   := StrToDate('01.01.2003');
+  dtBegin.Value := StrToDate('01.01.2021');
+  edFirst.Text  := '0';
+  edCount.Text  := '10';
 
   Pars := TParsExchg.Create(INI_NAME);
   BlackBox := TExchgRegCitizens.Create(Pars);
@@ -603,7 +606,6 @@ var
   D1,
   D2 : TDateTime;
   P : TParsGet;
-  Res : TResultGet;
 begin
   edMemo.Clear;
   D1 := dtBegin.Value;
@@ -611,24 +613,30 @@ begin
   P := TParsGet.Create(D1, D2, edOrgan.Text);
   P.First := edFirst.Value;
   P.Count := edCount.Value;
-  Res := BlackBox.GetRegDocs(P);
-  if (Assigned(Res)) then begin
-    DataSource1.DataSet := Res.INs;
-    dsDocs.DataSet      := Res.Docs;
-    dsChild.DataSet     := Res.Child;
+  BlackBox.ResGet := BlackBox.GetRegDocs(P);
+  GETRes := BlackBox.ResGet;
+  if (Assigned(BlackBox.ResGet)) then begin
+    DataSource1.DataSet := BlackBox.ResGet.INs;
+    dsDocs.DataSet      := BlackBox.ResGet.Docs;
+    dsChild.DataSet     := BlackBox.ResGet.Child;
   end;
 
 end;
 
 procedure TForm1.btnPostDocClick(Sender: TObject);
+const
+  exmSign = 'amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h';
+  exmSert = '109uu21nu0t17togdy70-fuib';
 var
   PPost : TParsPost;
-  Res : TResultSet;
+  Res : TResultPost;
 begin
   edMemo.Clear;
-  PPost := TParsPost.Create;
-  Res := BlackBox.SetRegDocs(PPost);
-  if (Assigned(Res)) then begin
+  PPost := TParsPost.Create(exmSign, exmSert);
+  PPost.Docs := BlackBox.ResGet.Docs;
+  PPost.Child := BlackBox.ResGet.Child;
+  BlackBox.ResPost := BlackBox.PostRegDocs(PPost);
+  if (Assigned(BlackBox.ResPost)) then begin
   end;
 
 end;
