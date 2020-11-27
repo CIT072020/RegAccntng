@@ -64,6 +64,7 @@ procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
 function FullPath(H : THostReg; Func : Integer; Pars : string) : string;
 
 function GetListDOC(Host : THostReg; Pars: TStringList): ISuperObject;
+procedure LeaveOnly1(ds: TDataSet);
 
 var
   ShowM : TMemo;
@@ -296,11 +297,19 @@ begin
 
 end;
 
-{
-function NewMemT(sTableName: string; MetaSect: String; AutoCreate: Boolean = True; AutoOpen: Boolean = True): TDataSet;
+procedure LeaveOnly1(ds: TDataSet);
+var
+  x : Variant;
 begin
 
+  x := DS.FieldValues['ID'];
+  ds.First;
+  while (ds.RecordCount > 1)AND(not ds.Eof) do begin
+    if (ds.FieldValues['ID'] = x) then
+      ds.Next
+    else
+      ds.Delete;
+  end;
 end;
-}
 
 end.

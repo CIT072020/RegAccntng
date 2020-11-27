@@ -7,6 +7,7 @@ uses
   DB,
   kbmMemTable,
   superobject,
+  superdate, 
   //httpsend,
   uService;
 
@@ -103,7 +104,9 @@ class function TDocSetDTO.GetDocList(SOArr: ISuperObject; Docs, Chs: TkbmMemTabl
 var
   s : string;
   IsF20 : Boolean;
+  iV,
   i, NCh: Integer;
+  d : TDateTime;
   v     : Variant;
   SOf20, SOChild, SO: ISuperObject;
 begin
@@ -123,11 +126,29 @@ begin
         else
           Docs.FieldByName('signAway').AsInteger := 0;
 
-        Docs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
-        Docs.FieldByName('sysDocType').AsString := SO.O[CT('sysDocType')].O[CT('klUniPK')].s[CT('type')];
+        Docs.FieldByName('LICH_NOMER').AsString := SO.S[CT('identif')];
+        Docs.FieldByName('sysDocType').AsString := SO.O[CT('sysDocType')].O[CT('klUniPK')].s[CT('code')];
         Docs.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].S[CT('lex1')];
         Docs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
         Docs.FieldByName('NAME').AsString := SO.S[CT('name')];
+        Docs.FieldByName('OTCH').AsString := SO.S[CT('sname')];
+        iV := SO.O[CT('sex')].O[CT('klUniPK')].I[CT('code')];
+        if (iV = 21000002) then s := 'Ж' else s := 'М';
+        Docs.FieldByName('POL').AsString := s;
+
+        iV := SO.O[CT('citizenship')].O[CT('klUniPK')].I[CT('code')];
+        Docs.FieldByName('CITIZEN').AsInteger := iV;
+
+        Docs.FieldByName('sysOrgan').AsInteger := SO.O[CT('sysOrgan')].O[CT('klUniPK')].I[CT('code')];
+        Docs.FieldByName('ORGAN').AsString := SO.O[CT('sysOrgan')].S[CT('lex1')];
+
+        s := SO.S[CT('bdate')];
+        d := STOD(s);
+        Docs.FieldByName('DateR').AsDateTime := d;
+
+        Docs.FieldByName('PASP_SERIA').AsString := SO.S[CT('docSery')];
+        Docs.FieldByName('PASP_NOMER').AsString := SO.S[CT('docNum')];
+        Docs.FieldByName('PASP_DATE').AsDateTime := JavaToDelphiDateTime(SO.I[CT('docDateIssue')]);
 
         try
           SOChild := SO.O[CT('form19_20')].O[CT('infants')];
@@ -371,25 +392,25 @@ begin
   try
     StreamDoc.WriteString('{');
 
-  //AddNum(  'pid', getFld('pid') );
-    AddStr('identif', getFld('IDENTIF'));
+    AddNum(  'pid' );
+    AddStr('identif', getFld('LICH_NOMER'));
   //AddNum( 'view', createSpr(-3, 10));
     AddNum('view');
     AddNum('sysDocType', VarKeySysDocType(getFld('sysDocType')));
-    AddStr('surname', getFld('FAMILIA'));
-    AddStr('name', getFld('NAME'));
-    AddStr('sname', getFld('OTCH'));
+    AddStr('surname', getFld('Familia'));
+    AddStr('name', getFld('Name'));
+    AddStr('sname', getFld('Otch'));
     AddNum('sex', VarKeyPol(getFld('POL')));
-    AddNum('citizenship', VarKeyCountry(getFld('CITIZENSHIP')));
+    AddNum('citizenship', VarKeyCountry(getFld('CITIZEN')));
     AddNum('sysOrgan', VarKeySysOrgan(getFld('sysOrgan')));    //###  код органа откуда отправляются данные !!!
 
-    AddStr('bdate', DTOSDef(getFldD('BDATE'), tdClipper, '')); // 19650111
+    AddStr('bdate', DTOSDef(getFldD('DateR'), tdClipper, '')); // 19650111
     AddStr('dsdDateRec');                                      // дата записи ???
-    AddStr('docSery', getFld('docSer'));                       // серия основного документа
-    AddStr('docNum', getFld('docNum'));                       // номер основного документа
-    AddDJ('docDateIssue', getFldD('docDateIssue'));           // дата выдачи основного документа
-    AddDJ('docAppleDate', getFldD('docAppleDate'));            // дата подачи документа  ???
-    AddDJ('dateRec', getFldD('dateRec'));                      // системная дата записи  ???
+    AddStr('docSery', getFld('PASP_SERIA'));                       // серия основного документа
+    AddStr('docNum', getFld('PASP_NOMER'));                       // номер основного документа
+    AddDJ('docDateIssue', getFldD('PASP_DATE'));           // дата выдачи основного документа
+    //AddDJ('docAppleDate', getFldD('docAppleDate'));            // дата подачи документа  ???
+    //AddDJ('dateRec', getFldD('dateRec'));                      // системная дата записи  ???
     AddNum('ateAddress');                                      // ???
     AddDJ('expireDate', getFldD('expireDate'));                // дата действия  ???
     AddNum('aisPasspDocStatus');                               // ???

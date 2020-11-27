@@ -317,8 +317,8 @@ begin
 
   ShowM := edMemo;
   edOrgan.Text  := '26';
-  dtEnd.Value   := StrToDate('01.01.2003');
-  dtBegin.Value := StrToDate('01.01.2021');
+  dtBegin.Value := StrToDate('01.01.2003');
+  dtEnd.Value   := StrToDate('01.01.2021');
   edFirst.Text  := '0';
   edCount.Text  := '10';
 
@@ -634,6 +634,9 @@ begin
   edMemo.Clear;
   PPost := TParsPost.Create(exmSign, exmSert);
   PPost.Docs := BlackBox.ResGet.Docs;
+  LeaveOnly1(dsDocs.DataSet);
+  Exit;
+
   PPost.Child := BlackBox.ResGet.Child;
   BlackBox.ResPost := BlackBox.PostRegDocs(PPost);
   if (Assigned(BlackBox.ResPost)) then begin

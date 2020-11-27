@@ -1,0 +1,345 @@
+{
+	"info": {
+		"_postman_id": "2f877181-ebed-4ef2-950c-ae2063548a1a",
+		"name": "ROC",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "village-council",
+			"item": [
+				{
+					"name": "v1",
+					"item": [
+						{
+							"name": "Количество установочных данных",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://a.todes.by:13555/village-council-service/api/v1/data/count?identifier=4221074A011PB0&name&surname&patronymic",
+									"protocol": "https",
+									"host": [
+										"a",
+										"todes",
+										"by"
+									],
+									"port": "13555",
+									"path": [
+										"village-council-service",
+										"api",
+										"v1",
+										"data",
+										"count"
+									],
+									"query": [
+										{
+											"key": "identifier",
+											"value": "4221074A011PB0",
+											"description": "Личный номер (обязателен, если не заполнено ФИО)"
+										},
+										{
+											"key": "name",
+											"value": null,
+											"description": "Имя"
+										},
+										{
+											"key": "surname",
+											"value": null,
+											"description": "Фамилия"
+										},
+										{
+											"key": "patronymic",
+											"value": null,
+											"description": "Отчество"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Список перемещений граждан за период",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://a.todes.by:13555/village-council-service/api/v1/movements/sys_organ/:sys_organ/period/:since/:till?first=0&count=7",
+									"protocol": "https",
+									"host": [
+										"a",
+										"todes",
+										"by"
+									],
+									"port": "13555",
+									"path": [
+										"village-council-service",
+										"api",
+										"v1",
+										"movements",
+										"sys_organ",
+										":sys_organ",
+										"period",
+										":since",
+										":till"
+									],
+									"query": [
+										{
+											"key": "first",
+											"value": "0",
+											"description": "Номер первого элемента. По умолчанию - 0"
+										},
+										{
+											"key": "count",
+											"value": "7",
+											"description": "Количество элементов. По умолчанию - 500"
+										}
+									],
+									"variable": [
+										{
+											"key": "sys_organ",
+											"value": "18"
+										},
+										{
+											"key": "since",
+											"value": "06.10.2020"
+										},
+										{
+											"key": "till",
+											"value": "08.10.2020"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Список установочных данных",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://a.todes.by:13555/village-council-service/api/v1/data?identifier=4011063A002VF5&name=&surname&patronymic&first&count=1&Sys_Organ=18",
+									"protocol": "https",
+									"host": [
+										"a",
+										"todes",
+										"by"
+									],
+									"port": "13555",
+									"path": [
+										"village-council-service",
+										"api",
+										"v1",
+										"data"
+									],
+									"query": [
+										{
+											"key": "identifier",
+											"value": "4011063A002VF5",
+											"description": "Личный номер (обязателен, если не заполнено ФИО)"
+										},
+										{
+											"key": "name",
+											"value": "",
+											"description": "Имя"
+										},
+										{
+											"key": "surname",
+											"value": null,
+											"description": "Фамилия"
+										},
+										{
+											"key": "patronymic",
+											"value": null,
+											"description": "Отчество"
+										},
+										{
+											"key": "first",
+											"value": null,
+											"description": "Номер первого элемента. По умолчанию - 0"
+										},
+										{
+											"key": "count",
+											"value": "1",
+											"description": "Количество элементов. По умолчанию - 500"
+										},
+										{
+											"key": "Sys_Organ",
+											"value": "18"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Количество перемещений граждан за период",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://a.todes.by:13555/village-council-service/api/v1/movements/sys_organ/:sys_organ/period/:since/:till/count",
+									"protocol": "https",
+									"host": [
+										"a",
+										"todes",
+										"by"
+									],
+									"port": "13555",
+									"path": [
+										"village-council-service",
+										"api",
+										"v1",
+										"movements",
+										"sys_organ",
+										":sys_organ",
+										"period",
+										":since",
+										":till",
+										"count"
+									],
+									"variable": [
+										{
+											"key": "sys_organ",
+											"value": "11",
+											"description": "Орган установки (обязательно)"
+										},
+										{
+											"key": "since",
+											"value": "06.10.2020",
+											"description": "Дата начала периода (обязательно)"
+										},
+										{
+											"key": "till",
+											"value": "08.10.2020",
+											"description": "Дата окончания периода (обязательно)"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Сохранение установочных данных",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "sign",
+										"value": "amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h",
+										"type": "text"
+									},
+									{
+										"key": "certificate",
+										"value": "109uu21nu0t17togdy70-fuib",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"identif\": \"4090940B026PB5\",\r\n    \"view\": null,\r\n    \"sysDocType\": {\r\n        \"klUniPK\": {\r\n            \"type\": -2,\r\n            \"code\": 8\r\n        }\r\n    },\r\n    \"surname\": \"КРИ\",\r\n    \"name\": \"РАДЖЕШ\",\r\n    \"sname\": \"КОГУТАЕВ\",\r\n    \"sex\": {\r\n        \"klUniPK\": {\r\n            \"type\": 32,\r\n            \"code\": 0\r\n        }\r\n    },\r\n    \"citizenship\": {\r\n        \"klUniPK\": {\r\n            \"type\": 8,\r\n            \"code\": 11200001\r\n        }\r\n    },\r\n    \"sysOrgan\": {\r\n        \"klUniPK\": {\r\n            \"type\": -5,\r\n            \"code\": 26\r\n        }\r\n    },\r\n    \"bdate\": \"19400909\",\r\n    \"dsdDateRec\": null,\r\n    \"docSery\": \"MC\",\r\n    \"docNum\": \"0922732\",\r\n    \"docDateIssue\": 1012183200000,\r\n    \"docAppleDate\": 1544065200000,\r\n    \"dateRec\": 1544045783000,\r\n    \"countryB\": {\r\n        \"klUniPK\": {\r\n            \"type\": 8,\r\n            \"code\": 11200001\r\n        }\r\n    },\r\n    \"areaB\": \"МИНСКАЯ ОБЛАСТЬ\",\r\n    \"regionB\": \"ПУХОВИЧСКИЙ\",\r\n    \"typeCityB\": {\r\n        \"klUniPK\": {\r\n            \"type\": 35,\r\n            \"code\": 11100009\r\n        }\r\n    },\r\n    \"cityB\": \"ПРУЦК\",\r\n    \"docType\": {\r\n        \"klUniPK\": {\r\n            \"type\": 37,\r\n            \"code\": 54100015\r\n        }\r\n    },\r\n    \"docOrgan\": null,\r\n    \"contryL\": {\r\n        \"klUniPK\": {\r\n            \"type\": 8,\r\n            \"code\": 0\r\n        }\r\n    },\r\n    \"areaL\": {\r\n        \"klUniPK\": {\r\n            \"type\": 1,\r\n            \"code\": 11300006\r\n        }\r\n    },\r\n    \"regionL\": {\r\n        \"klUniPK\": {\r\n            \"type\": 29,\r\n            \"code\": 11800088\r\n        }\r\n    },\r\n    \"typeCityL\": {\r\n        \"klUniPK\": {\r\n            \"type\": 35,\r\n            \"code\": 11100009\r\n        }\r\n    },\r\n    \"cityL\": {\r\n        \"klUniPK\": {\r\n            \"type\": 7,\r\n            \"code\": 11903466\r\n        }\r\n    },\r\n    \"typeStreetL\": {\r\n        \"klUniPK\": {\r\n            \"type\": 38,\r\n            \"code\": 0\r\n        }\r\n    },\r\n    \"streetL\": {\r\n        \"klUniPK\": {\r\n            \"type\": 34,\r\n            \"code\": 0\r\n        }\r\n    },\r\n    \"house\": \"32\",\r\n    \"korps\": null,\r\n    \"app\": null,\r\n    \"organDoc\": {\r\n        \"klUniPK\": {\r\n            \"type\": 24,\r\n            \"code\": 17608347\r\n        }\r\n    },\r\n    \"workPlace\": null,\r\n    \"workPosition\": \"ПЕНСИОНЕР\",\r\n    \"docIssueOrgan\": {\r\n        \"klUniPK\": {\r\n            \"type\": 24,\r\n            \"code\": 17608931\r\n        }\r\n    },\r\n    \"surnameBel\": \"КРЫ\",\r\n    \"nameBel\": \"РАДЖЭШ\",\r\n    \"snameBel\": \"КУТРАПАНСАН\",\r\n    \"surnameEn\": \"CREE\",\r\n    \"nameEn\": \"RAJESH\",\r\n    \"areaBBel\": null,\r\n    \"regionBBel\": null,\r\n    \"cityBBel\": null,\r\n    \"villageCouncil\": {\r\n        \"klUniPK\": {\r\n            \"type\": 98,\r\n            \"code\": 0\r\n        }\r\n    },\r\n    \"intracityRegion\": {\r\n        \"klUniPK\": {\r\n            \"type\": 99,\r\n            \"code\": 0\r\n        }\r\n    },\r\n    \"ateAddress\": null,\r\n    \"expireDate\": null,\r\n    \"aisPasspDocStatus\": null,\r\n    \"form19_20\": {\r\n        \"form19_20Base\": \"form19_20\",\r\n        \"pid\": 90017000,\r\n        \"signAway\": true,\r\n        \"countryPu\": {\r\n            \"klUniPK\": {\r\n                \"type\": 8,\r\n                \"code\": 11200241\r\n            },\r\n            \"lex1\": \"АВСТРАЛИЯ\",\r\n            \"lex2\": \"АЎСТРАЛІЯ\",\r\n            \"lex3\": \"AUS\",\r\n            \"dateBegin\": 1026177363000,\r\n            \"active\": 1\r\n        },\r\n        \"areaPu\": \"АБХАЗСКАЯ АССР\",\r\n        \"regionPu\": \"МСТИСЛАВЛЬСКИЙ\",\r\n        \"cityPu\": \"\\\"ВАСИЛЁК\\\"\",\r\n        \"datePu\": null,\r\n        \"marks\": {\r\n            \"klUniPK\": {\r\n                \"type\": 2,\r\n                \"code\": 0\r\n            },\r\n            \"lex1\": null,\r\n            \"lex2\": null,\r\n            \"lex3\": null,\r\n            \"dateBegin\": 1240672053000,\r\n            \"active\": 1\r\n        },\r\n        \"notes\": null,\r\n        \"reason\": {\r\n            \"klUniPK\": {\r\n                \"type\": 3,\r\n                \"code\": 2\r\n            },\r\n            \"lex1\": \"ВРЕМЕННАЯ РЕГИСТРАЦИЯ\",\r\n            \"lex2\": null,\r\n            \"lex3\": null,\r\n            \"dateBegin\": 1240674556000,\r\n            \"active\": 1\r\n        },\r\n        \"term\": null,\r\n        \"dateRec\": 1543978800000,\r\n        \"typeCityPu\": {\r\n            \"klUniPK\": {\r\n                \"type\": 35,\r\n                \"code\": 11100068\r\n            }\r\n        },\r\n        \"typeStreetPu\": {\r\n            \"klUniPK\": {\r\n                \"type\": 38,\r\n                \"code\": 0\r\n            }\r\n        },\r\n        \"streetPu\": null,\r\n        \"housePu\": null,\r\n        \"korpsPu\": null,\r\n        \"appPu\": null,\r\n        \"dateReg\": null,\r\n        \"termReg\": {\r\n            \"klUniPK\": {\r\n                \"type\": 27,\r\n                \"code\": 4\r\n            }\r\n        },\r\n        \"dateRegTill\": null,\r\n        \"causeIssue\": {\r\n            \"klUniPK\": {\r\n                \"type\": 39,\r\n                \"code\": 59200021\r\n            }\r\n        },\r\n        \"deathDate\": null,\r\n        \"signNoTake\": false,\r\n        \"signNoReg\": false,\r\n        \"signDestroy\": false,\r\n        \"noAddrPu\": {\r\n            \"klUniPK\": {\r\n                \"type\": 70,\r\n                \"code\": 12\r\n            }\r\n        },\r\n        \"regType\": {\r\n            \"klUniPK\": {\r\n                \"type\": 500,\r\n                \"code\": 2\r\n            }\r\n        },\r\n        \"maritalStatus\": {\r\n            \"klUniPK\": {\r\n                \"type\": 501,\r\n                \"code\": 3\r\n            }\r\n        },\r\n        \"education\": {\r\n            \"klUniPK\": {\r\n                \"type\": 502,\r\n                \"code\": 0\r\n            }\r\n        },\r\n        \"student\": false,\r\n        \"infants\": []\r\n    },\r\n    \"dsdAddressLive\": {\r\n        \"dsdAddressLiveBase\": \"dsdAddressLive\",\r\n        \"pid\": 18000000000000017489,\r\n        \"areaL\": \"МИНСК\",\r\n        \"areaObjNum\": 17030,\r\n        \"regionL\": \"\",\r\n        \"regionObjNum\": 0,\r\n        \"villageCouncil\": \"\",\r\n        \"vilCouncilObjNum\": 0,\r\n        \"typeCityL\": \"г.\",\r\n        \"cityL\": \"МИНСК\",\r\n        \"typeStreetL\": \"ул\",\r\n        \"streetL\": \"ПЛЕХАНОВА\",\r\n        \"house\": \"52\",\r\n        \"korps\": \"1\",\r\n        \"app\": \"325\",\r\n        \"ateObjectNum\": 17030,\r\n        \"ateElementUid\": 17926,\r\n        \"ateAddrNum\": 0\r\n    },\r\n    \"getPassportDate\": null,\r\n    \"images\": [],\r\n    \"addressLast\": null,\r\n    \"dossieStatus\": null,\r\n    \"status\": null\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://a.todes.by:13555/village-council-service/api/v1/data/save",
+									"protocol": "https",
+									"host": [
+										"a",
+										"todes",
+										"by"
+									],
+									"port": "13555",
+									"path": [
+										"village-council-service",
+										"api",
+										"v1",
+										"data",
+										"save"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Проверка статуса сервиса",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://a.todes.by:13555/village-council-service/service/status",
+							"protocol": "https",
+							"host": [
+								"a",
+								"todes",
+								"by"
+							],
+							"port": "13555",
+							"path": [
+								"village-council-service",
+								"service",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Информация о сервисе",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://a.todes.by:13555/village-council-service/service/info",
+							"protocol": "https",
+							"host": [
+								"a",
+								"todes",
+								"by"
+							],
+							"port": "13555",
+							"path": [
+								"village-council-service",
+								"service",
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OpenAPI",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://a.todes.by:13555/village-council-service/api-docs",
+							"protocol": "https",
+							"host": [
+								"a",
+								"todes",
+								"by"
+							],
+							"port": "13555",
+							"path": [
+								"village-council-service",
+								"api-docs"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"protocolProfileBehavior": {}
+}
