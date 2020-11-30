@@ -302,10 +302,10 @@ var
   x : Variant;
 begin
 
-  x := DS.FieldValues['ID'];
+  x := DS.FieldValues['MID'];
   ds.First;
   while (ds.RecordCount > 1)AND(not ds.Eof) do begin
-    if (ds.FieldValues['ID'] = x) then
+    if (ds.FieldValues['MID'] = x) then
       ds.Next
     else
       ds.Delete;

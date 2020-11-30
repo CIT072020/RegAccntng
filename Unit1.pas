@@ -635,7 +635,6 @@ begin
   PPost := TParsPost.Create(exmSign, exmSert);
   PPost.Docs := BlackBox.ResGet.Docs;
   LeaveOnly1(dsDocs.DataSet);
-  Exit;
 
   PPost.Child := BlackBox.ResGet.Child;
   BlackBox.ResPost := BlackBox.PostRegDocs(PPost);

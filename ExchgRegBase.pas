@@ -26,6 +26,7 @@ type
     function StoreINsInRes(Pars : TParsGet) : integer;
     function GetINsFromSrv(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
     procedure Docs4CurIN(IndNum : string; IndNs: TStringList);
+    function Post1Doc(ParsPost: TParsPost; StreamDoc : TStringStream) : TResultPost;
   protected
   public
     property ResGet : TResultGet read FResGet write FResGet;
@@ -249,27 +250,19 @@ begin
   end;
 end;
 
-// Передать документы регистрации
-function TExchgRegCitizens.PostRegDocs(ParsPost: TParsPost): TResultPost;
+// Передача одного документа
+function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc : TStringStream) : TResultPost;
 var
   Ret, NeedUp: Boolean;
   sErr: string;
   Header: TStringList;
-  StreamDoc: TStringStream;
 begin
   NeedUp := False;
   Result := TResultPost.Create;
 
-  FHTTP := THTTPSend.Create;
-  try
     try
       FHTTP.Headers.Clear;
 
-      ParsPost.FullURL := FullPath(FHost, POST_DOC, '');
-      StreamDoc := TStringStream.Create('');
-
-      ParsPost.Docs.First;
-      while not ParsPost.Docs.Eof do begin
         StreamDoc.Seek(0, soBeginning);
 
         if (TDocSetDTO.MemDoc2JSON(ParsPost.Docs, ParsPost.Child, StreamDoc, NeedUp) = True) then begin
@@ -295,6 +288,32 @@ begin
 
         end;
 
+
+    except
+
+    end;
+end;
+
+// Передать документы регистрации
+function TExchgRegCitizens.PostRegDocs(ParsPost: TParsPost): TResultPost;
+var
+  Ret, NeedUp: Boolean;
+  sErr: string;
+  Header: TStringList;
+  StreamDoc: TStringStream;
+begin
+  NeedUp := False;
+  Result := TResultPost.Create;
+
+  FHTTP := THTTPSend.Create;
+  try
+    try
+      ParsPost.FullURL := FullPath(FHost, POST_DOC, '');
+      StreamDoc := TStringStream.Create('');
+
+      ParsPost.Docs.First;
+      while not ParsPost.Docs.Eof do begin
+        Result := Post1Doc(ParsPost, StreamDoc);
         ParsPost.Docs.Next;
       end;
 

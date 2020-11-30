@@ -150,6 +150,9 @@ begin
         Docs.FieldByName('PASP_NOMER').AsString := SO.S[CT('docNum')];
         Docs.FieldByName('PASP_DATE').AsDateTime := JavaToDelphiDateTime(SO.I[CT('docDateIssue')]);
 
+        Docs.FieldByName('GOSUD_R').AsInteger := SO.O[CT('countryB')].O[CT('klUniPK')].I[CT('code')];
+        Docs.FieldByName('GOSUD_R_NAME').AsString := SO.O[CT('countryB')].S[CT('lex1')];
+
         try
           SOChild := SO.O[CT('form19_20')].O[CT('infants')];
           NCh := SOChild.AsArray.Length;
@@ -198,10 +201,13 @@ end;
 
 
 //-------------------------------------------------------
-function VarKey(nType : Integer; nValue : Int64) : String;
+function VarKey(nType : Integer; nValue : Int64; Emp : Boolean = False) : String;
 begin
   //Result := Format('{"klUniPK":{"type":%d,"code":%d},"lex1":null,"lex2":null,"lex3":null,"dateBegin":null,"active":true}', [nType, nValue]);
-  Result := Format('{"klUniPK":{"type":%d,"code":%d}}', [nType, nValue]);
+  if (NOT Emp) then
+    Result := Format('{"klUniPK":{"type":%d,"code":%d}}', [nType, nValue])
+  else
+    Result := Format('{"klUniPK":{"type":%d,"code":0}}', [nType]);
 end;
 
 // SYS-Тип документа
@@ -260,7 +266,11 @@ function VarKeyArea(sType : string) : String;
 var
   n : Int64;
 begin
+  try
   n := StrToInt64(sType);
+  except
+    n := 0;
+  end;
   Result := VarKey(1, n);
 end;
 
@@ -329,16 +339,13 @@ begin
 end;
 
 
-// Форма 19-20
-function PrepForm1920(sType : string) : String;
-begin
-  Result := 'null';
-end;
 
 // Тело документа для POST
 class function TDocSetDTO.MemDoc2JSON(dsDoc: TDataSet; dsChild: TDataSet; StreamDoc: TStringStream; NeedUp : Boolean): Boolean;
 var
-  sUTF, s, sURL, sPar, sss, sF, sFld, sPath, sPostDoc, sResponse, sError, sStatus, sId: String;
+  s, sURL, sPar, sss, sF, sFld, sPath, sPostDoc, sResponse, sError, sStatus, sId: String;
+  sUTF : UTF8String;
+  ws : WideString;
   new_obj, obj: ISuperObject;
   nSpr, n, i, j: Integer;
   lOk: Boolean;
@@ -356,10 +363,15 @@ var
 
   function getFldI(sField: String): String;
   begin
+    try
     Result := IntToStr(dsDoc.FieldByName(sField).AsInteger);
+    except
+      Result := 'null';
+    end;
   end;
 
   // Вставить число
+  // Вставить логическое
   procedure AddNum(const ss1: string; ss2: String = '');
   begin
     if (ss2 = '') then
@@ -386,6 +398,25 @@ var
       sss := IntToStr(Delphi2JavaDate(dValue));
     StreamDoc.WriteString('"' + ss1 + '": ' + sss + ',');
   end;
+// Форма 19-20
+procedure Form19_20Write;
+begin
+  try
+    StreamDoc.WriteString('"form19_20":{');
+    AddStr('form19_20Base', 'form19_20');
+    AddNum('signAway', 'false');
+    AddDJ('dateReg', getFldD('DATEZ'));
+    AddNum('countryPu', VarKeyCountry(getFldI('GOSUD_O')));
+    AddNum('areaPu', VarKeyArea(getFld('OBL_O')));
+    //AddNum('regionPu', VarKeyRegion(getFldI('RAION_O')));
+
+  // Последней была запятая, вернемся для записи конца объекта
+    StreamDoc.Seek(-1, soCurrent);
+    StreamDoc.WriteString('},');
+
+  except
+  end;
+end;
 
 begin
   Result := False;
@@ -415,8 +446,12 @@ begin
     AddDJ('expireDate', getFldD('expireDate'));                // дата действия  ???
     AddNum('aisPasspDocStatus');                               // ???
     AddNum('identifCheckResult');                               // ???
+
+    Form19_20Write;
+
+    if (False) then begin
   // место рождения
-    AddNum('countryB', VarKeyCountry(getFldI('countryB')));
+    AddNum('countryB', VarKeyCountry(getFldI('GOSUD_R')));
     AddStr('areaB', getFld('areaB'));
     AddNum('typeCityB', VarKeyCity(getFldI('typeCityB')));
     AddNum('docType', VarKeyDocType(getFld('docType')));  // тип основного документа
@@ -453,14 +488,17 @@ begin
     AddStr('villageCouncil', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
     AddStr('intracityRegion', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
 
+
     AddStr('dsdAddressLive', getFldI('organDoc'));    //###  код органа
     AddStr('images', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
     AddStr('status', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
     AddStr('intracityRegion', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
+    end;
   // Последней была запятая, вернемся для записи конца объекта
     StreamDoc.Seek(-1, soCurrent);
     StreamDoc.WriteString('}');
     sUTF := AnsiToUtf8(StreamDoc.DataString);
+    //ws := UTF8Encode();
     StreamDoc.Seek(0, soBeginning);
     StreamDoc.WriteString(sUTF);
     Result := True;
