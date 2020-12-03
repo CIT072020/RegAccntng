@@ -250,8 +250,8 @@ function SetPars4GetDocs(Pars : TStringList) : string;
 var
   s : string;
 begin
-  s := Format('?identifier=%s&name=%s&surname=%s&patronymic=%s&first=%s&count=%s',
-    [ Pars[0], Pars[1], Pars[2], Pars[3], Pars[4], Pars[5] ]);
+  s := Format('?identifier=%s&name=%s&surname=%s&patronymic=%s&pid=%s',
+    [ Pars[0], Pars[1], Pars[2], Pars[3], Pars[4] ]);
   Result := s;
 end;
 

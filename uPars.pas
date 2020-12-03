@@ -42,6 +42,7 @@ type
     DateEnd : TDateTime;
     First   : Integer;
     Count   : Integer;
+    PID     : string;
 
     TypeDoc : string;
     FullURL : string;

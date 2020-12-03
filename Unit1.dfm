@@ -31,6 +31,7 @@ object Form1: TForm1
     Height = 225
     Lines.Strings = (
       'edMemo')
+    ScrollBars = ssVertical
     TabOrder = 1
   end
   object edFile: TDBEditEh

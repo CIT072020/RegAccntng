@@ -25,7 +25,7 @@ type
     function ReadIni : Boolean;
     function StoreINsInRes(Pars : TParsGet) : integer;
     function GetINsFromSrv(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
-    procedure Docs4CurIN(IndNum : string; IndNs: TStringList);
+    procedure Docs4CurIN(IndNum, PID : string; IndNs: TStringList);
     function Post1Doc(ParsPost: TParsPost; StreamDoc : TStringStream) : TResultPost;
   protected
   public
@@ -35,6 +35,10 @@ type
     (* Получить список документов [убытия]
     *)
     function GetRegDocs(ParsGet : TParsGet) : TResultGet;
+    (* Получить документ актуальной регистрации
+    *)
+    function GetActualReg(ParsGet : TParsGet) : TResultGet;
+
     (* Записать сведения о регистрации
     *)
     function PostRegDocs(ParsPost: TParsPost) : TResultPost;
@@ -191,7 +195,7 @@ end;
 
 
 // Получить документы для текущего в списке ID
-procedure TExchgRegCitizens.Docs4CurIN(IndNum : string; IndNs: TStringList);
+procedure TExchgRegCitizens.Docs4CurIN(IndNum, PID : string; IndNs: TStringList);
 var
   i: Integer;
   SOList: ISuperObject;
@@ -203,7 +207,7 @@ begin
       IndNs.Add('');
       IndNs.Add('');
       IndNs.Add('');
-      IndNs.Add('');
+      IndNs.Add(PID);
       IndNs.Add('');
 
       SOList := GetListDoc(FHost, IndNs);
@@ -241,7 +245,7 @@ begin
     IndNs := TStringList.Create;
     FResGet.INs.First;
     while not FResGet.INs.Eof do begin
-      Docs4CurIN(FResGet.INs.FieldValues['IDENTIF'], IndNs);
+      Docs4CurIN(FResGet.INs.FieldValues['IDENTIF'], FResGet.INs.FieldValues['PID'], IndNs);
       FResGet.INs.Next;
     end;
     IndNs.Free;
@@ -249,6 +253,57 @@ begin
     Result := FResGet;
   end;
 end;
+
+
+
+
+
+
+
+
+
+
+// Получить актуальный документ регистрации для ИН
+function TExchgRegCitizens.GetActualReg(ParsGet: TParsGet): TResultGet;
+var
+  Ret: Boolean;
+  nINs: Integer;
+  sDoc, sErr, sPars: string;
+  IndNs: TStringList;
+  Docs: ISuperObject;
+begin
+  Result := nil;
+  FResGet := TResultGet.Create(FPars);
+
+  // Fill MemTable with IDs
+  if (Assigned(ParsGet.FIOrINs) and (ParsGet.ListType = TLIST_INS)) then
+    nINs := StoreINsInRes(ParsGet)
+  else
+    nINs := GetINsFromSrv(ParsGet, FResGet.INs);
+  if (nINs > 0) then begin
+    IndNs := TStringList.Create;
+    FResGet.INs.First;
+    while not FResGet.INs.Eof do begin
+      Docs4CurIN(FResGet.INs.FieldValues['IDENTIF'], '', IndNs);
+      FResGet.INs.Next;
+    end;
+    IndNs.Free;
+    FResGet.ResCode := 0;
+    Result := FResGet;
+  end;
+end;
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Передача одного документа
 function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc : TStringStream) : TResultPost;

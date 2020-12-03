@@ -20,7 +20,7 @@ function GetListID(Pars: TStringList; StrPars : string = ''): ISuperObject;
 
 function GetListDOC(Pars: TStringList): ISuperObject;
 function FillIDList(SOArr: ISuperObject; IDs: TkbmMemTable): Integer;
-function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
+function FillDocList(SOArr: ISuperObject; Docs, Chs: TkbmMemTable): Integer;
 
 
 implementation
@@ -242,7 +242,7 @@ begin
 
 end;
 
-function FillDocList(SOArr: ISuperObject; IDs, Chs: TkbmMemTable): Integer;
+function FillDocList(SOArr: ISuperObject; Docs, Chs: TkbmMemTable): Integer;
 
   function CT(s: string): string;
   begin
@@ -275,25 +275,25 @@ var
   SOf20, SOChild, SO: ISuperObject;
 begin
   try
-    IDs.EmptyTable;
+    Docs.EmptyTable;
     i := 0;
     while (i <= SOArr.AsArray.Length - 1) do begin
       SO := SOArr.AsArray.O[i];
       SOf20 := SO.O[CT('form19_20')];
       if ( Assigned(SOf20) and (Not SOf20.IsType(stNull) or True) ) then begin
-        IDs.Append;
-        IDs.FieldByName('PID').AsString := SO.S[CT('pid')];
+        Docs.Append;
+        Docs.FieldByName('PID').AsString := SO.S[CT('pid')];
         IsF20 := SOf20.B[CT('signAway')];
         if (IsF20 = True) then
-          IDs.FieldByName('signAway').AsInteger := 1
+          Docs.FieldByName('signAway').AsInteger := 1
         else
-          IDs.FieldByName('signAway').AsInteger := 0;
+          Docs.FieldByName('signAway').AsInteger := 0;
 
-        IDs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
-        IDs.FieldByName('sysDocType').AsString := SO.O[CT('sysDocType')].O[CT('klUniPK')].s[CT('type')];
-        IDs.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].S[CT('lex1')];
-        IDs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
-        IDs.FieldByName('NAME').AsString := SO.S[CT('name')];
+        Docs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
+        Docs.FieldByName('sysDocType').AsString := SO.O[CT('sysDocType')].O[CT('klUniPK')].s[CT('type')];
+        Docs.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].S[CT('lex1')];
+        Docs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
+        Docs.FieldByName('NAME').AsString := SO.S[CT('name')];
 
         try
           SOChild := SO.O[CT('form19_20')].O[CT('infants')];
@@ -305,9 +305,9 @@ begin
         if (Assigned(SOChild)) and (NCh > 0) then begin
           FillChild(SOChild, Chs, i);
         end;
-        IDs.FieldByName('NCHILD').AsInteger := NCh;
+        Docs.FieldByName('DETI').AsInteger := NCh;
 
-        IDs.Post;
+        Docs.Post;
       end;
       i := i + 1;
     end;

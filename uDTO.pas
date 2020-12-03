@@ -45,6 +45,7 @@ class function TIndNomDTO.GetIndNumList(SOArr: ISuperObject; IndNum : TkbmMemTab
   end;
 
 var
+  s : string;
   i : Integer;
   SO: ISuperObject;
 begin
@@ -62,6 +63,7 @@ begin
       IndNum.FieldByName('ORG_FROM_CODE').AsString  := SO.O[CT('SYS_ORGAN_FROM')].S[CT('CODE')];
       IndNum.FieldByName('ORG_FROM_NAME').AsString  := SO.O[CT('SYS_ORGAN_FROM')].S[CT('LEX')];
       IndNum.FieldByName('DATEREC').AsDateTime      := sdDateTimeFromString(SO.S[CT('REG_DATE')], false);
+      IndNum.FieldByName('PID').AsString            := SO.S[CT('pid')];
       IndNum.Post;
       i := i + 1;
     end;
@@ -108,7 +110,8 @@ var
   i, NCh: Integer;
   d : TDateTime;
   v     : Variant;
-  SOf20, SOChild, SO: ISuperObject;
+  SOf20, SODsdAddr,
+  SOChild, SO: ISuperObject;
 begin
   Result := 0;
   try
@@ -116,6 +119,7 @@ begin
     while (i <= SOArr.AsArray.Length - 1) do begin
       SO := SOArr.AsArray.O[i];
       SOf20 := SO.O[CT('form19_20')];
+      SODsdAddr := SO.O[CT('dsdAddressLive')];
       // !!! True temporary !!!
       if ( Assigned(SOf20) and (Not SOf20.IsType(stNull) or True) ) then begin
         Docs.Append;
@@ -142,8 +146,7 @@ begin
         Docs.FieldByName('sysOrgan').AsInteger := SO.O[CT('sysOrgan')].O[CT('klUniPK')].I[CT('code')];
         Docs.FieldByName('ORGAN').AsString := SO.O[CT('sysOrgan')].S[CT('lex1')];
 
-        s := SO.S[CT('bdate')];
-        d := STOD(s);
+        d := STOD(SO.S[CT('bdate')]);
         Docs.FieldByName('DateR').AsDateTime := d;
 
         Docs.FieldByName('PASP_SERIA').AsString := SO.S[CT('docSery')];
@@ -163,7 +166,21 @@ begin
         if (Assigned(SOChild)) and (NCh > 0) then begin
           FillChild(SOChild, Chs, i);
         end;
-        Docs.FieldByName('NCHILD').AsInteger := NCh;
+        Docs.FieldByName('DETI').AsInteger := NCh;
+
+        if ( Assigned(SODsdAddr) and (Not SODsdAddr.IsType(stNull)) ) then begin
+          Docs.FieldByName('vilCouncilObjNum').AsInteger := SODsdAddr.I[CT('vilCouncilObjNum')];
+          Docs.FieldByName('villageCouncil').AsString := SODsdAddr.S[CT('villageCouncil')];
+
+          Docs.FieldByName('ateObjectNum').AsInteger := SODsdAddr.I[CT('ateObjectNum')];
+          Docs.FieldByName('ateElementUid').AsInteger := SODsdAddr.I[CT('ateElementUid')];
+          Docs.FieldByName('ateAddrNum').AsInteger := SODsdAddr.I[CT('ateAddrNum')];
+          Docs.FieldByName('house').AsString := SODsdAddr.S[CT('house')];
+          Docs.FieldByName('korps').AsString := SODsdAddr.S[CT('korps')];
+          Docs.FieldByName('app').AsString := SODsdAddr.S[CT('app')];
+
+        end;
+
 
         Docs.Post;
       end;
@@ -398,6 +415,90 @@ var
       sss := IntToStr(Delphi2JavaDate(dValue));
     StreamDoc.WriteString('"' + ss1 + '": ' + sss + ',');
   end;
+
+
+
+  // Место рождения
+procedure SchPlaceOfBorn;
+begin
+  try
+    AddNum('countryB', VarKeyCountry(getFldI('GOSUD_R')));
+    AddStr('areaB', getFld('areaB'));
+    AddNum('typeCityB', VarKeyCity(getFldI('typeCityB')));
+  except
+  end;
+end;
+
+  // Место проживания
+procedure SchPlaceOfLiv;
+begin
+  try
+    AddNum('contryL', VarKeyCountry(getFldI('countryL')));
+    AddNum('areaL', VarKeyArea(getFldI('areaL')));
+    AddNum('regionL', VarKeyRegion(getFldI('regionL')));
+    AddNum('typeCityL', VarKeyTypeCity(getFldI('typeCityL')));
+    AddNum('cityL', VarKeyCity(getFldI('cityL')));
+    AddNum('typeStreetL', VarKeyTypeStreet(getFldI('typeStreetL')));
+    AddNum('streetL', VarKeyStreet(getFldI('streetL')));
+
+    AddStr('house', getFld('house'));
+    AddStr('korps', getFld('korps'));
+    AddStr('app', getFld('app'));
+
+    AddStr('areaBBel', getFld('areaB'));
+    AddNum('regionBBelL', getFldI('regionL'));
+    AddNum('cityBBel', getFldI('cityL'));
+
+  except
+  end;
+end;
+
+  // Схема Паспорт
+procedure SchPasport;
+begin
+  try
+    AddStr('docSery', getFld('PASP_SERIA'));                       // серия основного документа
+    AddStr('docNum', getFld('PASP_NOMER'));                       // номер основного документа
+    AddDJ('docDateIssue', getFldD('PASP_DATE'));           // дата выдачи основного документа
+    //AddDJ('docAppleDate', getFldD('docAppleDate'));            // дата подачи документа  ???
+    AddDJ('expireDate', getFldD('expireDate'));                // дата действия  ???
+    //AddNum('aisPasspDocStatus');                               // ???
+    AddNum('docType', VarKeyDocType(getFld('docType')));  // тип основного документа
+    AddStr('docOrgan');                                       // орган выдачи основного документа
+    //AddStr('docIssueOrgan', VarKeyOrgan(getFldI('docIssueOrgan')));    //###  код органа
+
+    //AddStr('surnameBel', getFld('FAMILIA'));
+    //AddStr('nameBel', getFld('NAME'));
+    //AddStr('snameBel', getFld('OTCH'));
+
+    //AddStr('surnameEn', getFld('FAMILIA'));
+    //AddStr('nameEn', getFld('NAME'));
+  except
+  end;
+end;
+
+// Структура dsdAddressLive
+procedure DsdAddress;
+begin
+  try
+    StreamDoc.WriteString('"dsdAddressLive":{');
+    AddStr('dsdAddressLiveBase', 'dsdAddressLive');
+    AddNum('ateObjectNum', getFldI('ateObjectNum'));
+    AddNum('ateElementUid', getFldI('ateElementUid'));
+    AddNum('ateAddrNum', getFldI('ateAddrNum'));
+    AddStr('house', getFld('house'));
+    AddStr('korps', getFld('korps'));
+    AddStr('app', getFld('app'));
+
+  // Последней была запятая, вернемся для записи конца объекта
+    StreamDoc.Seek(-1, soCurrent);
+    StreamDoc.WriteString('},');
+
+  except
+  end;
+end;
+
+
 // Форма 19-20
 procedure Form19_20Write;
 begin
@@ -434,66 +535,42 @@ begin
     AddNum('sex', VarKeyPol(getFld('POL')));
     AddNum('citizenship', VarKeyCountry(getFld('CITIZEN')));
     AddNum('sysOrgan', VarKeySysOrgan(getFld('sysOrgan')));    //###  код органа откуда отправляются данные !!!
-
     AddStr('bdate', DTOSDef(getFldD('DateR'), tdClipper, '')); // 19650111
     AddStr('dsdDateRec');                                      // дата записи ???
-    AddStr('docSery', getFld('PASP_SERIA'));                       // серия основного документа
-    AddStr('docNum', getFld('PASP_NOMER'));                       // номер основного документа
-    AddDJ('docDateIssue', getFldD('PASP_DATE'));           // дата выдачи основного документа
-    //AddDJ('docAppleDate', getFldD('docAppleDate'));            // дата подачи документа  ???
-    //AddDJ('dateRec', getFldD('dateRec'));                      // системная дата записи  ???
-    AddNum('ateAddress');                                      // ???
-    AddDJ('expireDate', getFldD('expireDate'));                // дата действия  ???
-    AddNum('aisPasspDocStatus');                               // ???
-    AddNum('identifCheckResult');                               // ???
 
-    Form19_20Write;
+    // Схема Паспорт
+    SchPasport;
+
+    //AddStr('regNum');                                      // дата записи ???
+    //AddDJ('dateRec', getFldD('dateRec'));                      // системная дата записи  ???
+    //AddNum('ateAddress');                                      // ???
+    //AddNum('identifCheckResult');                               // ???
+
+    // Место рождения
+    SchPlaceOfBorn;
+
+    // Место проживания
+    SchPlaceOfLiv;
+
 
     if (False) then begin
-  // место рождения
-    AddNum('countryB', VarKeyCountry(getFldI('GOSUD_R')));
-    AddStr('areaB', getFld('areaB'));
-    AddNum('typeCityB', VarKeyCity(getFldI('typeCityB')));
-    AddNum('docType', VarKeyDocType(getFld('docType')));  // тип основного документа
-    AddStr('docOrgan');                                       // орган выдачи основного документа
-
-    AddNum('contryL', VarKeyCountry(getFldI('countryL')));
-    AddNum('areaL', VarKeyArea(getFldI('areaL')));
-    AddNum('regionL', VarKeyRegion(getFldI('regionL')));
-    AddNum('typeCityL', VarKeyTypeCity(getFldI('typeCityL')));
-    AddNum('cityL', VarKeyCity(getFldI('cityL')));
-    AddNum('typeStreetL', VarKeyTypeStreet(getFldI('typeStreetL')));
-    AddNum('streetL', VarKeyStreet(getFldI('streetL')));
-
-    AddStr('house', getFld('house'));
-    AddStr('korps', getFld('korps'));
-    AddStr('app', getFld('app'));
-
     AddStr('organDoc', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
     AddStr('workplace', getFld('workplace'));
     AddStr('workposition', getFld('workposition'));
-
-    AddStr('docIssueOrgan', VarKeyOrgan(getFldI('docIssueOrgan')));    //###  код органа
-    AddStr('surnameBel', getFld('FAMILIA'));
-    AddStr('nameBel', getFld('NAME'));
-    AddStr('snameBel', getFld('OTCH'));
-
-    AddStr('surnameEn', getFld('FAMILIA'));
-    AddStr('nameEn', getFld('NAME'));
-
-    AddStr('areaBBel', getFld('areaB'));
-    AddNum('regionBBelL', getFldI('regionL'));
-    AddNum('cityBBel', getFldI('cityL'));
-
     AddStr('villageCouncil', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
     AddStr('intracityRegion', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
 
+    // Форма 19-20
+    Form19_20Write;
+    // Адрес регистрации
+    DsdAddress;
 
-    AddStr('dsdAddressLive', getFldI('organDoc'));    //###  код органа
     AddStr('images', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
     AddStr('status', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
     AddStr('intracityRegion', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
     end;
+
+
   // Последней была запятая, вернемся для записи конца объекта
     StreamDoc.Seek(-1, soCurrent);
     StreamDoc.WriteString('}');
