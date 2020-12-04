@@ -24,22 +24,25 @@ const
 
   RES_HOST     = 'https://a.todes.by:13555';
   RES_GENPOINT = '/village-council-service/api';
-  RES_NSI      = '/kluni-service';
+  RES_NSI      = '/kluni-service/api';
   RES_VER      = '/v1';
 
   RESOURCE_LISTID_PATH = '/movements';
   RESOURCE_LISTDOC_PATH  = '/data';
   RESOURCE_POSTDOC_PATH = '/data/save';
+  RESOURCE_NSICNTT_PATH = '/kl_uni/with_links/type';
 
   // Секции INI-файла для описания таблиц
   SCT_TBL_INS = 'TABLE_INDNUM';
-  SCT_TBL_DOC = 'TABLE_DOCSET';
+  SCT_TBL_DOC = 'TABLE_DOCSETDATA';
   SCT_TBL_CLD = 'TABLE_CHILD';
+  SCT_TBL_NSI = 'TABLE_NSI';
 
   // Имена таблиц
   MT_INS   = 'INS';
   MT_DOCS  = 'DOCS';
   MT_CHILD = 'CHILD';
+  MT_NSI   = 'NSI';
 
   // Режим вывода очередной отладочной записи
   DEB_CLEAR    = 1;

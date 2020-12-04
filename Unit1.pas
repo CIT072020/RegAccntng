@@ -52,6 +52,11 @@ type
     edFirst: TDBEditEh;
     edCount: TDBEditEh;
     btnPostDoc: TButton;
+    btnGetActual: TButton;
+    lstINs: TListBox;
+    edtIN: TDBEditEh;
+    btnGetNSI: TButton;
+    procedure btnGetActualClick(Sender: TObject);
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -601,28 +606,44 @@ begin
   end;
 end;
 
+// Уехавшие из Sys_Organ
 procedure TForm1.btnGetDocsClick(Sender: TObject);
 var
-  D1,
-  D2 : TDateTime;
-  P : TParsGet;
+  D1, D2: TDateTime;
+  P: TParsGet;
 begin
   edMemo.Clear;
   D1 := dtBegin.Value;
   D2 := dtEnd.Value;
-  P := TParsGet.Create(D1, D2, edOrgan.Text);
-  P.First := edFirst.Value;
-  P.Count := edCount.Value;
-  BlackBox.ResGet := BlackBox.GetRegDocs(P);
+  if (Integer(edFirst.Value) = 0) AND (Integer(edCount.Value) = 0) then
+    BlackBox.ResGet := BlackBox.GetDeparted(D1, D2, edOrgan.Text)
+  else begin
+
+    P := TParsGet.Create(D1, D2, edOrgan.Text);
+    P.First := edFirst.Value;
+    P.Count := edCount.Value;
+    BlackBox.ResGet := BlackBox.GetDeparted(P);
+  end;
   GETRes := BlackBox.ResGet;
+
   if (Assigned(BlackBox.ResGet)) then begin
     DataSource1.DataSet := BlackBox.ResGet.INs;
-    dsDocs.DataSet      := BlackBox.ResGet.Docs;
-    dsChild.DataSet     := BlackBox.ResGet.Child;
+    dsDocs.DataSet := BlackBox.ResGet.Docs;
+    dsChild.DataSet := BlackBox.ResGet.Child;
+    BlackBox.ResGet.INs.First;
+    while (NOT BlackBox.ResGet.INs.Eof) do begin
+      if (BlackBox.ResGet.INs.Bof) then
+        lstINs.Clear;
+      lstINs.Items.Add(BlackBox.ResGet.INs.FieldValues['IDENTIF']);
+      BlackBox.ResGet.INs.Next;
+    end;
+
   end;
 
 end;
 
+
+// Записать Актуальные установочные данные для ИН
 procedure TForm1.btnPostDocClick(Sender: TObject);
 const
   exmSign = 'amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h';
@@ -642,6 +663,37 @@ begin
   end;
 
 end;
+
+// Актуальные установочные данные для ИН
+procedure TForm1.btnGetActualClick(Sender: TObject);
+var
+  i: Integer;
+  IndNums: TStringList;
+  P: TParsGet;
+begin
+  if (lstINs.SelCount > 0) then begin
+    if (lstINs.SelCount = 1) then
+      // Выбран единственный - передается строка
+      BlackBox.ResGet := BlackBox.GetActualReg(lstINs.Items[lstINs.ItemIndex])
+    else begin
+      // Выбрано несколько - передается список
+      IndNums := TStringList.Create;
+      for i := 1 to lstINs.SelCount do begin
+        if (lstINs.Selected[i]) then
+          IndNums.Add(lstINs.Items[i]);
+      end;
+      BlackBox.ResGet := BlackBox.GetActualReg(IndNums);
+    end;
+  end
+  else
+    BlackBox.ResGet := BlackBox.GetActualReg(edtIN.Text);
+  if (Assigned(BlackBox.ResGet)) then begin
+    dsDocs.DataSet := BlackBox.ResGet.Docs;
+    dsChild.DataSet := BlackBox.ResGet.Child;
+  end;
+
+end;
+
 
 //
 end.

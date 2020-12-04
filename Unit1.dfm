@@ -1,7 +1,7 @@
 object Form1: TForm1
   Left = 426
   Top = 101
-  Width = 1241
+  Width = 1409
   Height = 841
   Caption = 'Form1'
   Color = clBtnFace
@@ -276,11 +276,11 @@ object Form1: TForm1
     OnClick = btnGetWithParsClick
   end
   object btnGetDocs: TButton
-    Left = 1088
-    Top = 184
-    Width = 121
+    Left = 953
+    Top = 153
+    Width = 119
     Height = 25
-    Caption = 'GET-DOCS-BB'
+    Caption = 'GET- '#1091#1073#1099#1074#1096#1080#1077' - BB'
     TabOrder = 23
     OnClick = btnGetDocsClick
   end
@@ -335,13 +335,50 @@ object Form1: TForm1
     Visible = True
   end
   object btnPostDoc: TButton
-    Left = 1088
-    Top = 223
-    Width = 121
+    Left = 953
+    Top = 193
+    Width = 119
     Height = 25
     Caption = 'POST-DOC-BB'
     TabOrder = 29
     OnClick = btnPostDocClick
+  end
+  object btnGetActual: TButton
+    Left = 1086
+    Top = 153
+    Width = 119
+    Height = 25
+    Caption = 'GET- '#1072#1082#1090#1091#1072#1083#1100#1085#1099#1077' - BB'
+    TabOrder = 30
+    OnClick = btnGetActualClick
+  end
+  object lstINs: TListBox
+    Left = 1232
+    Top = 40
+    Width = 121
+    Height = 73
+    ItemHeight = 13
+    MultiSelect = True
+    TabOrder = 31
+  end
+  object edtIN: TDBEditEh
+    Left = 1232
+    Top = 13
+    Width = 121
+    Height = 21
+    EditButtons = <>
+    TabOrder = 32
+    Text = '4221074A011PB0'
+    Visible = True
+  end
+  object btnGetNSI: TButton
+    Left = 1086
+    Top = 193
+    Width = 119
+    Height = 25
+    Caption = 'GET- '#1053#1057#1048' - BB'
+    TabOrder = 33
+    OnClick = btnGetActualClick
   end
   object DataSource1: TDataSource
     Left = 112

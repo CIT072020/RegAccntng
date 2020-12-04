@@ -29,19 +29,30 @@ type
     function Post1Doc(ParsPost: TParsPost; StreamDoc : TStringStream) : TResultPost;
   protected
   public
+    // Результат запроса данных (GET)
     property ResGet : TResultGet read FResGet write FResGet;
+    // Результат отправки данных (POST)
     property ResPost : TResultPost read FResSet write FResSet;
 
     (* Получить список документов [убытия]
     *)
-    function GetRegDocs(ParsGet : TParsGet) : TResultGet;
+    function GetDeparted(DBeg, DEnd : TDateTime; OrgCode : string = '') : TResultGet; overload;
+    function GetDeparted(ParsGet : TParsGet) : TResultGet; overload;
+
     (* Получить документ актуальной регистрации
     *)
-    function GetActualReg(ParsGet : TParsGet) : TResultGet;
+    function GetActualReg(INum : string) : TResultGet; overload;
+    function GetActualReg(IndNs: TStringList) : TResultGet;  overload;
+    function GetActualReg(ParsGet : TParsGet) : TResultGet;  overload;
 
     (* Записать сведения о регистрации
     *)
     function PostRegDocs(ParsPost: TParsPost) : TResultPost;
+
+    (* Получить содержимое справочника
+    *)
+    function GetNSI(NsiType : integer; NsiCode : integer = 0): TResultGet;
+
 
     constructor Create(Pars : TParsExchg);
     destructor Destroy; override;
@@ -118,14 +129,12 @@ function TExchgRegCitizens.StoreINsInRes(Pars : TParsGet) : integer;
 var
   i : Integer;
 begin
-  i := 1;
-  while i <= Result do begin
+  Result := Pars.FIOrINs.Count;
+  for i := 1 to Result do begin
     FResGet.INs.Append;
     FResGet.INs.FieldValues['IDENTIF'] := Pars.FIOrINs[i - 1];
     FResGet.INs.Post;
-    i := i + 1;
   end;
-  Result := Pars.FIOrINs.Count;
 end;
 
 
@@ -133,10 +142,8 @@ end;
 // Перемещение граждан за период
 function GetListID(StrPars: string = ''): ISuperObject;
 var
-  INsCount : Integer;
   Ret: Boolean;
   sDoc, sErr : string;
-  Docs: ISuperObject;
   HTTP: THTTPSend;
 begin
   Result := nil;
@@ -223,9 +230,24 @@ begin
   end;
 end;
 
+// Получить документы для сельсовета за период
+function TExchgRegCitizens.GetDeparted(DBeg, DEnd: TDateTime; OrgCode: string = ''): TResultGet;
+var
+  P: TParsGet;
+begin
+  Result := nil;
+  if (OrgCode = '') then
+    OrgCode := FPars.Organ;
+  P := TParsGet.Create(DBeg, DEnd, OrgCode);
+  try
+    Result := GetDeparted(P);
+  finally
+    P.Free;
+  end;
+end;
 
 // Получить документы для сельсовета за период
-function TExchgRegCitizens.GetRegDocs(ParsGet: TParsGet): TResultGet;
+function TExchgRegCitizens.GetDeparted(ParsGet: TParsGet): TResultGet;
 var
   Ret: Boolean;
   nINs: Integer;
@@ -254,17 +276,41 @@ begin
   end;
 end;
 
+// Получить актуальный документ регистрации для единственного ИН
+function TExchgRegCitizens.GetActualReg(INum : string): TResultGet;
+var
+  IndNums: TStringList;
+  ParsGet: TParsGet;
+  Res: TResultGet;
+begin
+  Result := nil;
+  IndNums := TStringList.Create;
+  ParsGet := TParsGet.Create(IndNums, TLIST_INS);
+  try
+    IndNums.Add(INum);
+    Result := GetActualReg(ParsGet);
+  finally
+    ParsGet.Free;
+    IndNums.Free;
+  end;
+end;
 
-
-
-
-
-
-
-
+// Получить актуальный документ регистрации для списка ИН
+function TExchgRegCitizens.GetActualReg(IndNs: TStringList): TResultGet;
+var
+  ParsGet: TParsGet;
+  Res: TResultGet;
+begin
+  try
+    ParsGet := TParsGet.Create(IndNs, TLIST_INS);
+    Result := GetActualReg(ParsGet);
+  finally
+    ParsGet.Free;
+  end;
+end;
 
 // Получить актуальный документ регистрации для ИН
-function TExchgRegCitizens.GetActualReg(ParsGet: TParsGet): TResultGet;
+function TExchgRegCitizens.GetActualReg(ParsGet: TParsGet) : TResultGet;
 var
   Ret: Boolean;
   nINs: Integer;
@@ -292,18 +338,6 @@ begin
     Result := FResGet;
   end;
 end;
-
-
-
-
-
-
-
-
-
-
-
-
 
 // Передача одного документа
 function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc : TStringStream) : TResultPost;
@@ -380,5 +414,33 @@ begin
   end;
 
 end;
+
+
+
+
+
+
+
+
+
+
+// Получить содержимое справочника
+function TExchgRegCitizens.GetNSI(NsiType : integer; NsiCode : integer = 0): TResultGet;
+var
+  P: TParsGet;
+begin
+  Result := nil;
+  {
+  if (NsiCode = 0) then
+    OrgCode := FPars.Organ;
+  P := TParsGet.Create(DBeg, DEnd, OrgCode);
+  try
+    Result := GetDeparted(P);
+  finally
+    P.Free;
+  end;
+  }
+end;
+
 
 end.

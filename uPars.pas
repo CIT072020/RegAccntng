@@ -26,6 +26,7 @@ type
     SectINs : string;
     SectDocs : string;
     SectChild : string;
+    SectNsi : string;
     // Код органа регистрации (с/совета)
     Organ : string;
 
@@ -47,13 +48,13 @@ type
     TypeDoc : string;
     FullURL : string;
 
-    FIOrINs  : TStrings;
+    FIOrINs  : TStringList;
     // Тип данных во входном списке
     ListType : Integer;
 
     constructor Create(DBeg, DEnd : TDateTime; OrgCode : string = ''); overload;
     constructor Create(URL : string); overload;
-    constructor Create(INs : TStrings; LType : Integer = TLIST_FIO); overload;
+    constructor Create(INs : TStringList; LType : Integer = TLIST_FIO); overload;
   end;
 
   // параметры для PostDocs
@@ -80,6 +81,7 @@ type
   // Результат для GET
   TResultGet = class
   private
+    FNsi,
     FChild,
     FDocs,
     FINs : TkbmMemTable;
@@ -90,6 +92,7 @@ type
     property INs   : TkbmMemTable read FINs write FINs;
     property Docs  : TkbmMemTable read FDocs write FDocs;
     property Child : TkbmMemTable read FChild write FChild;
+    property Nsi   : TkbmMemTable read FNsi write FNsi;
 
     property ResCode : Integer read FCode write FCode;
     property ResMsg : string read FMsg write FMsg;
@@ -121,6 +124,7 @@ begin
   SectINs   := SCT_TBL_INS;
   SectDocs  := SCT_TBL_DOC;
   SectChild := SCT_TBL_CLD;
+  SectNsi   := SCT_TBL_NSI;
 end;
 
 constructor TParsExchg.Create(MName : string);
@@ -149,7 +153,7 @@ begin
   FullURL := URL;
 end;
 
-constructor TParsGet.Create(INs : TStrings; LType : Integer = TLIST_FIO);
+constructor TParsGet.Create(INs : TStringList; LType : Integer = TLIST_FIO);
 begin
   FIOrINs := INs;
   ListType := LType;
@@ -161,6 +165,7 @@ begin
   INs   := TkbmMemTable(CreateMemTable(MT_INS, Pars.Meta, Pars.SectINs));
   Docs  := TkbmMemTable(CreateMemTable(MT_DOCS, Pars.Meta, Pars.SectDocs));
   Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, Pars.SectChild));
+  Nsi   := TkbmMemTable(CreateMemTable(MT_NSI, Pars.Meta, Pars.SectNsi));
 end;
 
 constructor TParsPost.Create(DSign, Cert : string; URL : string = '');
