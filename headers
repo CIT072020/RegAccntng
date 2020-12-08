@@ -1,4 +1,4 @@
-GET /village-council-service/api/v1/data?identifier=4270790A038PB8&name=&surname=&patronymic=&pid=1100000000000002916 HTTP/1.0
+GET /kluni-service/api/v1/kl_uni/with_links/type/2?code=&active=true&first&count HTTP/1.0
 Host: a.todes.by:13555
 Keep-Alive: 300
 Connection: keep-alive

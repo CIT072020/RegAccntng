@@ -15,6 +15,27 @@ object Form1: TForm1
   OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
+  object lblSSovCode: TLabel
+    Left = 944
+    Top = 12
+    Width = 81
+    Height = 13
+    Caption = #1050#1086#1076' '#1089#1077#1083#1100#1089#1086#1074#1077#1090#1072
+  end
+  object lblIndNum: TLabel
+    Left = 1232
+    Top = 12
+    Width = 105
+    Height = 13
+    Caption = #1048#1085#1076#1080#1074#1080#1076#1091#1072#1083#1100#1085#1099#1081' '#8470
+  end
+  object lblNsiType: TLabel
+    Left = 1088
+    Top = 12
+    Width = 88
+    Height = 13
+    Caption = #1050#1086#1076' '#1089#1087#1088#1072#1074#1086#1095#1085#1080#1082#1072
+  end
   object Button1: TButton
     Left = 16
     Top = 9
@@ -203,8 +224,8 @@ object Form1: TForm1
     TitleFont.Style = []
   end
   object btnGetCurID: TButton
-    Left = 1096
-    Top = 355
+    Left = 1256
+    Top = 483
     Width = 121
     Height = 25
     Caption = 'GET '#1090#1077#1082#1091#1097#1080#1081' ID'
@@ -220,8 +241,8 @@ object Form1: TForm1
     TabOrder = 18
   end
   object btnGetList: TButton
-    Left = 1096
-    Top = 320
+    Left = 1256
+    Top = 448
     Width = 121
     Height = 25
     Caption = 'GET '#1057#1087#1080#1089#1086#1082' ID'
@@ -267,8 +288,8 @@ object Form1: TForm1
     TitleFont.Style = []
   end
   object btnGetWithPars: TButton
-    Left = 939
-    Top = 320
+    Left = 1251
+    Top = 408
     Width = 121
     Height = 25
     Caption = 'GET with Pars'
@@ -276,8 +297,8 @@ object Form1: TForm1
     OnClick = btnGetWithParsClick
   end
   object btnGetDocs: TButton
-    Left = 953
-    Top = 153
+    Left = 944
+    Top = 173
     Width = 119
     Height = 25
     Caption = 'GET- '#1091#1073#1099#1074#1096#1080#1077' - BB'
@@ -286,7 +307,7 @@ object Form1: TForm1
   end
   object dtBegin: TDBDateTimeEditEh
     Left = 944
-    Top = 44
+    Top = 64
     Width = 121
     Height = 21
     EditButtons = <>
@@ -296,7 +317,7 @@ object Form1: TForm1
   end
   object dtEnd: TDBDateTimeEditEh
     Left = 1088
-    Top = 44
+    Top = 64
     Width = 121
     Height = 21
     EditButtons = <>
@@ -306,7 +327,7 @@ object Form1: TForm1
   end
   object edOrgan: TDBEditEh
     Left = 944
-    Top = 13
+    Top = 30
     Width = 121
     Height = 21
     EditButtons = <>
@@ -316,7 +337,7 @@ object Form1: TForm1
   end
   object edFirst: TDBEditEh
     Left = 944
-    Top = 90
+    Top = 110
     Width = 121
     Height = 21
     EditButtons = <>
@@ -326,7 +347,7 @@ object Form1: TForm1
   end
   object edCount: TDBEditEh
     Left = 1088
-    Top = 90
+    Top = 110
     Width = 121
     Height = 21
     EditButtons = <>
@@ -335,8 +356,8 @@ object Form1: TForm1
     Visible = True
   end
   object btnPostDoc: TButton
-    Left = 953
-    Top = 193
+    Left = 944
+    Top = 213
     Width = 119
     Height = 25
     Caption = 'POST-DOC-BB'
@@ -344,9 +365,9 @@ object Form1: TForm1
     OnClick = btnPostDocClick
   end
   object btnGetActual: TButton
-    Left = 1086
-    Top = 153
-    Width = 119
+    Left = 1088
+    Top = 173
+    Width = 121
     Height = 25
     Caption = 'GET- '#1072#1082#1090#1091#1072#1083#1100#1085#1099#1077' - BB'
     TabOrder = 30
@@ -354,7 +375,7 @@ object Form1: TForm1
   end
   object lstINs: TListBox
     Left = 1232
-    Top = 40
+    Top = 60
     Width = 121
     Height = 73
     ItemHeight = 13
@@ -363,7 +384,7 @@ object Form1: TForm1
   end
   object edtIN: TDBEditEh
     Left = 1232
-    Top = 13
+    Top = 30
     Width = 121
     Height = 21
     EditButtons = <>
@@ -372,13 +393,50 @@ object Form1: TForm1
     Visible = True
   end
   object btnGetNSI: TButton
-    Left = 1086
-    Top = 193
-    Width = 119
+    Left = 1088
+    Top = 213
+    Width = 121
     Height = 25
     Caption = 'GET- '#1053#1057#1048' - BB'
     TabOrder = 33
-    OnClick = btnGetActualClick
+    OnClick = btnGetNSIClick
+  end
+  object edNsiType: TDBEditEh
+    Left = 1088
+    Top = 30
+    Width = 65
+    Height = 21
+    EditButtons = <>
+    TabOrder = 34
+    Visible = True
+  end
+  object gdNsi: TDBGridEh
+    Left = 944
+    Top = 246
+    Width = 422
+    Height = 128
+    DataSource = dsNsi
+    FooterColor = clWindow
+    FooterFont.Charset = DEFAULT_CHARSET
+    FooterFont.Color = clWindowText
+    FooterFont.Height = -11
+    FooterFont.Name = 'Tahoma'
+    FooterFont.Style = []
+    TabOrder = 35
+    TitleFont.Charset = DEFAULT_CHARSET
+    TitleFont.Color = clWindowText
+    TitleFont.Height = -11
+    TitleFont.Name = 'Tahoma'
+    TitleFont.Style = []
+  end
+  object edNsiCode: TDBEditEh
+    Left = 1168
+    Top = 30
+    Width = 41
+    Height = 21
+    EditButtons = <>
+    TabOrder = 36
+    Visible = True
   end
   object DataSource1: TDataSource
     Left = 112
@@ -424,5 +482,9 @@ object Form1: TForm1
   object dsChild: TDataSource
     Left = 992
     Top = 457
+  end
+  object dsNsi: TDataSource
+    Left = 1209
+    Top = 297
   end
 end

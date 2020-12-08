@@ -7,7 +7,7 @@ uses
   DB,
   kbmMemTable,
   superobject,
-  superdate, 
+  superdate,
   //httpsend,
   uService;
 
@@ -21,14 +21,25 @@ type
   // Чтение/Запись установочных данных
   TDocSetDTO = class
   private
+    // MemTable with Docs
+    FDoc : TDataSet;
+    FChild : TDataSet;
+    FSO : ISuperObject;
+
+    function GetFS(sField: String): String;
+    function GetFD(sField: String): TDateTime;
+    // Код из справочного реквизита
+    function GetCode(sField: String): Integer;
   public
     NeedUpper : Boolean;
 
+    // Список документов из SuperObject сохранить в MemTable
+    function GetDocList(SOArr: ISuperObject): Integer;
+    function MemDoc2JSON(dsDoc: TDataSet; dsChild: TDataSet; StreamDoc: TStringStream; NeedUp : Boolean): Boolean;
 
-    constructor Create(ChkUp : Boolean);
+    constructor Create(MTDoc, MTChild : TDataSet);
 
-    class function GetDocList(SOArr: ISuperObject; Docs, Chs: TkbmMemTable): Integer;
-    class function MemDoc2JSON(dsDoc: TDataSet; dsChild: TDataSet; StreamDoc: TStringStream; NeedUp : Boolean): Boolean;
+    class function GetNsi(SOArr: ISuperObject; Nsi: TkbmMemTable; EmpTbl: Boolean = True): Integer;
   end;
 
 implementation
@@ -37,6 +48,32 @@ uses
   SysUtils,
   NativeXml,
   FuncPr;
+
+
+constructor TDocSetDTO.Create(MTDoc, MTChild : TDataSet);
+begin
+  inherited Create;
+  FDoc := MTDoc;
+  FChild := MTChild;
+end;
+
+// Строковое из MemTable
+function TDocSetDTO.GetFS(sField: String): String;
+begin
+  Result := FDoc.FieldByName(sField).AsString;
+end;
+
+// Дата из MemTable
+function TDocSetDTO.GetFD(sField: String): TDateTime;
+begin
+  Result := FDoc.FieldByName(sField).AsDateTime;
+end;
+
+// Код из справочного реквизита
+function TDocSetDTO.GetCode(sField: String): Integer;
+begin
+  Result := FSO.O[sField].O['klUniPK'].I['code'];
+end;
 
 class function TIndNomDTO.GetIndNumList(SOArr: ISuperObject; IndNum : TkbmMemTable; EmpTbl : Boolean = True): Integer;
   function CT(s: string): string;
@@ -74,14 +111,14 @@ begin
 end;
 
 
-class function TDocSetDTO.GetDocList(SOArr: ISuperObject; Docs, Chs: TkbmMemTable): Integer;
+function TDocSetDTO.GetDocList(SOArr: ISuperObject): Integer;
 
   function CT(s: string): string;
   begin
     Result := s;
   end;
 
-  procedure FillChild(SOA: ISuperObject; Chs: TkbmMemTable; MasterI: integer);
+  procedure FillChild(SOA: ISuperObject; Chs: TDataSet; MasterI: integer);
   var
     j: Integer;
     SO: ISuperObject;
@@ -118,43 +155,46 @@ begin
     i := 0;
     while (i <= SOArr.AsArray.Length - 1) do begin
       SO := SOArr.AsArray.O[i];
+      FSO := SO;
       SOf20 := SO.O[CT('form19_20')];
       SODsdAddr := SO.O[CT('dsdAddressLive')];
       // !!! True temporary !!!
       if ( Assigned(SOf20) and (Not SOf20.IsType(stNull) or True) ) then begin
-        Docs.Append;
-        Docs.FieldByName('PID').AsString := SO.S[CT('pid')];
+        FDoc.Append;
+        FDoc.FieldByName('PID').AsString := SO.S[CT('pid')];
         IsF20 := SOf20.B[CT('signAway')];
         if (IsF20 = True) then
-          Docs.FieldByName('signAway').AsInteger := 1
+          FDoc.FieldByName('signAway').AsInteger := 1
         else
-          Docs.FieldByName('signAway').AsInteger := 0;
+          FDoc.FieldByName('signAway').AsInteger := 0;
 
-        Docs.FieldByName('LICH_NOMER').AsString := SO.S[CT('identif')];
-        Docs.FieldByName('sysDocType').AsString := SO.O[CT('sysDocType')].O[CT('klUniPK')].s[CT('code')];
-        Docs.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].S[CT('lex1')];
-        Docs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
-        Docs.FieldByName('NAME').AsString := SO.S[CT('name')];
-        Docs.FieldByName('OTCH').AsString := SO.S[CT('sname')];
+        FDoc.FieldByName('view').AsInteger := GetCode('view');
+        FDoc.FieldByName('LICH_NOMER').AsString := SO.S[CT('identif')];
+        FDoc.FieldByName('sysDocType').AsInteger := GetCode('sysDocType');
+        FDoc.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].S[CT('lex1')];
+        FDoc.FieldByName('Familia').AsString := SO.S[CT('surname')];
+        FDoc.FieldByName('Name').AsString := SO.S[CT('name')];
+        FDoc.FieldByName('Otch').AsString := SO.S[CT('sname')];
+
         iV := SO.O[CT('sex')].O[CT('klUniPK')].I[CT('code')];
         if (iV = 21000002) then s := 'Ж' else s := 'М';
-        Docs.FieldByName('POL').AsString := s;
+        FDoc.FieldByName('POL').AsString := s;
 
         iV := SO.O[CT('citizenship')].O[CT('klUniPK')].I[CT('code')];
-        Docs.FieldByName('CITIZEN').AsInteger := iV;
+        FDoc.FieldByName('CITIZEN').AsInteger := iV;
 
-        Docs.FieldByName('sysOrgan').AsInteger := SO.O[CT('sysOrgan')].O[CT('klUniPK')].I[CT('code')];
-        Docs.FieldByName('ORGAN').AsString := SO.O[CT('sysOrgan')].S[CT('lex1')];
+        FDoc.FieldByName('sysOrgan').AsInteger := SO.O[CT('sysOrgan')].O[CT('klUniPK')].I[CT('code')];
+        FDoc.FieldByName('ORGAN').AsString := SO.O[CT('sysOrgan')].S[CT('lex1')];
 
         d := STOD(SO.S[CT('bdate')]);
-        Docs.FieldByName('DateR').AsDateTime := d;
+        FDoc.FieldByName('DateR').AsDateTime := d;
 
-        Docs.FieldByName('PASP_SERIA').AsString := SO.S[CT('docSery')];
-        Docs.FieldByName('PASP_NOMER').AsString := SO.S[CT('docNum')];
-        Docs.FieldByName('PASP_DATE').AsDateTime := JavaToDelphiDateTime(SO.I[CT('docDateIssue')]);
+        FDoc.FieldByName('PASP_SERIA').AsString := SO.S[CT('docSery')];
+        FDoc.FieldByName('PASP_NOMER').AsString := SO.S[CT('docNum')];
+        FDoc.FieldByName('PASP_DATE').AsDateTime := JavaToDelphiDateTime(SO.I[CT('docDateIssue')]);
 
-        Docs.FieldByName('GOSUD_R').AsInteger := SO.O[CT('countryB')].O[CT('klUniPK')].I[CT('code')];
-        Docs.FieldByName('GOSUD_R_NAME').AsString := SO.O[CT('countryB')].S[CT('lex1')];
+        FDoc.FieldByName('GOSUD_R').AsInteger := SO.O[CT('countryB')].O[CT('klUniPK')].I[CT('code')];
+        FDoc.FieldByName('GOSUD_R_NAME').AsString := SO.O[CT('countryB')].S[CT('lex1')];
 
         try
           SOChild := SO.O[CT('form19_20')].O[CT('infants')];
@@ -164,25 +204,25 @@ begin
         end;
 
         if (Assigned(SOChild)) and (NCh > 0) then begin
-          FillChild(SOChild, Chs, i);
+          FillChild(SOChild, FChild, i);
         end;
-        Docs.FieldByName('DETI').AsInteger := NCh;
+        FDoc.FieldByName('DETI').AsInteger := NCh;
 
         if ( Assigned(SODsdAddr) and (Not SODsdAddr.IsType(stNull)) ) then begin
-          Docs.FieldByName('vilCouncilObjNum').AsInteger := SODsdAddr.I[CT('vilCouncilObjNum')];
-          Docs.FieldByName('villageCouncil').AsString := SODsdAddr.S[CT('villageCouncil')];
+          FDoc.FieldByName('vilCouncilObjNum').AsInteger := SODsdAddr.I[CT('vilCouncilObjNum')];
+          FDoc.FieldByName('villageCouncil').AsString := SODsdAddr.S[CT('villageCouncil')];
 
-          Docs.FieldByName('ateObjectNum').AsInteger := SODsdAddr.I[CT('ateObjectNum')];
-          Docs.FieldByName('ateElementUid').AsInteger := SODsdAddr.I[CT('ateElementUid')];
-          Docs.FieldByName('ateAddrNum').AsInteger := SODsdAddr.I[CT('ateAddrNum')];
-          Docs.FieldByName('house').AsString := SODsdAddr.S[CT('house')];
-          Docs.FieldByName('korps').AsString := SODsdAddr.S[CT('korps')];
-          Docs.FieldByName('app').AsString := SODsdAddr.S[CT('app')];
+          FDoc.FieldByName('ateObjectNum').AsInteger := SODsdAddr.I[CT('ateObjectNum')];
+          FDoc.FieldByName('ateElementUid').AsInteger := SODsdAddr.I[CT('ateElementUid')];
+          FDoc.FieldByName('ateAddrNum').AsInteger := SODsdAddr.I[CT('ateAddrNum')];
+          FDoc.FieldByName('house').AsString := SODsdAddr.S[CT('house')];
+          FDoc.FieldByName('korps').AsString := SODsdAddr.S[CT('korps')];
+          FDoc.FieldByName('app').AsString := SODsdAddr.S[CT('app')];
 
         end;
 
 
-        Docs.Post;
+        FDoc.Post;
       end;
       i := i + 1;
     end;
@@ -192,11 +232,6 @@ begin
   end;
 end;
 
-constructor TDocSetDTO.Create(ChkUp: Boolean);
-begin
-  inherited Create;
-  NeedUpper := ChkUp;
-end;
 
 
 
@@ -358,7 +393,7 @@ end;
 
 
 // Тело документа для POST
-class function TDocSetDTO.MemDoc2JSON(dsDoc: TDataSet; dsChild: TDataSet; StreamDoc: TStringStream; NeedUp : Boolean): Boolean;
+function TDocSetDTO.MemDoc2JSON(dsDoc: TDataSet; dsChild: TDataSet; StreamDoc: TStringStream; NeedUp : Boolean): Boolean;
 var
   s, sURL, sPar, sss, sF, sFld, sPath, sPostDoc, sResponse, sError, sStatus, sId: String;
   sUTF : UTF8String;
@@ -367,16 +402,8 @@ var
   nSpr, n, i, j: Integer;
   lOk: Boolean;
 
-  function getFld(sField: String): String;
-  begin
-    Result := dsDoc.FieldByName(sField).AsString;
-    if NeedUp then Result := ANSIUpperCase(Result);
-  end;
-
-  function getFldD(sField: String): TDateTime;
-  begin
-    Result := dsDoc.FieldByName(sField).AsDateTime;
-  end;
+{
+}
 
   function getFldI(sField: String): String;
   begin
@@ -423,7 +450,7 @@ procedure SchPlaceOfBorn;
 begin
   try
     AddNum('countryB', VarKeyCountry(getFldI('GOSUD_R')));
-    AddStr('areaB', getFld('areaB'));
+    AddStr('areaB', GetFS('areaB'));
     AddNum('typeCityB', VarKeyCity(getFldI('typeCityB')));
   except
   end;
@@ -441,11 +468,11 @@ begin
     AddNum('typeStreetL', VarKeyTypeStreet(getFldI('typeStreetL')));
     AddNum('streetL', VarKeyStreet(getFldI('streetL')));
 
-    AddStr('house', getFld('house'));
-    AddStr('korps', getFld('korps'));
-    AddStr('app', getFld('app'));
+    AddStr('house', GetFS('house'));
+    AddStr('korps', GetFS('korps'));
+    AddStr('app', GetFS('app'));
 
-    AddStr('areaBBel', getFld('areaB'));
+    AddStr('areaBBel', GetFS('areaB'));
     AddNum('regionBBelL', getFldI('regionL'));
     AddNum('cityBBel', getFldI('cityL'));
 
@@ -457,13 +484,13 @@ end;
 procedure SchPasport;
 begin
   try
-    AddStr('docSery', getFld('PASP_SERIA'));                       // серия основного документа
-    AddStr('docNum', getFld('PASP_NOMER'));                       // номер основного документа
-    AddDJ('docDateIssue', getFldD('PASP_DATE'));           // дата выдачи основного документа
+    AddStr('docSery', GetFS('PASP_SERIA'));                       // серия основного документа
+    AddStr('docNum', GetFS('PASP_NOMER'));                       // номер основного документа
+    AddDJ('docDateIssue', GetFD('PASP_DATE'));           // дата выдачи основного документа
     //AddDJ('docAppleDate', getFldD('docAppleDate'));            // дата подачи документа  ???
-    AddDJ('expireDate', getFldD('expireDate'));                // дата действия  ???
+    AddDJ('expireDate', GetFD('expireDate'));                // дата действия  ???
     //AddNum('aisPasspDocStatus');                               // ???
-    AddNum('docType', VarKeyDocType(getFld('docType')));  // тип основного документа
+    AddNum('docType', VarKeyDocType(GetFS('docType')));  // тип основного документа
     AddStr('docOrgan');                                       // орган выдачи основного документа
     //AddStr('docIssueOrgan', VarKeyOrgan(getFldI('docIssueOrgan')));    //###  код органа
 
@@ -486,9 +513,9 @@ begin
     AddNum('ateObjectNum', getFldI('ateObjectNum'));
     AddNum('ateElementUid', getFldI('ateElementUid'));
     AddNum('ateAddrNum', getFldI('ateAddrNum'));
-    AddStr('house', getFld('house'));
-    AddStr('korps', getFld('korps'));
-    AddStr('app', getFld('app'));
+    AddStr('house', GetFS('house'));
+    AddStr('korps', GetFS('korps'));
+    AddStr('app', GetFS('app'));
 
   // Последней была запятая, вернемся для записи конца объекта
     StreamDoc.Seek(-1, soCurrent);
@@ -506,9 +533,9 @@ begin
     StreamDoc.WriteString('"form19_20":{');
     AddStr('form19_20Base', 'form19_20');
     AddNum('signAway', 'false');
-    AddDJ('dateReg', getFldD('DATEZ'));
+    AddDJ('dateReg', GetFD('DATEZ'));
     AddNum('countryPu', VarKeyCountry(getFldI('GOSUD_O')));
-    AddNum('areaPu', VarKeyArea(getFld('OBL_O')));
+    AddNum('areaPu', VarKeyArea(GetFS('OBL_O')));
     //AddNum('regionPu', VarKeyRegion(getFldI('RAION_O')));
 
   // Последней была запятая, вернемся для записи конца объекта
@@ -525,17 +552,17 @@ begin
     StreamDoc.WriteString('{');
 
     AddNum(  'pid' );
-    AddStr('identif', getFld('LICH_NOMER'));
+    AddStr('identif', GetFS('LICH_NOMER'));
   //AddNum( 'view', createSpr(-3, 10));
     AddNum('view');
-    AddNum('sysDocType', VarKeySysDocType(getFld('sysDocType')));
-    AddStr('surname', getFld('Familia'));
-    AddStr('name', getFld('Name'));
-    AddStr('sname', getFld('Otch'));
-    AddNum('sex', VarKeyPol(getFld('POL')));
-    AddNum('citizenship', VarKeyCountry(getFld('CITIZEN')));
-    AddNum('sysOrgan', VarKeySysOrgan(getFld('sysOrgan')));    //###  код органа откуда отправляются данные !!!
-    AddStr('bdate', DTOSDef(getFldD('DateR'), tdClipper, '')); // 19650111
+    AddNum('sysDocType', VarKeySysDocType(GetFS('sysDocType')));
+    AddStr('surname', GetFS('Familia'));
+    AddStr('name', GetFS('Name'));
+    AddStr('sname', GetFS('Otch'));
+    AddNum('sex', VarKeyPol(GetFS('POL')));
+    AddNum('citizenship', VarKeyCountry(GetFS('CITIZEN')));
+    AddNum('sysOrgan', VarKeySysOrgan(GetFS('sysOrgan')));    //###  код органа откуда отправляются данные !!!
+    AddStr('bdate', DTOSDef(GetFD('DateR'), tdClipper, '')); // 19650111
     AddStr('dsdDateRec');                                      // дата записи ???
 
     // Схема Паспорт
@@ -555,8 +582,8 @@ begin
 
     if (False) then begin
     AddStr('organDoc', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
-    AddStr('workplace', getFld('workplace'));
-    AddStr('workposition', getFld('workposition'));
+    AddStr('workplace', GetFS('workplace'));
+    AddStr('workposition', GetFS('workposition'));
     AddStr('villageCouncil', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
     AddStr('intracityRegion', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
 
@@ -583,5 +610,62 @@ begin
     Result := False;
   end;
 end;
+
+
+
+
+
+
+
+
+
+
+class function TDocSetDTO.GetNsi(SOArr: ISuperObject; Nsi: TkbmMemTable; EmpTbl: Boolean = True): Integer;
+  function CT(s: string): string;
+  begin
+    Result := s;
+  end;
+
+var
+  b : Boolean;
+  s : string;
+  i : Integer;
+  SOPK,
+  SO: ISuperObject;
+begin
+  Result := 0;
+  try
+    if (EmpTbl = True) then
+      Nsi.EmptyTable;
+    i := 0;
+    while (i <= SOArr.AsArray.Length - 1) do begin
+      SO := SOArr.AsArray.O[i];
+      Nsi.Append;
+      SO := SOArr.AsArray.O[i];
+      Nsi.FieldByName('Type').AsInteger := SO.O[CT('klUniPK')].I[CT('type')];
+      Nsi.FieldByName('Code').AsInteger := SO.O[CT('klUniPK')].I[CT('code')];
+      Nsi.FieldByName('Lex1').AsString  := SO.S[CT('lex1')];
+      Nsi.FieldByName('Lex2').AsString  := SO.S[CT('lex2')];
+      Nsi.FieldByName('Lex3').AsString  := SO.S[CT('lex3')];
+      Nsi.FieldByName('DateBegin').AsDateTime := JavaToDelphiDateTime(SO.I[CT('dateBegin')]);;
+      b := SO.B[CT('active')];
+      if (b = True) then
+      Nsi.FieldByName('Active').AsInteger := 1
+      else
+      Nsi.FieldByName('Active').AsInteger := 1;
+      Nsi.Post;
+      i := i + 1;
+    end;
+    Result := i;
+  except
+    Result := -1;
+  end;
+end;
+
+
+
+
+
+
 
 end.

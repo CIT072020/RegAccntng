@@ -51,7 +51,7 @@ type
 
     (* Получить содержимое справочника
     *)
-    function GetNSI(NsiType : integer; NsiCode : integer = 0): TResultGet;
+    function GetNSI(NsiType : integer; NsiCode : integer = 0; URL : string = ''): TResultGet;
 
 
     constructor Create(Pars : TParsExchg);
@@ -88,6 +88,7 @@ begin
   FHost := THostReg.Create;
   FHost.URL := RES_HOST;
   FHost.GenPoint := RES_GENPOINT;
+  FHost.NsiPoint := RES_NSI;
   FHost.Ver := RES_VER;
 
   if (NOT Assigned(FPars.Meta)) then
@@ -206,6 +207,7 @@ procedure TExchgRegCitizens.Docs4CurIN(IndNum, PID : string; IndNs: TStringList)
 var
   i: Integer;
   SOList: ISuperObject;
+  DocDTO : TDocSetDTO;
 begin
   try
     if ( Length(IndNum) >= 0) then begin
@@ -220,7 +222,8 @@ begin
       SOList := GetListDoc(FHost, IndNs);
       // должен вернуться массив установочных документов
       if Assigned(SOList) and (SOList.DataType = stArray) then begin
-        i := TDocSetDTO.GetDocList(SOList, ResGet.Docs, FResGet.Child);
+        DocDTO := TDocSetDTO.Create(ResGet.Docs, ResGet.Child);
+        i := DocDTO.GetDocList(SOList);
       end;
     end;
   except
@@ -230,7 +233,7 @@ begin
   end;
 end;
 
-// Получить документы для сельсовета за период
+// Список убывших для сельсовета (период-сельсовет)
 function TExchgRegCitizens.GetDeparted(DBeg, DEnd: TDateTime; OrgCode: string = ''): TResultGet;
 var
   P: TParsGet;
@@ -246,7 +249,7 @@ begin
   end;
 end;
 
-// Получить документы для сельсовета за период
+// Список убывших для сельсовета (параметры)
 function TExchgRegCitizens.GetDeparted(ParsGet: TParsGet): TResultGet;
 var
   Ret: Boolean;
@@ -276,7 +279,7 @@ begin
   end;
 end;
 
-// Получить актуальный документ регистрации для единственного ИН
+// Актуальный документ регистрации для единственного ИН
 function TExchgRegCitizens.GetActualReg(INum : string): TResultGet;
 var
   IndNums: TStringList;
@@ -345,16 +348,18 @@ var
   Ret, NeedUp: Boolean;
   sErr: string;
   Header: TStringList;
+  DocDTO : TDocSetDTO;
 begin
   NeedUp := False;
   Result := TResultPost.Create;
+  DocDTO := TDocSetDTO.Create(ParsPost.Docs, ParsPost.Child);
 
     try
       FHTTP.Headers.Clear;
 
         StreamDoc.Seek(0, soBeginning);
 
-        if (TDocSetDTO.MemDoc2JSON(ParsPost.Docs, ParsPost.Child, StreamDoc, NeedUp) = True) then begin
+        if (DocDTO.MemDoc2JSON(ParsPost.Docs, ParsPost.Child, StreamDoc, NeedUp) = True) then begin
           FHTTP.Headers.Clear;
 
           FHTTP.Headers.Add('sign:' + ParsPost.USign);
@@ -425,21 +430,60 @@ end;
 
 
 // Получить содержимое справочника
-function TExchgRegCitizens.GetNSI(NsiType : integer; NsiCode : integer = 0): TResultGet;
+function TExchgRegCitizens.GetNSI(NsiType: integer; NsiCode: integer = 0; URL: string = ''): TResultGet;
 var
-  P: TParsGet;
+  nRec: Integer;
+  SOList: ISuperObject;
+  Ret: Boolean;
+  StrPars, sDoc, sType, sCode, sErr: string;
 begin
   Result := nil;
-  {
-  if (NsiCode = 0) then
-    OrgCode := FPars.Organ;
-  P := TParsGet.Create(DBeg, DEnd, OrgCode);
+
+  if (URL = '') then begin
+    if (NsiCode = 0) then
+      sCode := ''
+    else
+      sCode := IntToStr(NsiCode);
+    sType := IntToStr(NsiType);
+    StrPars := Format('/type/%s?code=%s&active=true&first&count', [sType, sCode]);
+    StrPars := FullPath(FHost, GET_NSI, StrPars);
+  end
+  else
+    StrPars := URL;
+
+  ShowDeb(StrPars);
+
+  FHTTP := THTTPSend.Create;
   try
-    Result := GetDeparted(P);
+    try
+      Ret := FHTTP.HTTPMethod('GET', StrPars);
+      if (Ret = True) then begin
+        if (FHTTP.ResultCode < 200) or (FHTTP.ResultCode >= 400) then begin
+          sErr := FHTTP.Headers.Text;
+          raise Exception.Create(sErr);
+        end;
+        ShowDeb(IntToStr(FHTTP.ResultCode) + ' ' + FHTTP.ResultString);
+        sDoc := MemStream2Str(FHTTP.Document);
+        SOList := SO(Utf8Decode(sDoc));
+      end
+      else begin
+        sErr := IntToStr(FHTTP.sock.LastError) + ' ' + FHTTP.sock.LastErrorDesc;
+        raise Exception.Create(sErr);
+      end;
+    except
+
+    end;
   finally
-    P.Free;
+    FHTTP.Free;
   end;
-  }
+
+  if Assigned(SOList) and (SOList.DataType = stArray) then begin
+    Result := TResultGet.Create(FPars, True);
+    nRec := TDocSetDTO.GetNSI(SOList, Result.Nsi);
+    if (nRec < 0) then
+      Result := nil;
+  end;
+
 end;
 
 

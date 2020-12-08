@@ -56,6 +56,13 @@ type
     lstINs: TListBox;
     edtIN: TDBEditEh;
     btnGetNSI: TButton;
+    lblSSovCode: TLabel;
+    lblIndNum: TLabel;
+    edNsiType: TDBEditEh;
+    lblNsiType: TLabel;
+    gdNsi: TDBGridEh;
+    dsNsi: TDataSource;
+    edNsiCode: TDBEditEh;
     procedure btnGetActualClick(Sender: TObject);
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -70,6 +77,7 @@ type
     procedure Button8Click(Sender: TObject);
     procedure btnGetCurIDClick(Sender: TObject);
     procedure btnGetDocsClick(Sender: TObject);
+    procedure btnGetNSIClick(Sender: TObject);
     procedure btnGetWithParsClick(Sender: TObject);
     procedure btnPostDocClick(Sender: TObject);
   private
@@ -693,6 +701,37 @@ begin
   end;
 
 end;
+
+// Справочник ROC
+procedure TForm1.btnGetNSIClick(Sender: TObject);
+var
+  ValidPars: Boolean;
+  NsiCode, NsiType: integer;
+begin
+  try
+    NsiType := StrToInt(edNsiType.Text);
+    if (Length(edNsiCode.Text) > 0) then
+      NsiCode := StrToInt(edNsiCode.Text)
+    else
+      NsiCode := 0;
+    ValidPars := True;
+  except
+    ValidPars := False;
+  end;
+  if (ValidPars = True) then begin
+    BlackBox.ResGet := BlackBox.GetNSI(NsiType, NsiCode);
+    if (Assigned(BlackBox.ResGet)) then begin
+      dsNsi.DataSet := BlackBox.ResGet.Nsi;
+      BlackBox.ResGet.Nsi.First;
+    end;
+  end;
+end;
+
+
+
+
+
+
 
 
 //

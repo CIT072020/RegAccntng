@@ -13,10 +13,12 @@ uses
 
 const
   INI_NAME = 'ExchgPars.ini';
+  
   // функции запросов к серверу
   GET_LIST_ID  = 1;
   GET_LIST_DOC = 2;
-  POST_DOC     = 3;
+  GET_NSI      = 3;
+  POST_DOC     = 4;
 
   // Тип списочных данных для GET
   TLIST_FIO = Integer(1);
@@ -30,7 +32,7 @@ const
   RESOURCE_LISTID_PATH = '/movements';
   RESOURCE_LISTDOC_PATH  = '/data';
   RESOURCE_POSTDOC_PATH = '/data/save';
-  RESOURCE_NSICNTT_PATH = '/kl_uni/with_links/type';
+  RESOURCE_NSICNTT_PATH = '/kl_uni/with_links';
 
   // Секции INI-файла для описания таблиц
   SCT_TBL_INS = 'TABLE_INDNUM';
@@ -54,6 +56,7 @@ type
   // путь к сервису
     URL      : string;
     GenPoint : string;
+    NsiPoint : string;
     Ver      : string;
   end;
 
@@ -225,17 +228,24 @@ end;
 
 function FullPath(H : THostReg; Func : Integer; Pars : string) : string;
 var
+  sr,
   s : string;
 begin
-  s := '';
+  Result := '';
+  s      := H.GenPoint;
   case Func of
-    GET_LIST_ID  : s := RESOURCE_LISTID_PATH;
-    GET_LIST_DOC : s := RESOURCE_LISTDOC_PATH;
-    POST_DOC     : s := RESOURCE_POSTDOC_PATH;
+    GET_LIST_ID  : sr := RESOURCE_LISTID_PATH;
+    GET_LIST_DOC : sr := RESOURCE_LISTDOC_PATH;
+    POST_DOC     : sr := RESOURCE_POSTDOC_PATH;
+  else
+    if (Func = GET_NSI) then begin
+      s  := H.NsiPoint;
+      sr := RESOURCE_NSICNTT_PATH;
+    end;
   end;
-  if ( Length(s) > 0) then
-    s := H.URL + H.GenPoint + H.Ver + s + Pars;
-  Result := s;
+  if ( Length(sr) > 0) then
+    Result := H.URL + s + H.Ver + sr + Pars;
+
 end;
 
 

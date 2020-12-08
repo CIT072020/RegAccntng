@@ -97,7 +97,7 @@ type
     property ResCode : Integer read FCode write FCode;
     property ResMsg : string read FMsg write FMsg;
 
-    constructor Create(Pars : TParsExchg);
+    constructor Create(Pars : TParsExchg; NSIOnly : Boolean = False);
   end;
 
   TResultPost = class
@@ -160,12 +160,14 @@ begin
 end;
 
 // Результат GET
-constructor TResultGet.Create(Pars : TParsExchg);
+constructor TResultGet.Create(Pars: TParsExchg; NSIOnly: Boolean = False);
 begin
-  INs   := TkbmMemTable(CreateMemTable(MT_INS, Pars.Meta, Pars.SectINs));
-  Docs  := TkbmMemTable(CreateMemTable(MT_DOCS, Pars.Meta, Pars.SectDocs));
-  Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, Pars.SectChild));
-  Nsi   := TkbmMemTable(CreateMemTable(MT_NSI, Pars.Meta, Pars.SectNsi));
+  if (NSIOnly = False) then begin
+    INs := TkbmMemTable(CreateMemTable(MT_INS, Pars.Meta, Pars.SectINs));
+    Docs := TkbmMemTable(CreateMemTable(MT_DOCS, Pars.Meta, Pars.SectDocs));
+    Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, Pars.SectChild));
+  end;
+  Nsi := TkbmMemTable(CreateMemTable(MT_NSI, Pars.Meta, Pars.SectNsi));
 end;
 
 constructor TParsPost.Create(DSign, Cert : string; URL : string = '');
