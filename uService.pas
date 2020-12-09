@@ -61,6 +61,7 @@ type
   end;
 
 
+function CT(s: string) : string;
 function UnixStrToDateTime(sDate:String):TDateTime;
 function Delphi2JavaDate(d:TDateTime):SuperInt;
 function MemStream2Str(const MS: TMemoryStream; const FullStream: Boolean = True; const ADefault: string = ''): string;
@@ -80,6 +81,12 @@ implementation
 uses
   SysUtils,
   StrUtils;
+
+// Обработка имен полей  
+function CT(s: string): string;
+begin
+  Result := s;
+end;
 
 function UnixStrToDateTime(sDate:String):TDateTime;
 begin

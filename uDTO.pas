@@ -27,9 +27,26 @@ type
     FSO : ISuperObject;
 
     function GetFS(sField: String): String;
+    function GetFI(sField: String): Integer;
     function GetFD(sField: String): TDateTime;
     // Код из справочного реквизита
     function GetCode(sField: String): Integer;
+
+    // Паспортные данные
+    procedure GetPasp;
+    // Место рождения
+    procedure GetPlaceOfBirth;
+    // Место проживания
+    procedure GetPlaceOfLiving;
+    // Белорусская версия
+    procedure GetByVer;
+    // Адрес регистрации
+    procedure GetROC(SODsdAddr: ISuperObject);
+    // Форма 19-20
+    procedure GetForm19_20(SOf20 : ISuperObject; MasterI: integer);
+    // Данные по детям из внутреннего массива
+    procedure GetChild(SOA: ISuperObject; MasterI: integer);
+
   public
     NeedUpper : Boolean;
 
@@ -46,6 +63,7 @@ implementation
 
 uses
   SysUtils,
+  Variants,
   NativeXml,
   FuncPr;
 
@@ -63,6 +81,13 @@ begin
   Result := FDoc.FieldByName(sField).AsString;
 end;
 
+// Числовое целое из MemTable
+function TDocSetDTO.GetFI(sField: String): Integer;
+begin
+  Result := FDoc.FieldByName(sField).AsInteger;
+end;
+
+
 // Дата из MemTable
 function TDocSetDTO.GetFD(sField: String): TDateTime;
 begin
@@ -75,12 +100,8 @@ begin
   Result := FSO.O[sField].O['klUniPK'].I['code'];
 end;
 
+// Список убывших
 class function TIndNomDTO.GetIndNumList(SOArr: ISuperObject; IndNum : TkbmMemTable; EmpTbl : Boolean = True): Integer;
-  function CT(s: string): string;
-  begin
-    Result := s;
-  end;
-
 var
   s : string;
   i : Integer;
@@ -111,119 +132,168 @@ begin
 end;
 
 
-function TDocSetDTO.GetDocList(SOArr: ISuperObject): Integer;
 
-  function CT(s: string): string;
-  begin
-    Result := s;
-  end;
 
-  procedure FillChild(SOA: ISuperObject; Chs: TDataSet; MasterI: integer);
-  var
-    j: Integer;
-    SO: ISuperObject;
-  begin
-    try
-      for j := 0 to SOA.AsArray.Length - 1 do begin
-        SO := SOA.AsArray.O[j];
-        Chs.Append;
-        Chs.FieldByName('ID').AsInteger := MasterI;
-        Chs.FieldByName('PID').AsString := SO.S[CT('pid')];
-        Chs.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
-        Chs.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
-        Chs.FieldByName('NAME').AsString := SO.S[CT('name')];
-        Chs.FieldByName('BDATE').AsString := SO.S[CT('bdate')];
-        Chs.FieldByName('DATER').AsDateTime := UnixStrToDateTime(SO.S[CT('dateRec')]);
-        Chs.Post;
-      end;
-    except
-    end;
-  end;
 
+
+
+  // Паспортные данные
+procedure TDocSetDTO.GetPasp;
 var
-  s : string;
-  IsF20 : Boolean;
-  iV,
-  i, NCh: Integer;
-  d : TDateTime;
-  v     : Variant;
-  SOf20, SODsdAddr,
-  SOChild, SO: ISuperObject;
+  d: TDateTime;
+begin
+  FDoc.FieldByName('PASP_SERIA').AsString := FSO.S[CT('docSery')];
+  FDoc.FieldByName('PASP_NOMER').AsString := FSO.S[CT('docNum')];
+  FDoc.FieldByName('PASP_DATE').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('docDateIssue')]);
+  d := STOD(FSO.S[CT('bdate')]);
+  FDoc.FieldByName('DateR').AsDateTime := d;
+  FDoc.FieldByName('CITIZEN').AsInteger := GetCode('citizenship');
+
+  FDoc.FieldByName('GOSUD_R').AsInteger := FSO.O[CT('countryB')].O[CT('klUniPK')].i[CT('code')];
+  FDoc.FieldByName('GOSUD_R_NAME').AsString := FSO.O[CT('countryB')].s[CT('lex1')];
+end;
+
+
+// Место рождения
+procedure TDocSetDTO.GetPlaceOfBirth;
+var
+  d: TDateTime;
+begin
+  try
+
+  except
+  end;
+end;
+
+// Место проживания
+procedure TDocSetDTO.GetPlaceOfLiving;
+begin
+end;
+
+// Белорусская версия
+procedure TDocSetDTO.GetByVer;
+begin
+end;
+
+
+// Адрес регистрации
+procedure TDocSetDTO.GetROC(SODsdAddr: ISuperObject);
+begin
+  if (Assigned(SODsdAddr) and (Not SODsdAddr.IsType(stNull))) then begin
+    FDoc.FieldByName('villageCouncil').AsString := SODsdAddr.S[CT('villageCouncil')];
+    FDoc.FieldByName('vilCouncilObjNum').AsInteger := SODsdAddr.I[CT('vilCouncilObjNum')];
+
+    FDoc.FieldByName('ateObjectNum').AsInteger := SODsdAddr.I[CT('ateObjectNum')];
+    FDoc.FieldByName('ateElementUid').AsInteger := SODsdAddr.I[CT('ateElementUid')];
+    FDoc.FieldByName('ADRES_ID').AsInteger := SODsdAddr.I[CT('ateAddrNum')];
+    FDoc.FieldByName('house').AsString := SODsdAddr.S[CT('house')];
+    FDoc.FieldByName('korps').AsString := SODsdAddr.S[CT('korps')];
+    FDoc.FieldByName('app').AsString := SODsdAddr.S[CT('app')];
+  end;
+end;
+
+// Форма 19-20
+procedure TDocSetDTO.GetForm19_20(SOf20: ISuperObject; MasterI: integer);
+var
+  IsF20: Boolean;
+  NCh: Integer;
+  SOChild: ISuperObject;
+begin
+  if (Assigned(SOf20) and (Not SOf20.IsType(stNull))) then begin
+    IsF20 := SOf20.B[CT('signAway')];
+    if (IsF20 = True) then
+      FDoc.FieldByName('signAway').AsInteger := 1
+    else
+      FDoc.FieldByName('signAway').AsInteger := 0;
+
+        // Сведения о детях
+    try
+      SOChild := FSO.O[CT('form19_20')].O[CT('infants')];
+      NCh := SOChild.AsArray.Length;
+    except
+      NCh := 0;
+    end;
+
+    if (Assigned(SOChild)) and (NCh > 0) then begin
+      GetChild(SOChild, MasterI);
+    end;
+    FDoc.FieldByName('DETI').AsInteger := NCh;
+  end;
+end;
+
+
+// Данные по детям из внутреннего массива
+procedure TDocSetDTO.GetChild(SOA: ISuperObject; MasterI: integer);
+var
+  j: Integer;
+  SO: ISuperObject;
+begin
+  try
+    for j := 0 to SOA.AsArray.Length - 1 do begin
+      SO := SOA.AsArray.O[j];
+      FChild.Append;
+      FChild.FieldByName('ID').AsInteger := MasterI;
+      FChild.FieldByName('PID').AsString := SO.S[CT('pid')];
+      FChild.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
+      FChild.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
+      FChild.FieldByName('NAME').AsString := SO.S[CT('name')];
+      FChild.FieldByName('BDATE').AsString := SO.S[CT('bdate')];
+      FChild.FieldByName('DATER').AsDateTime := UnixStrToDateTime(SO.S[CT('dateRec')]);
+      FChild.Post;
+    end;
+  except
+  end;
+end;
+
+
+// Список DSD
+function TDocSetDTO.GetDocList(SOArr: ISuperObject): Integer;
+var
+  s: string;
+  iV, i: Integer;
+  d: TDateTime;
+  v: Variant;
 begin
   Result := 0;
   try
     i := 0;
     while (i <= SOArr.AsArray.Length - 1) do begin
-      SO := SOArr.AsArray.O[i];
-      FSO := SO;
-      SOf20 := SO.O[CT('form19_20')];
-      SODsdAddr := SO.O[CT('dsdAddressLive')];
-      // !!! True temporary !!!
-      if ( Assigned(SOf20) and (Not SOf20.IsType(stNull) or True) ) then begin
-        FDoc.Append;
-        FDoc.FieldByName('PID').AsString := SO.S[CT('pid')];
-        IsF20 := SOf20.B[CT('signAway')];
-        if (IsF20 = True) then
-          FDoc.FieldByName('signAway').AsInteger := 1
-        else
-          FDoc.FieldByName('signAway').AsInteger := 0;
+      FSO := SOArr.AsArray.O[i];
+      FDoc.Append;
+      FDoc.FieldByName('PID').AsString := FSO.S[CT('pid')];
 
-        FDoc.FieldByName('view').AsInteger := GetCode('view');
-        FDoc.FieldByName('LICH_NOMER').AsString := SO.S[CT('identif')];
-        FDoc.FieldByName('sysDocType').AsInteger := GetCode('sysDocType');
-        FDoc.FieldByName('sysDocName').AsString := SO.O[CT('sysDocType')].S[CT('lex1')];
-        FDoc.FieldByName('Familia').AsString := SO.S[CT('surname')];
-        FDoc.FieldByName('Name').AsString := SO.S[CT('name')];
-        FDoc.FieldByName('Otch').AsString := SO.S[CT('sname')];
+      FDoc.FieldByName('view').AsInteger := GetCode('view');
+      FDoc.FieldByName('LICH_NOMER').AsString := FSO.S[CT('identif')];
+      FDoc.FieldByName('sysDocType').AsInteger := GetCode('sysDocType');
+      FDoc.FieldByName('sysDocName').AsString := FSO.O[CT('sysDocType')].s[CT('lex1')];
+      FDoc.FieldByName('Familia').AsString := FSO.S[CT('surname')];
+      FDoc.FieldByName('Name').AsString := FSO.S[CT('name')];
+      FDoc.FieldByName('Otch').AsString := FSO.S[CT('sname')];
 
-        iV := SO.O[CT('sex')].O[CT('klUniPK')].I[CT('code')];
-        if (iV = 21000002) then s := 'Ж' else s := 'М';
-        FDoc.FieldByName('POL').AsString := s;
+      iV := GetCode('sex');
+      if (iV = 21000002) then
+        s := 'Ж'
+      else
+        s := 'М';
+      FDoc.FieldByName('POL').AsString := s;
 
-        iV := SO.O[CT('citizenship')].O[CT('klUniPK')].I[CT('code')];
-        FDoc.FieldByName('CITIZEN').AsInteger := iV;
+      FDoc.FieldByName('sysOrgan').AsInteger := GetCode('sysOrgan');
+      FDoc.FieldByName('ORGAN').AsString := FSO.O[CT('sysOrgan')].s[CT('lex1')];
 
-        FDoc.FieldByName('sysOrgan').AsInteger := SO.O[CT('sysOrgan')].O[CT('klUniPK')].I[CT('code')];
-        FDoc.FieldByName('ORGAN').AsString := SO.O[CT('sysOrgan')].S[CT('lex1')];
+      // Паспортные данные
+      GetPasp;
 
-        d := STOD(SO.S[CT('bdate')]);
-        FDoc.FieldByName('DateR').AsDateTime := d;
-
-        FDoc.FieldByName('PASP_SERIA').AsString := SO.S[CT('docSery')];
-        FDoc.FieldByName('PASP_NOMER').AsString := SO.S[CT('docNum')];
-        FDoc.FieldByName('PASP_DATE').AsDateTime := JavaToDelphiDateTime(SO.I[CT('docDateIssue')]);
-
-        FDoc.FieldByName('GOSUD_R').AsInteger := SO.O[CT('countryB')].O[CT('klUniPK')].I[CT('code')];
-        FDoc.FieldByName('GOSUD_R_NAME').AsString := SO.O[CT('countryB')].S[CT('lex1')];
-
-        try
-          SOChild := SO.O[CT('form19_20')].O[CT('infants')];
-          NCh := SOChild.AsArray.Length;
-        except
-          NCh := 0;
-        end;
-
-        if (Assigned(SOChild)) and (NCh > 0) then begin
-          FillChild(SOChild, FChild, i);
-        end;
-        FDoc.FieldByName('DETI').AsInteger := NCh;
-
-        if ( Assigned(SODsdAddr) and (Not SODsdAddr.IsType(stNull)) ) then begin
-          FDoc.FieldByName('vilCouncilObjNum').AsInteger := SODsdAddr.I[CT('vilCouncilObjNum')];
-          FDoc.FieldByName('villageCouncil').AsString := SODsdAddr.S[CT('villageCouncil')];
-
-          FDoc.FieldByName('ateObjectNum').AsInteger := SODsdAddr.I[CT('ateObjectNum')];
-          FDoc.FieldByName('ateElementUid').AsInteger := SODsdAddr.I[CT('ateElementUid')];
-          FDoc.FieldByName('ateAddrNum').AsInteger := SODsdAddr.I[CT('ateAddrNum')];
-          FDoc.FieldByName('house').AsString := SODsdAddr.S[CT('house')];
-          FDoc.FieldByName('korps').AsString := SODsdAddr.S[CT('korps')];
-          FDoc.FieldByName('app').AsString := SODsdAddr.S[CT('app')];
-
-        end;
-
-
-        FDoc.Post;
-      end;
+      // Место рождения
+      GetPlaceOfBirth;
+      // Место проживания
+      GetPlaceOfLiving;
+      // Белорусская версия
+      GetByVer;
+      // Адрес регистрации
+      GetROC(FSO.O[CT('dsdAddressLive')]);
+      // Форма 19-20
+      GetForm19_20(FSO.O[CT('form19_20')], FDoc.FieldByName('MID').AsInteger);
+      FDoc.Post;
       i := i + 1;
     end;
     Result := i;
@@ -231,6 +301,25 @@ begin
     Result := -1;
   end;
 end;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -263,9 +352,9 @@ begin
 end;
 
 // SYS-Тип документа
-function VarKeySysDocType(sType : string = '8') : String;
+function VarKeySysDocType(ICode : Integer = 8) : String;
 begin
-  Result := VarKey(-2, StrToInt64(sType));
+  Result := VarKey(-2, ICode);
 end;
 
 // Мужской/женский
@@ -278,118 +367,76 @@ begin
 end;
 
 // Код гражданства
-function VarKeyCountry(sType : string = '11200001') : String;
-var
-  n : Int64;
+function VarKeyCountry(ICode : Integer = 11200001) : String;
 begin
-  n := StrToInt64(sType);
-  Result := VarKey(8, n);
+  Result := VarKey(8, ICode);
 end;
 
 // Код регистрирующего органа
-function VarKeySysOrgan(sType : string = '') : String;
-var
-  n : Int64;
+function VarKeySysOrgan(ICode : Integer = 0) : String;
 begin
-  n := StrToInt64(sType);
-  Result := VarKey(-5, n);
+  Result := VarKey(-5, ICode);
 end;
 
 // Код типа населенного пункта
-function VarKeyTypeCity(sType : string) : String;
-var
-  n : Int64;
+function VarKeyTypeCity(ICode : Integer = 0) : String;
 begin
-  n := StrToInt64(sType);
-  Result := VarKey(35, n);
+  Result := VarKey(35, ICode);
 end;
 
 // Тип документа
-function VarKeyDocType(sType : string) : String;
-var
-  n : Int64;
+function VarKeyDocType(ICode : Integer = 0) : String;
 begin
-  n := StrToInt64(sType);
-  Result := VarKey(37, n);
+  Result := VarKey(37, ICode);
 end;
 
 // Территория/область
-function VarKeyArea(sType : string) : String;
-var
-  n : Int64;
+function VarKeyArea(ICode : Integer = 0) : String;
 begin
-  try
-  n := StrToInt64(sType);
-  except
-    n := 0;
-  end;
-  Result := VarKey(1, n);
+  Result := VarKey(1, ICode);
 end;
 
 // Регион
-function VarKeyRegion(sType : string) : String;
-var
-  n : Int64;
+function VarKeyRegion(ICode : Integer = 0) : String;
 begin
-  n := StrToInt64(sType);
-  Result := VarKey(29, n);
+  Result := VarKey(29, ICode);
 end;
 
 // Населенный пункт
-function VarKeyCity(sType : string) : String;
-var
-  n : Int64;
+function VarKeyCity(ICode : Integer = 0) : String;
 begin
-  n := StrToInt64(sType);
-  Result := VarKey(7, n);
+  Result := VarKey(7, ICode);
 end;
 
 // Тип Улицы
-function VarKeyTypeStreet(sType : string) : String;
-var
-  n : Int64;
+function VarKeyTypeStreet(ICode : Integer = 0) : String;
 begin
-  n := StrToInt64(sType);
-  Result := VarKey(38, n);
+  Result := VarKey(38, ICode);
 end;
 
 // Улица
-function VarKeyStreet(sType : string) : String;
-var
-  n : Int64;
+function VarKeyStreet(ICode : Integer = 0) : String;
 begin
-  n := StrToInt64(sType);
-  Result := VarKey(34, n);
+  Result := VarKey(34, ICode);
 end;
 
 // Орган выдачи документа
-function VarKeyOrgan(sType : string) : String;
-var
-  n : Int64;
+function VarKeyOrgan(ICode : Integer = 0) : String;
 begin
-  n := StrToInt64(sType);
-  Result := VarKey(24, n);
+  Result := VarKey(24, ICode);
 end;
 
-
 // Сельсовет
-function VarKeyVilage(sType : string) : String;
-var
-  n : Int64;
+function VarKeyVilage(ICode : Integer = 0) : String;
 begin
-  n := StrToInt64(sType);
-  Result := VarKey(98, n);
+  Result := VarKey(98, ICode);
 end;
 
 // IntrRegion
-function VarKeyIntrRegion(sType : string) : String;
-var
-  n : Int64;
+function VarKeyIntrRegion(ICode : Integer = 0) : String;
 begin
-  n := StrToInt64(sType);
-  Result := VarKey(99, n);
+  Result := VarKey(99, ICode);
 end;
-
 
 
 // Тело документа для POST
@@ -402,26 +449,23 @@ var
   nSpr, n, i, j: Integer;
   lOk: Boolean;
 
-{
-}
-
-  function getFldI(sField: String): String;
-  begin
-    try
-    Result := IntToStr(dsDoc.FieldByName(sField).AsInteger);
-    except
-      Result := 'null';
-    end;
-  end;
-
   // Вставить число
   // Вставить логическое
-  procedure AddNum(const ss1: string; ss2: String = '');
+  procedure AddNum(const ss1: string; ss2: Variant); overload;
   begin
-    if (ss2 = '') then
-      ss2 := 'null';
+    //if (VarType(ss2) = varNull) then ss2 := 'null'
+    //else ss2 := IntToStr(ss2);
+    ss2 := VarToStrDef(ss2, 'null');
     StreamDoc.WriteString('"' + ss1 + '":' + ss2 + ',');
   end;
+
+  procedure AddNum(const ss1: string); overload;
+  begin
+       AddNum(ss1, null);
+  end;
+
+
+
   // Вставить строку
 
   procedure AddStr(const ss1: string; ss2: String = '');
@@ -449,9 +493,9 @@ var
 procedure SchPlaceOfBorn;
 begin
   try
-    AddNum('countryB', VarKeyCountry(getFldI('GOSUD_R')));
+    AddNum('countryB', VarKeyCountry(GetFI('GOSUD_R')));
     AddStr('areaB', GetFS('areaB'));
-    AddNum('typeCityB', VarKeyCity(getFldI('typeCityB')));
+    AddNum('typeCityB', VarKeyCity(GetFI('typeCityB')));
   except
   end;
 end;
@@ -460,21 +504,21 @@ end;
 procedure SchPlaceOfLiv;
 begin
   try
-    AddNum('contryL', VarKeyCountry(getFldI('countryL')));
-    AddNum('areaL', VarKeyArea(getFldI('areaL')));
-    AddNum('regionL', VarKeyRegion(getFldI('regionL')));
-    AddNum('typeCityL', VarKeyTypeCity(getFldI('typeCityL')));
-    AddNum('cityL', VarKeyCity(getFldI('cityL')));
-    AddNum('typeStreetL', VarKeyTypeStreet(getFldI('typeStreetL')));
-    AddNum('streetL', VarKeyStreet(getFldI('streetL')));
+    AddNum('contryL', VarKeyCountry(GetFI('countryL')));
+    AddNum('areaL', VarKeyArea(GetFI('areaL')));
+    AddNum('regionL', VarKeyRegion(GetFI('regionL')));
+    AddNum('typeCityL', VarKeyTypeCity(GetFI('typeCityL')));
+    AddNum('cityL', VarKeyCity(GetFI('cityL')));
+    AddNum('typeStreetL', VarKeyTypeStreet(GetFI('typeStreetL')));
+    AddNum('streetL', VarKeyStreet(GetFI('streetL')));
 
     AddStr('house', GetFS('house'));
     AddStr('korps', GetFS('korps'));
     AddStr('app', GetFS('app'));
 
     AddStr('areaBBel', GetFS('areaB'));
-    AddNum('regionBBelL', getFldI('regionL'));
-    AddNum('cityBBel', getFldI('cityL'));
+    AddNum('regionBBelL', GetFI('regionL'));
+    AddNum('cityBBel', GetFI('cityL'));
 
   except
   end;
@@ -490,9 +534,9 @@ begin
     //AddDJ('docAppleDate', getFldD('docAppleDate'));            // дата подачи документа  ???
     AddDJ('expireDate', GetFD('expireDate'));                // дата действия  ???
     //AddNum('aisPasspDocStatus');                               // ???
-    AddNum('docType', VarKeyDocType(GetFS('docType')));  // тип основного документа
+    AddNum('docType', VarKeyDocType(GetFI('docType')));  // тип основного документа
     AddStr('docOrgan');                                       // орган выдачи основного документа
-    //AddStr('docIssueOrgan', VarKeyOrgan(getFldI('docIssueOrgan')));    //###  код органа
+    //AddStr('docIssueOrgan', VarKeyOrgan(GetFI('docIssueOrgan')));    //###  код органа
 
     //AddStr('surnameBel', getFld('FAMILIA'));
     //AddStr('nameBel', getFld('NAME'));
@@ -510,9 +554,9 @@ begin
   try
     StreamDoc.WriteString('"dsdAddressLive":{');
     AddStr('dsdAddressLiveBase', 'dsdAddressLive');
-    AddNum('ateObjectNum', getFldI('ateObjectNum'));
-    AddNum('ateElementUid', getFldI('ateElementUid'));
-    AddNum('ateAddrNum', getFldI('ateAddrNum'));
+    AddNum('ateObjectNum', GetFI('ateObjectNum'));
+    AddNum('ateElementUid', GetFI('ateElementUid'));
+    AddNum('ateAddrNum', GetFI('ADRES_ID'));
     AddStr('house', GetFS('house'));
     AddStr('korps', GetFS('korps'));
     AddStr('app', GetFS('app'));
@@ -534,9 +578,9 @@ begin
     AddStr('form19_20Base', 'form19_20');
     AddNum('signAway', 'false');
     AddDJ('dateReg', GetFD('DATEZ'));
-    AddNum('countryPu', VarKeyCountry(getFldI('GOSUD_O')));
-    AddNum('areaPu', VarKeyArea(GetFS('OBL_O')));
-    //AddNum('regionPu', VarKeyRegion(getFldI('RAION_O')));
+    AddNum('countryPu', VarKeyCountry(GetFI('GOSUD_O')));
+    AddNum('areaPu', VarKeyArea(GetFI('OBL_O')));
+    //AddNum('regionPu', VarKeyRegion(GetFI('RAION_O')));
 
   // Последней была запятая, вернемся для записи конца объекта
     StreamDoc.Seek(-1, soCurrent);
@@ -555,13 +599,13 @@ begin
     AddStr('identif', GetFS('LICH_NOMER'));
   //AddNum( 'view', createSpr(-3, 10));
     AddNum('view');
-    AddNum('sysDocType', VarKeySysDocType(GetFS('sysDocType')));
+    AddNum('sysDocType', VarKeySysDocType(GetFI('sysDocType')));
     AddStr('surname', GetFS('Familia'));
     AddStr('name', GetFS('Name'));
     AddStr('sname', GetFS('Otch'));
     AddNum('sex', VarKeyPol(GetFS('POL')));
-    AddNum('citizenship', VarKeyCountry(GetFS('CITIZEN')));
-    AddNum('sysOrgan', VarKeySysOrgan(GetFS('sysOrgan')));    //###  код органа откуда отправляются данные !!!
+    AddNum('citizenship', VarKeyCountry(GetFI('CITIZEN')));
+    AddNum('sysOrgan', VarKeySysOrgan(GetFI('sysOrgan')));    //###  код органа откуда отправляются данные !!!
     AddStr('bdate', DTOSDef(GetFD('DateR'), tdClipper, '')); // 19650111
     AddStr('dsdDateRec');                                      // дата записи ???
 
@@ -581,20 +625,20 @@ begin
 
 
     if (False) then begin
-    AddStr('organDoc', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
+    AddStr('organDoc', VarKeyOrgan(GetFI('organDoc')));    //###  код органа
     AddStr('workplace', GetFS('workplace'));
     AddStr('workposition', GetFS('workposition'));
-    AddStr('villageCouncil', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
-    AddStr('intracityRegion', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
+    AddStr('villageCouncil', VarKeyOrgan(GetFI('organDoc')));    //###  код органа
+    AddStr('intracityRegion', VarKeyOrgan(GetFI('organDoc')));    //###  код органа
 
     // Форма 19-20
     Form19_20Write;
     // Адрес регистрации
     DsdAddress;
 
-    AddStr('images', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
-    AddStr('status', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
-    AddStr('intracityRegion', VarKeyOrgan(getFldI('organDoc')));    //###  код органа
+    AddStr('images', VarKeyOrgan(GetFI('organDoc')));    //###  код органа
+    AddStr('status', VarKeyOrgan(GetFI('organDoc')));    //###  код органа
+    AddStr('intracityRegion', VarKeyOrgan(GetFI('organDoc')));    //###  код органа
     end;
 
 
