@@ -262,7 +262,7 @@ begin
       FDoc.Append;
       FDoc.FieldByName('PID').AsString := FSO.S[CT('pid')];
 
-      FDoc.FieldByName('view').AsInteger := GetCode('view');
+      //FDoc.FieldByName('view').AsInteger := GetCode('view');
       FDoc.FieldByName('LICH_NOMER').AsString := FSO.S[CT('identif')];
       FDoc.FieldByName('sysDocType').AsInteger := GetCode('sysDocType');
       FDoc.FieldByName('sysDocName').AsString := FSO.O[CT('sysDocType')].s[CT('lex1')];
@@ -279,6 +279,9 @@ begin
 
       FDoc.FieldByName('sysOrgan').AsInteger := GetCode('sysOrgan');
       FDoc.FieldByName('ORGAN').AsString := FSO.O[CT('sysOrgan')].s[CT('lex1')];
+
+      FDoc.FieldByName('SelSovet').AsInteger := GetCode('villageCouncil');
+      FDoc.FieldByName('SelSovet_Name').AsString := FSO.O[CT('villageCouncil')].s[CT('lex1')];
 
       // Паспортные данные
       GetPasp;
@@ -427,7 +430,7 @@ begin
 end;
 
 // Сельсовет
-function VarKeyVilage(ICode : Integer = 0) : String;
+function VarKeyVillage(ICode : Integer = 0) : String;
 begin
   Result := VarKey(98, ICode);
 end;
@@ -470,10 +473,7 @@ var
 
   procedure AddStr(const ss1: string; ss2: String = '');
   begin
-    if (ss2 = '') then
-      ss2 := 'null'
-    else
-      ss2 := '"' + ss2 + '"';
+    ss2 := '"' + ss2 + '"';
     StreamDoc.WriteString('"' + ss1 + '": ' + ss2 + ',');
   end;
   // Вставить дату
@@ -533,7 +533,6 @@ begin
     AddDJ('docDateIssue', GetFD('PASP_DATE'));           // дата выдачи основного документа
     //AddDJ('docAppleDate', getFldD('docAppleDate'));            // дата подачи документа  ???
     AddDJ('expireDate', GetFD('expireDate'));                // дата действия  ???
-    //AddNum('aisPasspDocStatus');                               // ???
     AddNum('docType', VarKeyDocType(GetFI('docType')));  // тип основного документа
     AddStr('docOrgan');                                       // орган выдачи основного документа
     //AddStr('docIssueOrgan', VarKeyOrgan(GetFI('docIssueOrgan')));    //###  код органа
@@ -554,12 +553,45 @@ begin
   try
     StreamDoc.WriteString('"dsdAddressLive":{');
     AddStr('dsdAddressLiveBase', 'dsdAddressLive');
-    AddNum('ateObjectNum', GetFI('ateObjectNum'));
-    AddNum('ateElementUid', GetFI('ateElementUid'));
-    AddNum('ateAddrNum', GetFI('ADRES_ID'));
+    AddNum('pid');
+    {
+    AddStr('areaL', GetFS('МИНСК'));
+    AddNum('areaObjNum');
+    AddStr('regionL');
+    AddNum('regionObjNum', 0);
+    AddStr('villageCouncil');
+    AddNum('vilCouncilObjNum', 0);
+    AddStr('typeCityL', 'г.');
+    AddStr('cityL');
+    AddStr('typeStreetL');
+    AddStr('streetL');
+
     AddStr('house', GetFS('house'));
     AddStr('korps', GetFS('korps'));
     AddStr('app', GetFS('app'));
+    AddNum('ateObjectNum', GetFI('ateObjectNum'));
+    AddNum('ateElementUid', GetFI('ateElementUid'));
+    }
+    //AddNum('ateAddrNum', GetFI('ADRES_ID'));
+
+    // Для отладки - константы
+    AddStr('areaL', 'МИНСК');
+    AddNum('areaObjNum', 0);
+    AddStr('regionL');
+    AddNum('regionObjNum', 0);
+    AddStr('villageCouncil');
+    AddNum('vilCouncilObjNum', 0);
+    AddStr('typeCityL', 'г.');
+    AddStr('cityL');
+    AddStr('typeStreetL');
+    AddStr('streetL');
+
+    AddStr('house', '88');
+    AddStr('korps', '');
+    AddStr('app', '381');
+    AddNum('ateObjectNum', 17030);
+    AddNum('ateElementUid', 23164);
+    AddNum('ateAddrNum');
 
   // Последней была запятая, вернемся для записи конца объекта
     StreamDoc.Seek(-1, soCurrent);
@@ -607,15 +639,17 @@ begin
     AddNum('citizenship', VarKeyCountry(GetFI('CITIZEN')));
     AddNum('sysOrgan', VarKeySysOrgan(GetFI('sysOrgan')));    //###  код органа откуда отправляются данные !!!
     AddStr('bdate', DTOSDef(GetFD('DateR'), tdClipper, '')); // 19650111
-    AddStr('dsdDateRec');                                      // дата записи ???
 
     // Схема Паспорт
     SchPasport;
 
-    //AddStr('regNum');                                      // дата записи ???
-    //AddDJ('dateRec', getFldD('dateRec'));                      // системная дата записи  ???
-    //AddNum('ateAddress');                                      // ???
-    //AddNum('identifCheckResult');                               // ???
+    AddNum('dsdDateRec');                                        // iuse
+    AddStr('regNum');                                            // рег. № карточки
+    AddNum('dateRec');                                           // iuse
+    AddNum('ateAddress');                                        // iuse
+    AddNum('aisPasspDocStatus');                                 // iuse
+    AddNum('identifCheckResult');                                // iuse
+    AddStr('organDoc');                                          // iuse
 
     // Место рождения
     SchPlaceOfBorn;
@@ -623,24 +657,26 @@ begin
     // Место проживания
     SchPlaceOfLiv;
 
-
+    AddNum('workplace');
     if (False) then begin
-    AddStr('organDoc', VarKeyOrgan(GetFI('organDoc')));    //###  код органа
-    AddStr('workplace', GetFS('workplace'));
     AddStr('workposition', GetFS('workposition'));
-    AddStr('villageCouncil', VarKeyOrgan(GetFI('organDoc')));    //###  код органа
-    AddStr('intracityRegion', VarKeyOrgan(GetFI('organDoc')));    //###  код органа
+    end;
+
+    AddNum('villageCouncil', VarKeyVillage(GetFI('SelSovet')));    // код сельсовета
+    AddStr('intracityRegion');    //  код
 
     // Форма 19-20
-    Form19_20Write;
+    //!!! Form19_20Write;
+    AddNum('form19_20');    //###  код органа
+
     // Адрес регистрации
     DsdAddress;
 
-    AddStr('images', VarKeyOrgan(GetFI('organDoc')));    //###  код органа
-    AddStr('status', VarKeyOrgan(GetFI('organDoc')));    //###  код органа
-    AddStr('intracityRegion', VarKeyOrgan(GetFI('organDoc')));    //###  код органа
-    end;
-
+    AddNum('getPassportDate');    //iuse
+    AddNum('images');    //###  код органа
+    AddNum('addressLast');    //iuse
+    AddNum('dossieStatus');    //iuse
+    AddNum('status');    //###  код органа
 
   // Последней была запятая, вернемся для записи конца объекта
     StreamDoc.Seek(-1, soCurrent);

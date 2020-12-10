@@ -330,8 +330,8 @@ begin
 
   ShowM := edMemo;
   edOrgan.Text  := '26';
-  dtBegin.Value := StrToDate('01.01.2003');
-  dtEnd.Value   := StrToDate('01.01.2021');
+  dtBegin.Value := StrToDate('06.10.2020');
+  dtEnd.Value   := StrToDate('08.10.2020');
   edFirst.Text  := '0';
   edCount.Text  := '10';
 
