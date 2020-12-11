@@ -254,9 +254,9 @@ function TExchgRegCitizens.GetDeparted(ParsGet: TParsGet): TResultGet;
 var
   Ret: Boolean;
   nINs: Integer;
-  sDoc, sErr, sPars: string;
+  sErr, sPars: string;
   IndNs: TStringList;
-  Docs: ISuperObject;
+  //Docs: ISuperObject;
 begin
   Result := nil;
   FResGet := TResultGet.Create(FPars);
@@ -343,49 +343,60 @@ begin
 end;
 
 // Передача одного документа
-function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc : TStringStream) : TResultPost;
+function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc: TStringStream): TResultPost;
 var
+  RetCode: Integer;
   Ret, NeedUp: Boolean;
   sErr: string;
   Header: TStringList;
-  DocDTO : TDocSetDTO;
+  DocDTO: TDocSetDTO;
 begin
+  sErr := '';
   NeedUp := False;
   Result := TResultPost.Create;
-  DocDTO := TDocSetDTO.Create(ParsPost.Docs, ParsPost.Child);
 
-    try
-      FHTTP.Headers.Clear;
-
-        StreamDoc.Seek(0, soBeginning);
-
-        if (DocDTO.MemDoc2JSON(ParsPost.Docs, ParsPost.Child, StreamDoc, NeedUp) = True) then begin
-          FHTTP.Headers.Clear;
-
-          FHTTP.Headers.Add('sign:' + ParsPost.USign);
-          FHTTP.Headers.Add('certificate:' + ParsPost.USert);
-          FHTTP.MimeType := 'application/json;charset=UTF-8';
-          FHTTP.Document.CopyFrom(StreamDoc, 0);
-
-          Ret := FHTTP.HTTPMethod('POST', ParsPost.FullURL);
-          if (Ret = True) then begin
-            if (FHTTP.ResultCode < 200) or (FHTTP.ResultCode >= 400) then begin
-              sErr := FHTTP.Headers.Text;
-              raise Exception.Create(sErr);
-            end;
-            ShowDeb(IntToStr(FHTTP.ResultCode) + ' ' + FHTTP.ResultString);
-          end
-          else begin
-            sErr := IntToStr(FHTTP.sock.LastError) + ' ' + FHTTP.sock.LastErrorDesc;
-            raise Exception.Create(sErr);
-          end;
-
-        end;
-
-
-    except
-
+  try
+    FHTTP.Headers.Clear;
+    FHTTP.Headers.Add('sign:' + ParsPost.USign);
+    FHTTP.Headers.Add('certificate:' + ParsPost.USert);
+    FHTTP.MimeType := 'application/json;charset=UTF-8';
+    if (ParsPost.JSONSrc = '') then begin
+      DocDTO := TDocSetDTO.Create(ParsPost.Docs, ParsPost.Child);
+      StreamDoc.Seek(0, soBeginning);
+      if (DocDTO.MemDoc2JSON(ParsPost.Docs, ParsPost.Child, StreamDoc, NeedUp) = True) then
+        FHTTP.Document.CopyFrom(StreamDoc, 0)
+      else begin
+        RetCode := 1;
+        sErr := 'Error creating POST card';
+        raise Exception.Create(sErr);
+      end;
+    end
+    else begin
+      FHTTP.Document.LoadFromFile(ParsPost.JSONSrc);
     end;
+
+    Ret := FHTTP.HTTPMethod('POST', ParsPost.FullURL);
+    if (Ret = True) then begin
+      RetCode := FHTTP.ResultCode;
+      if (FHTTP.ResultCode < 200) or (FHTTP.ResultCode >= 400) then begin
+        StreamDoc.Seek(0, soBeginning);
+        StreamDoc.CopyFrom(FHTTP.Document, 0);
+        sErr := Utf8ToAnsi(StreamDoc.DataString) + CRLF + FHTTP.Headers[0];
+        raise Exception.Create(sErr);
+      end;
+      sErr := FHTTP.ResultString;
+    end
+    else begin
+      RetCode := FHTTP.sock.LastError;
+      sErr := FHTTP.sock.LastErrorDesc;
+      raise Exception.Create(sErr);
+    end;
+  except
+    if (sErr <> '') then begin
+    end;
+  end;
+  Result.ResCode := RetCode;
+  Result.ResMsg := sErr;
 end;
 
 // Передать документы регистрации
@@ -404,13 +415,15 @@ begin
     try
       ParsPost.FullURL := FullPath(FHost, POST_DOC, '');
       StreamDoc := TStringStream.Create('');
-
-      ParsPost.Docs.First;
-      while not ParsPost.Docs.Eof do begin
+      if (ParsPost.JSONSrc = '') then begin
+        ParsPost.Docs.First;
+        while not ParsPost.Docs.Eof do begin
+          Result := Post1Doc(ParsPost, StreamDoc);
+          ParsPost.Docs.Next;
+        end;
+      end
+      else
         Result := Post1Doc(ParsPost, StreamDoc);
-        ParsPost.Docs.Next;
-      end;
-
     except
 
     end;
@@ -419,6 +432,16 @@ begin
   end;
 
 end;
+
+
+
+
+
+
+
+
+
+
 
 
 

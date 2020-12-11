@@ -649,7 +649,7 @@ begin
     AddNum('ateAddress');                                        // iuse
     AddNum('aisPasspDocStatus');                                 // iuse
     AddNum('identifCheckResult');                                // iuse
-    AddStr('organDoc');                                          // iuse
+    AddNum('organDoc');                                          // iuse
 
     // Место рождения
     SchPlaceOfBorn;
@@ -663,7 +663,7 @@ begin
     end;
 
     AddNum('villageCouncil', VarKeyVillage(GetFI('SelSovet')));    // код сельсовета
-    AddStr('intracityRegion');    //  код
+    AddNum('intracityRegion');    //  код
 
     // Форма 19-20
     //!!! Form19_20Write;

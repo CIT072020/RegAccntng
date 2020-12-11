@@ -67,6 +67,7 @@ type
     USert   : string;
     TypeDoc : string;
     FullURL : string;
+    JSONSrc : string;
 
     property Docs  : TkbmMemTable read FDocs write FDocs;
     property Child : TkbmMemTable read FChild write FChild;

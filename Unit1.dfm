@@ -299,7 +299,7 @@ object Form1: TForm1
   object btnGetDocs: TButton
     Left = 944
     Top = 173
-    Width = 119
+    Width = 121
     Height = 25
     Caption = 'GET- '#1091#1073#1099#1074#1096#1080#1077' - BB'
     TabOrder = 23
@@ -356,7 +356,7 @@ object Form1: TForm1
     Visible = True
   end
   object btnPostDoc: TButton
-    Left = 944
+    Left = 1088
     Top = 213
     Width = 119
     Height = 25
@@ -393,8 +393,8 @@ object Form1: TForm1
     Visible = True
   end
   object btnGetNSI: TButton
-    Left = 1088
-    Top = 213
+    Left = 1232
+    Top = 173
     Width = 121
     Height = 25
     Caption = 'GET- '#1053#1057#1048' - BB'
@@ -436,6 +436,19 @@ object Form1: TForm1
     Height = 21
     EditButtons = <>
     TabOrder = 36
+    Visible = True
+  end
+  object cbSrcPost: TDBComboBoxEh
+    Left = 944
+    Top = 215
+    Width = 121
+    Height = 21
+    EditButtons = <>
+    Items.Strings = (
+      'J4Post.json'
+      #1058#1077#1082#1091#1097#1080#1081' DSD')
+    TabOrder = 37
+    Text = 'cbSrcPost'
     Visible = True
   end
   object DataSource1: TDataSource

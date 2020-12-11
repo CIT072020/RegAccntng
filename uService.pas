@@ -12,6 +12,7 @@ uses
  SasaINiFile, FuncPr;
 
 const
+  CRLF     = string(#13#10);
   INI_NAME = 'ExchgPars.ini';
   
   // функции запросов к серверу

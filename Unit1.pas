@@ -63,6 +63,7 @@ type
     gdNsi: TDBGridEh;
     dsNsi: TDataSource;
     edNsiCode: TDBEditEh;
+    cbSrcPost: TDBComboBoxEh;
     procedure btnGetActualClick(Sender: TObject);
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -334,6 +335,7 @@ begin
   dtEnd.Value   := StrToDate('08.10.2020');
   edFirst.Text  := '0';
   edCount.Text  := '10';
+  cbSrcPost.ItemIndex := 0;
 
   Pars := TParsExchg.Create(INI_NAME);
   BlackBox := TExchgRegCitizens.Create(Pars);
@@ -657,18 +659,30 @@ const
   exmSign = 'amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h';
   exmSert = '109uu21nu0t17togdy70-fuib';
 var
+  iSrc : Integer;
   PPost : TParsPost;
   Res : TResultPost;
 begin
   edMemo.Clear;
   PPost := TParsPost.Create(exmSign, exmSert);
-  PPost.Docs := BlackBox.ResGet.Docs;
-  LeaveOnly1(dsDocs.DataSet);
+  iSrc := cbSrcPost.ItemIndex;
+  if (cbSrcPost.ItemIndex = 0) then begin
+    // טח JSON-פאיכא
+    PPost.JSONSrc := cbSrcPost.Items[cbSrcPost.ItemIndex];
+    //PPost.Docs := nil;
+  end
+  else begin
+    // טח MemTable
+    PPost.JSONSrc := '';
+    PPost.Docs := BlackBox.ResGet.Docs;
+    PPost.Child := BlackBox.ResGet.Child;
+    LeaveOnly1(dsDocs.DataSet);
+  end;
 
-  PPost.Child := BlackBox.ResGet.Child;
   BlackBox.ResPost := BlackBox.PostRegDocs(PPost);
   if (Assigned(BlackBox.ResPost)) then begin
   end;
+  ShowDeb(IntToStr(BlackBox.ResPost.ResCode) + ' ' + BlackBox.ResPost.ResMsg);
 
 end;
 
