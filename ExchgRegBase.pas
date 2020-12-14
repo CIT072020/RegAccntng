@@ -66,6 +66,7 @@ implementation
 
 uses
   SysUtils,
+  StrUtils,
   NativeXml,
   uDTO;
 
@@ -139,6 +140,60 @@ begin
 end;
 
 
+// Перевод Num->Str
+function MakeNumAsStr(const NumField, Src: string): string;
+const
+  NumToken = ',"%s":';
+var
+  TokLen,
+  Offs, MaxI,
+  i : Integer;
+  s,
+  Dst, Srch: string;
+
+  function SelectNum: string;
+  var
+    iBeg, iLen : Integer;
+  begin
+    Result := '';
+    iBeg := i;
+    iLen := 0;
+    while (i <= MaxI) do begin
+      if not (Src[i] in ['0'..'9']) then begin
+        Result := Copy(Src, iBeg, iLen);
+        Break;
+      end
+      else
+        Inc(iLen);
+      i := i + 1;
+    end;
+  end;
+
+begin
+  Result := Src;
+  Srch := Format(NumToken, [NumField]);
+  // поиск строкового представления
+  i := PosEx(Srch + '"', Src);
+  if (i <= 0) then begin
+    // строкового нет, числовое представление, его и ищем
+    MaxI := Length(Src);
+    TokLen := Length(Srch);
+    Dst := '';
+    Offs := 1;
+    i := PosEx(Srch, Src, Offs);
+    while (i > 0) do begin
+      i := i + TokLen; // Nums start here
+      Dst := Dst + Copy(Src, Offs, i - Offs);
+      s := '"' + SelectNum + '"';
+      Dst := Dst + s;
+      Offs := i;
+      i := PosEx(Srch, Src, Offs);
+    end;
+    Dst := Dst + Copy(Src, Offs, MaxI - Offs + 1);
+    Result := Dst;
+  end
+end;
+
 
 // Перемещение граждан за период
 function GetListID(StrPars: string = ''): ISuperObject;
@@ -162,8 +217,8 @@ begin
           raise Exception.Create(sErr);
         end;
         ShowDeb(IntToStr(HTTP.ResultCode) + ' ' + HTTP.ResultString);
-        sDoc := MemStream2Str(HTTP.Document);
-        Result := SO(Utf8Decode(sDoc));
+        sDoc := Utf8Decode(MemStream2Str(HTTP.Document));
+        Result := SO(MakeNumAsStr('pid', sDoc));
       end
       else begin
         sErr := IntToStr(HTTP.sock.LastError) + ' ' + HTTP.sock.LastErrorDesc;
