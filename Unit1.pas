@@ -351,6 +351,7 @@ end;
 
 procedure TForm1.Button4Click(Sender: TObject);
 var
+  jdt : Int64;
   d:TDateTime;
 begin
 {
@@ -364,14 +365,24 @@ function ISO8601DateToJavaDateTime(const str: SOString; var ms: Int64): Boolean;
 function ISO8601DateToDelphiDateTime(const str: SOString; var dt: TDateTime): Boolean;
 }
 //1240672053000
- Edit2.Text:='';
+ //Edit2.Text:='';
+
  if ComboBox1.ItemIndex=0 then begin
+   // ISO converting
    if ISO8601DateToDelphiDateTime(Edit1.Text, d)
      then Edit2.Text:=FormatDateTime('dd.mm.yyyy hh:nn:ss', d)
      else Edit2.Text:='error';
  end else begin
-   d:=JavaToDelphiDateTime( StrToInt64(Edit1.Text));
-   Edit2.Text:=FormatDateTime('dd.mm.yyyy hh:nn:ss', d)
+   // Java converting
+   if (Edit1.Text <> '') then begin
+     d:=JavaToDelphiDateTime( StrToInt64(Edit1.Text));
+     Edit2.Text:=FormatDateTime('dd.mm.yyyy hh:nn:ss', d);
+   end else begin
+     d   := StrToDate(Edit2.Text);
+     jdt := DelphiToJavaDateTime(d);
+     Edit1.Text := IntToStr(DelphiToJavaDateTime(StrToDate(Edit2.Text)));
+
+   end;
  end;
 end;
 
@@ -663,20 +674,22 @@ var
   PPost : TParsPost;
   Res : TResultPost;
 begin
-  edMemo.Clear;
+  //edMemo.Clear;
   PPost := TParsPost.Create(exmSign, exmSert);
   iSrc := cbSrcPost.ItemIndex;
-  if (cbSrcPost.ItemIndex = 0) then begin
-    // из JSON-файла
-    PPost.JSONSrc := cbSrcPost.Items[cbSrcPost.ItemIndex];
-    //PPost.Docs := nil;
-  end
-  else begin
+  if (cbSrcPost.ItemIndex in [0..1]) then begin
     // из MemTable
     PPost.JSONSrc := '';
     PPost.Docs := BlackBox.ResGet.Docs;
     PPost.Child := BlackBox.ResGet.Child;
-    LeaveOnly1(dsDocs.DataSet);
+    if (cbSrcPost.ItemIndex = 0) then
+    // передача только текущей
+      LeaveOnly1(dsDocs.DataSet);
+  end
+  else begin
+    // из JSON-файла
+    PPost.JSONSrc := cbSrcPost.Items[cbSrcPost.ItemIndex];
+    //PPost.Docs := nil;
   end;
 
   BlackBox.ResPost := BlackBox.PostRegDocs(PPost);

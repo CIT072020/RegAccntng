@@ -50,8 +50,6 @@ object Form1: TForm1
     Top = 153
     Width = 921
     Height = 225
-    Lines.Strings = (
-      'edMemo')
     ScrollBars = ssVertical
     TabOrder = 1
   end
@@ -445,8 +443,11 @@ object Form1: TForm1
     Height = 21
     EditButtons = <>
     Items.Strings = (
+      #1058#1077#1082#1091#1097#1080#1081' DSD'
+      #1042#1089#1077' DSD'
       'J4Post.json'
-      #1058#1077#1082#1091#1097#1080#1081' DSD')
+      'J4PostNoPasp.json'
+      'J4PostNoIN.json')
     TabOrder = 37
     Text = 'cbSrcPost'
     Visible = True

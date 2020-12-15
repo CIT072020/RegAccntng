@@ -1,0 +1,197 @@
+{
+    "identif": "7489423A002PB5",
+    "view": null,
+    "sysDocType": {
+        "klUniPK": {
+            "type": -2,
+            "code": 8
+        }
+    },
+    "surname": "МЕДВЕДЕВ",
+    "name": "АРТЕМ",
+    "sname": "АНДРЕЕВИЧ",
+    "sex": {
+        "klUniPK": {
+            "type": 32,
+            "code": 21000001
+        }
+    },
+    "citizenship": {
+        "klUniPK": {
+            "type": 8,
+            "code": 11200001
+        }
+    },
+    "sysOrgan": {
+        "klUniPK": {
+            "type": -5,
+            "code": 26
+        }
+    },
+    "bdate": "20170622",
+    "dsdDateRec": null,
+    "docSery": "I-ЛЮ",
+    "docNum": "0480737",
+    "docDateIssue": 1498683600000,
+    "docAppleDate": null,
+    "dateRec": null,
+    "countryB": null,
+    "areaB": null,
+    "regionB": null,
+    "typeCityB": null,
+    "cityB": null,
+    "docType": {
+        "klUniPK": {
+            "type": 37,
+            "code": 54100005
+        }
+    },
+    "docOrgan": null,
+    "contryL": null,
+    "areaL": null,
+    "regionL": null,
+    "typeCityL": null,
+    "cityL": null,
+    "typeStreetL": null,
+    "streetL": null,
+    "house": null,
+    "korps": null,
+    "app": null,
+    "organDoc": null,
+    "workPlace": null,
+    "workPosition": "ПЕНСИОНЕР",
+    "docIssueOrgan": {
+        "klUniPK": {
+            "type": 24,
+            "code": 17608931
+        }
+    },
+    "surnameBel": "МЯДЗВЕДЗЕЎ",
+    "nameBel": "АРЦЁМ",
+    "snameBel": "АНДРЭЕВІЧ",
+    "surnameEn": "",
+    "nameEn": "",
+    "areaBBel": null,
+    "regionBBel": null,
+    "cityBBel": null,
+    "villageCouncil": {
+        "klUniPK": {
+            "type": 98,
+            "code": 0
+        }
+    },
+    "intracityRegion": null,
+    "ateAddress": null,
+    "expireDate": null,
+    "aisPasspDocStatus": null,
+    "form19_20": {
+        "form19_20Base": "form19_20",
+        "pid": null,
+        "signAway": false,
+        "countryPu": {
+            "klUniPK": {
+                "type": 8,
+                "code": 11200001
+            }
+        },
+        "areaPu": "АБХАЗСКАЯ АССР",
+        "regionPu": "МСТИСЛАВЛЬСКИЙ",
+        "cityPu": "\"ВАСИЛЁК\"",
+        "datePu": null,
+        "marks": {
+            "klUniPK": {
+                "type": 2,
+                "code": 0
+            }
+        },
+        "notes": null,
+        "reason": {
+            "klUniPK": {
+                "type": 3,
+                "code": 2
+            }
+        },
+        "term": null,
+        "dateRec": 1543978800000,
+        "typeCityPu": {
+            "klUniPK": {
+                "type": 35,
+                "code": 11100068
+            }
+        },
+        "typeStreetPu": {
+            "klUniPK": {
+                "type": 38,
+                "code": 0
+            }
+        },
+        "streetPu": null,
+        "housePu": null,
+        "korpsPu": null,
+        "appPu": null,
+        "dateReg": null,
+        "termReg": {
+            "klUniPK": {
+                "type": 27,
+                "code": 4
+            }
+        },
+        "dateRegTill": null,
+        "causeIssue": {
+            "klUniPK": {
+                "type": 39,
+                "code": 59200021
+            }
+        },
+        "deathDate": null,
+        "signNoTake": false,
+        "signNoReg": false,
+        "signDestroy": false,
+        "noAddrPu": {
+            "klUniPK": {
+                "type": 70,
+                "code": 12
+            }
+        },
+        "regType": {
+            "klUniPK": {
+                "type": 500,
+                "code": 2
+            }
+        },
+        "maritalStatus": {
+            "klUniPK": {
+                "type": 501,
+                "code": 3
+            }
+        },
+        "education": null,
+        "student": false,
+        "infants": []
+    },
+    "dsdAddressLive": {
+        "dsdAddressLiveBase": "dsdAddressLive",
+        "pid": null,
+        "areaL": "МИНСК",
+        "areaObjNum": 0,
+        "regionL": "",
+        "regionObjNum": 0,
+        "villageCouncil": "",
+        "vilCouncilObjNum": 0,
+        "typeCityL": "г.",
+        "cityL": "",
+        "typeStreetL": "",
+        "streetL": "",
+        "house": "88",
+        "korps": null,
+        "app": "381",
+        "ateObjectNum": 17030,
+        "ateElementUid": 23164,
+        "ateAddrNum": null
+    },
+    "getPassportDate": null,
+    "images": [],
+    "addressLast": null,
+    "dossieStatus": null,
+    "status": null
+}

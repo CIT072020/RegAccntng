@@ -9,7 +9,8 @@ uses
   uService in 'uService.pas',
   ExchgRegBase in 'ExchgRegBase.pas',
   uPars in 'uPars.pas',
-  uDTO in 'uDTO.pas';
+  uDTO in 'uDTO.pas',
+  uNSI in 'uNSI.pas';
 
 {$R *.res}
 

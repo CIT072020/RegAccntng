@@ -65,7 +65,8 @@ uses
   SysUtils,
   Variants,
   NativeXml,
-  FuncPr;
+  FuncPr,
+  uNSI;
 
 
 constructor TDocSetDTO.Create(MTDoc, MTChild : TDataSet);
@@ -84,7 +85,11 @@ end;
 // Числовое целое из MemTable
 function TDocSetDTO.GetFI(sField: String): Integer;
 begin
-  Result := FDoc.FieldByName(sField).AsInteger;
+  try
+    Result := FDoc.FieldByName(sField).AsInteger;
+  except
+    Result := null;
+  end;
 end;
 
 
@@ -355,12 +360,15 @@ begin
 end;
 
 // SYS-Тип документа
+{
 function VarKeySysDocType(ICode : Integer = 8) : String;
 begin
   Result := VarKey(-2, ICode);
 end;
+}
 
 // Мужской/женский
+{
 function VarKeyPol(sType : string = 'М') : String;
 var
   n : Int64;
@@ -368,12 +376,14 @@ begin
   if (sType = 'М') then n := 21000001 else n := 21000002;
   Result := VarKey(32, n);
 end;
-
+}
 // Код гражданства
+{
 function VarKeyCountry(ICode : Integer = 11200001) : String;
 begin
   Result := VarKey(8, ICode);
 end;
+}
 
 // Код регистрирующего органа
 function VarKeySysOrgan(ICode : Integer = 0) : String;
@@ -454,6 +464,7 @@ var
 
   // Вставить число
   // Вставить логическое
+  // Вставить значение ключа
   procedure AddNum(const ss1: string; ss2: Variant); overload;
   begin
     //if (VarType(ss2) = varNull) then ss2 := 'null'
@@ -493,7 +504,7 @@ var
 procedure SchPlaceOfBorn;
 begin
   try
-    AddNum('countryB', VarKeyCountry(GetFI('GOSUD_R')));
+    AddNum('countryB', TNsiRoc.Country(GetFI('GOSUD_R')));
     AddStr('areaB', GetFS('areaB'));
     AddNum('typeCityB', VarKeyCity(GetFI('typeCityB')));
   except
@@ -504,7 +515,7 @@ end;
 procedure SchPlaceOfLiv;
 begin
   try
-    AddNum('contryL', VarKeyCountry(GetFI('countryL')));
+    AddNum('contryL', TNsiRoc.Country(GetFI('countryL')));
     AddNum('areaL', VarKeyArea(GetFI('areaL')));
     AddNum('regionL', VarKeyRegion(GetFI('regionL')));
     AddNum('typeCityL', VarKeyTypeCity(GetFI('typeCityL')));
@@ -610,7 +621,7 @@ begin
     AddStr('form19_20Base', 'form19_20');
     AddNum('signAway', 'false');
     AddDJ('dateReg', GetFD('DATEZ'));
-    AddNum('countryPu', VarKeyCountry(GetFI('GOSUD_O')));
+    AddNum('countryPu', TNsiRoc.Country(GetFI('GOSUD_O')));
     AddNum('areaPu', VarKeyArea(GetFI('OBL_O')));
     //AddNum('regionPu', VarKeyRegion(GetFI('RAION_O')));
 
@@ -627,16 +638,16 @@ begin
   try
     StreamDoc.WriteString('{');
 
-    AddNum(  'pid' );
+    AddNum('pid');
     AddStr('identif', GetFS('LICH_NOMER'));
   //AddNum( 'view', createSpr(-3, 10));
     AddNum('view');
-    AddNum('sysDocType', VarKeySysDocType(GetFI('sysDocType')));
+    AddNum('sysDocType', TNsiRoc.SysDocType(GetFI('sysDocType')));
     AddStr('surname', GetFS('Familia'));
     AddStr('name', GetFS('Name'));
     AddStr('sname', GetFS('Otch'));
-    AddNum('sex', VarKeyPol(GetFS('POL')));
-    AddNum('citizenship', VarKeyCountry(GetFI('CITIZEN')));
+    AddNum('sex', TNsiRoc.Sex(GetFS('POL')));
+    AddNum('citizenship', TNsiRoc.Country(GetFI('CITIZEN')));
     AddNum('sysOrgan', VarKeySysOrgan(GetFI('sysOrgan')));    //###  код органа откуда отправляются данные !!!
     AddStr('bdate', DTOSDef(GetFD('DateR'), tdClipper, '')); // 19650111
 
