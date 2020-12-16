@@ -27,6 +27,7 @@ type
     function GetINsFromSrv(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
     procedure Docs4CurIN(IndNum, PID : string; IndNs: TStringList);
     function Post1Doc(ParsPost: TParsPost; StreamDoc : TStringStream) : TResultPost;
+    function SetRetCode(Ret: Boolean; var sErr: string): integer;
   protected
   public
     // Результат запроса данных (GET)
@@ -101,6 +102,53 @@ destructor TExchgRegCitizens.Destroy;
 begin
 
 end;
+
+
+// Установка кодов возврата после HTTPSend
+function TExchgRegCitizens.SetRetCode(Ret: Boolean; var sErr: string): integer;
+var
+  SOErr: ISuperObject;
+  StreamDoc: TStringStream;
+begin
+  sErr := '';
+  Result := FHTTP.ResultCode;
+
+  try
+    if (Ret = True) then begin
+      if (FHTTP.ResultCode <> 200) then begin
+        StreamDoc := TStringStream.Create('');
+        try
+          StreamDoc.Seek(0, soBeginning);
+          StreamDoc.CopyFrom(FHTTP.Document, 0);
+          if (FHTTP.ResultCode = 500) then begin
+            SOErr := SO(Utf8Decode(StreamDoc.DataString));
+            Result := SOErr.I['status'];
+            sErr := SOErr.S['message'];
+          end
+          else
+            sErr := Utf8ToAnsi(StreamDoc.DataString) + CRLF + FHTTP.Headers[0];
+          raise Exception.Create(sErr);
+        finally
+          StreamDoc.Free;
+        end;
+      end;
+      sErr := FHTTP.ResultString;
+      Result := 0;
+    end
+    else begin
+      Result := FHTTP.sock.LastError;
+      sErr := FHTTP.sock.LastErrorDesc;
+      raise Exception.Create(sErr);
+    end;
+  except
+    on E: Exception do begin
+      if (sErr <> '') then
+        sErr := E.Message;
+      Result := 700;
+    end;
+  end;
+end;
+
 
 
 
@@ -401,14 +449,13 @@ end;
 function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc: TStringStream): TResultPost;
 var
   RetCode: Integer;
-  Ret, NeedUp: Boolean;
   sErr: string;
   Header: TStringList;
   DocDTO: TDocSetDTO;
 begin
   sErr := '';
-  NeedUp := False;
   Result := TResultPost.Create;
+  RetCode := 900;
 
   try
     FHTTP.Headers.Clear;
@@ -418,18 +465,16 @@ begin
     if (ParsPost.JSONSrc = '') then begin
       DocDTO := TDocSetDTO.Create(ParsPost.Docs, ParsPost.Child);
       StreamDoc.Seek(0, soBeginning);
-      if (DocDTO.MemDoc2JSON(ParsPost.Docs, ParsPost.Child, StreamDoc, NeedUp) = True) then
+      if (DocDTO.MemDoc2JSON(ParsPost.Docs, ParsPost.Child, StreamDoc, False) = True) then
         FHTTP.Document.CopyFrom(StreamDoc, 0)
       else begin
-        RetCode := 1;
         sErr := 'Error creating POST card';
         raise Exception.Create(sErr);
       end;
     end
-    else begin
+    else
       FHTTP.Document.LoadFromFile(ParsPost.JSONSrc);
-    end;
-
+{
     Ret := FHTTP.HTTPMethod('POST', ParsPost.FullURL);
     if (Ret = True) then begin
       RetCode := FHTTP.ResultCode;
@@ -446,9 +491,14 @@ begin
       sErr := FHTTP.sock.LastErrorDesc;
       raise Exception.Create(sErr);
     end;
+}
+
+    RetCode := SetRetCode(FHTTP.HTTPMethod('POST', ParsPost.FullURL), sErr);
+
   except
     if (sErr <> '') then begin
     end;
+    RetCode := 900;
   end;
   Result.ResCode := RetCode;
   Result.ResMsg := sErr;
@@ -457,23 +507,23 @@ end;
 // Передать документы регистрации
 function TExchgRegCitizens.PostRegDocs(ParsPost: TParsPost): TResultPost;
 var
-  Ret, NeedUp: Boolean;
   sErr: string;
   Header: TStringList;
   StreamDoc: TStringStream;
 begin
-  NeedUp := False;
   Result := TResultPost.Create;
 
+  StreamDoc := TStringStream.Create('');
   FHTTP := THTTPSend.Create;
   try
     try
       ParsPost.FullURL := FullPath(FHost, POST_DOC, '');
-      StreamDoc := TStringStream.Create('');
       if (ParsPost.JSONSrc = '') then begin
         ParsPost.Docs.First;
         while not ParsPost.Docs.Eof do begin
           Result := Post1Doc(ParsPost, StreamDoc);
+          if (Result.ResCode <> 0) then
+            Break;
           ParsPost.Docs.Next;
         end;
       end
@@ -483,39 +533,20 @@ begin
 
     end;
   finally
+    StreamDoc.Free;
     FHTTP.Free;
   end;
 
 end;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Получить содержимое справочника
 function TExchgRegCitizens.GetNSI(NsiType: integer; NsiCode: integer = 0; URL: string = ''): TResultGet;
 var
-  nRec: Integer;
+  nRet : Integer;
   SOList: ISuperObject;
-  Ret: Boolean;
-  StrPars, sDoc, sType, sCode, sErr: string;
+  sType, sCode, sErr: string;
 begin
-  Result := nil;
+  Result := TResultGet.Create(FPars, NSI_ONLY);
 
   if (URL = '') then begin
     if (NsiCode = 0) then
@@ -523,43 +554,34 @@ begin
     else
       sCode := IntToStr(NsiCode);
     sType := IntToStr(NsiType);
-    StrPars := Format('/type/%s?code=%s&active=true&first&count', [sType, sCode]);
-    StrPars := FullPath(FHost, GET_NSI, StrPars);
-  end
-  else
-    StrPars := URL;
-
-  ShowDeb(StrPars);
+    URL := Format('/type/%s?code=%s&active=true&first&count', [sType, sCode]);
+    URL := FullPath(FHost, GET_NSI, URL);
+  end;
 
   FHTTP := THTTPSend.Create;
   try
     try
-      Ret := FHTTP.HTTPMethod('GET', StrPars);
-      if (Ret = True) then begin
-        if (FHTTP.ResultCode < 200) or (FHTTP.ResultCode >= 400) then begin
-          sErr := FHTTP.Headers.Text;
-          raise Exception.Create(sErr);
+      nRet := SetRetCode(FHTTP.HTTPMethod('GET', URL), sErr);
+      if (nRet = 0) then begin
+        sErr   := MemStream2Str(FHTTP.Document);
+        SOList := SO(Utf8Decode(sErr));
+        nRet := 801;
+        sErr := 'No data in HTTP-Document';
+        if Assigned(SOList) and (SOList.DataType = stArray) then begin
+          if (TDocSetDTO.GetNSI(SOList, Result.Nsi) > 0) then begin
+            nRet := 0;
+            sErr := '';
+          end;
         end;
-        ShowDeb(IntToStr(FHTTP.ResultCode) + ' ' + FHTTP.ResultString);
-        sDoc := MemStream2Str(FHTTP.Document);
-        SOList := SO(Utf8Decode(sDoc));
-      end
-      else begin
-        sErr := IntToStr(FHTTP.sock.LastError) + ' ' + FHTTP.sock.LastErrorDesc;
-        raise Exception.Create(sErr);
       end;
+      Result.ResCode := nRet;
+      Result.ResMsg  := sErr;
     except
-
+      Result.ResCode := 800;
+      Result.ResMsg  := 'Error getting NSI';
     end;
   finally
     FHTTP.Free;
-  end;
-
-  if Assigned(SOList) and (SOList.DataType = stArray) then begin
-    Result := TResultGet.Create(FPars, True);
-    nRec := TDocSetDTO.GetNSI(SOList, Result.Nsi);
-    if (nRec < 0) then
-      Result := nil;
   end;
 
 end;

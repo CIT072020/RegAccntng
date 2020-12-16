@@ -98,7 +98,7 @@ type
     property ResCode : Integer read FCode write FCode;
     property ResMsg : string read FMsg write FMsg;
 
-    constructor Create(Pars : TParsExchg; NSIOnly : Boolean = False);
+    constructor Create(Pars: TParsExchg; WhatMT : Integer = DATA_ONLY);
   end;
 
   TResultPost = class
@@ -161,14 +161,14 @@ begin
 end;
 
 // Результат GET
-constructor TResultGet.Create(Pars: TParsExchg; NSIOnly: Boolean = False);
+constructor TResultGet.Create(Pars: TParsExchg; WhatMT : Integer = DATA_ONLY);
 begin
-  if (NSIOnly = False) then begin
+  if (WhatMT = DATA_ONLY) then begin
     INs := TkbmMemTable(CreateMemTable(MT_INS, Pars.Meta, Pars.SectINs));
     Docs := TkbmMemTable(CreateMemTable(MT_DOCS, Pars.Meta, Pars.SectDocs));
     Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, Pars.SectChild));
-  end;
-  Nsi := TkbmMemTable(CreateMemTable(MT_NSI, Pars.Meta, Pars.SectNsi));
+  end else
+    Nsi := TkbmMemTable(CreateMemTable(MT_NSI, Pars.Meta, Pars.SectNsi));
 end;
 
 constructor TParsPost.Create(DSign, Cert : string; URL : string = '');

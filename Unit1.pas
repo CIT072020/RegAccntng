@@ -738,6 +738,7 @@ begin
   try
     NsiType := StrToInt(edNsiType.Text);
     if (Length(edNsiCode.Text) > 0) then
+      // только один элемент справочника
       NsiCode := StrToInt(edNsiCode.Text)
     else
       NsiCode := 0;
@@ -751,6 +752,7 @@ begin
       dsNsi.DataSet := BlackBox.ResGet.Nsi;
       BlackBox.ResGet.Nsi.First;
     end;
+    ShowDeb(IntToStr(BlackBox.ResGet.ResCode) + ' ' + BlackBox.ResGet.ResMsg);
   end;
 end;
 

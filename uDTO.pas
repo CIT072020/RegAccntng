@@ -643,9 +643,9 @@ begin
   //AddNum( 'view', createSpr(-3, 10));
     AddNum('view');
     AddNum('sysDocType', TNsiRoc.SysDocType(GetFI('sysDocType')));
-    AddStr('surname', GetFS('Familia'));
-    AddStr('name', GetFS('Name'));
-    AddStr('sname', GetFS('Otch'));
+    AddStr('surname', UpperCase(GetFS('Familia')));
+    AddStr('name', UpperCase(GetFS('Name')));
+    AddStr('sname', UpperCase(GetFS('Otch')));
     AddNum('sex', TNsiRoc.Sex(GetFS('POL')));
     AddNum('citizenship', TNsiRoc.Country(GetFI('CITIZEN')));
     AddNum('sysOrgan', VarKeySysOrgan(GetFI('sysOrgan')));    //###  код органа откуда отправл€ютс€ данные !!!

@@ -47,6 +47,10 @@ const
   MT_CHILD = 'CHILD';
   MT_NSI   = 'NSI';
 
+  // Режим создания выходных парметров
+  DATA_ONLY = 1;
+  NSI_ONLY  = 2;
+
   // Режим вывода очередной отладочной записи
   DEB_CLEAR    = 1;
   DEB_NEWLINE  = 2;
