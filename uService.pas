@@ -56,6 +56,13 @@ const
   DEB_NEWLINE  = 2;
   DEB_SAMELINE = 3;
 
+  // Коды ошибок
+  UERR_GET_NSI = 600;
+  UERR_GET_INDNOMS = 700;
+  UERR_GET_DEPART = 800;
+  UERR_GET_ACTUAL = 900;
+  UERR_POST_REG = 1000;
+
 type
   THostReg = class(TObject)
   // путь к сервису

@@ -150,12 +150,29 @@ begin
   FDoc.FieldByName('PASP_SERIA').AsString := FSO.S[CT('docSery')];
   FDoc.FieldByName('PASP_NOMER').AsString := FSO.S[CT('docNum')];
   FDoc.FieldByName('PASP_DATE').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('docDateIssue')]);
+  FDoc.FieldByName('docIssueOrgan').AsInteger := GetCode('docIssueOrgan');
+  FDoc.FieldByName('PASP_VIDAN').AsString := FSO.O[CT('docIssueOrgan')].s[CT('lex1')];
+  FDoc.FieldByName('docAppleDate').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('docAppleDate')]);
+  FDoc.FieldByName('expireDate').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('expireDate')]);
+  FDoc.FieldByName('docType').AsInteger := GetCode('docType');
+  FDoc.FieldByName('docType_NAME').AsString := FSO.O[CT('docType')].s[CT('lex1')];
+
   d := STOD(FSO.S[CT('bdate')]);
   FDoc.FieldByName('DateR').AsDateTime := d;
   FDoc.FieldByName('CITIZEN').AsInteger := GetCode('citizenship');
+  FDoc.FieldByName('CITIZEN_NAME').AsString := FSO.O[CT('citizenship')].s[CT('lex1')];
 
   FDoc.FieldByName('GOSUD_R').AsInteger := FSO.O[CT('countryB')].O[CT('klUniPK')].i[CT('code')];
   FDoc.FieldByName('GOSUD_R_NAME').AsString := FSO.O[CT('countryB')].s[CT('lex1')];
+
+  FDoc.FieldByName('FAMILIA_B').AsString := FSO.S[CT('surnameBel')];
+  FDoc.FieldByName('NAME_B').AsString := FSO.S[CT('nameBel')];
+  FDoc.FieldByName('OTCH_B').AsString := FSO.S[CT('snameBel')];
+
+  FDoc.FieldByName('FAMILIA_E').AsString := FSO.S[CT('surnameEn')];
+  FDoc.FieldByName('NAME_E').AsString := FSO.S[CT('nameEn')];
+
+
 end;
 
 
@@ -288,6 +305,9 @@ begin
       FDoc.FieldByName('SelSovet').AsInteger := GetCode('villageCouncil');
       FDoc.FieldByName('SelSovet_Name').AsString := FSO.O[CT('villageCouncil')].s[CT('lex1')];
 
+      FDoc.FieldByName('WORK_NAME').AsString := FSO.S[CT('workPlace')];
+      FDoc.FieldByName('DOLG_NAME').AsString := FSO.S[CT('workPosition')];
+
       // Паспортные данные
       GetPasp;
 
@@ -386,10 +406,12 @@ end;
 }
 
 // Код регистрирующего органа
+{
 function VarKeySysOrgan(ICode : Integer = 0) : String;
 begin
   Result := VarKey(-5, ICode);
 end;
+}
 
 // Код типа населенного пункта
 function VarKeyTypeCity(ICode : Integer = 0) : String;
@@ -398,11 +420,12 @@ begin
 end;
 
 // Тип документа
+{
 function VarKeyDocType(ICode : Integer = 0) : String;
 begin
   Result := VarKey(37, ICode);
 end;
-
+}
 // Территория/область
 function VarKeyArea(ICode : Integer = 0) : String;
 begin
@@ -433,11 +456,6 @@ begin
   Result := VarKey(34, ICode);
 end;
 
-// Орган выдачи документа
-function VarKeyOrgan(ICode : Integer = 0) : String;
-begin
-  Result := VarKey(24, ICode);
-end;
 
 // Сельсовет
 function VarKeyVillage(ICode : Integer = 0) : String;
@@ -542,18 +560,19 @@ begin
     AddStr('docSery', GetFS('PASP_SERIA'));                       // серия основного документа
     AddStr('docNum', GetFS('PASP_NOMER'));                       // номер основного документа
     AddDJ('docDateIssue', GetFD('PASP_DATE'));           // дата выдачи основного документа
-    //AddDJ('docAppleDate', getFldD('docAppleDate'));            // дата подачи документа  ???
+    AddNum('docType', TNsiRoc.DocType(GetFI('docType')));  // тип основного документа
+    AddNum('docIssueOrgan', TNsiRoc.PaspOrg(GetFI('docIssueOrgan'),GetFS('PASP_VIDAN')));    //###  код органа
+
+    AddDJ('docAppleDate', GetFD('docAppleDate'));            // дата подачи документа  ???
     AddDJ('expireDate', GetFD('expireDate'));                // дата действия  ???
-    AddNum('docType', VarKeyDocType(GetFI('docType')));  // тип основного документа
-    AddStr('docOrgan');                                       // орган выдачи основного документа
-    //AddStr('docIssueOrgan', VarKeyOrgan(GetFI('docIssueOrgan')));    //###  код органа
+    AddNum('docOrgan');                                       // орган выдачи основного документа
 
     //AddStr('surnameBel', getFld('FAMILIA'));
     //AddStr('nameBel', getFld('NAME'));
     //AddStr('snameBel', getFld('OTCH'));
 
-    //AddStr('surnameEn', getFld('FAMILIA'));
-    //AddStr('nameEn', getFld('NAME'));
+    AddStr('surnameEn', GetFS('FAMILIA_E'));
+    AddStr('nameEn', GetFS('NAME_E'));
   except
   end;
 end;
@@ -640,7 +659,6 @@ begin
 
     AddNum('pid');
     AddStr('identif', GetFS('LICH_NOMER'));
-  //AddNum( 'view', createSpr(-3, 10));
     AddNum('view');
     AddNum('sysDocType', TNsiRoc.SysDocType(GetFI('sysDocType')));
     AddStr('surname', UpperCase(GetFS('Familia')));
@@ -648,7 +666,7 @@ begin
     AddStr('sname', UpperCase(GetFS('Otch')));
     AddNum('sex', TNsiRoc.Sex(GetFS('POL')));
     AddNum('citizenship', TNsiRoc.Country(GetFI('CITIZEN')));
-    AddNum('sysOrgan', VarKeySysOrgan(GetFI('sysOrgan')));    //###  код органа откуда отправляются данные !!!
+    AddNum('sysOrgan', TNsiRoc.SysOrgan(GetFI('sysOrgan')));    //###  код органа откуда отправляются данные !!!
     AddStr('bdate', DTOSDef(GetFD('DateR'), tdClipper, '')); // 19650111
 
     // Схема Паспорт
@@ -668,10 +686,8 @@ begin
     // Место проживания
     SchPlaceOfLiv;
 
-    AddNum('workplace');
-    if (False) then begin
-    AddStr('workposition', GetFS('workposition'));
-    end;
+    AddStr('workPlace', GetFS('WORK_NAME'));
+    AddStr('workPosition', GetFS('DOLG_NAME'));
 
     AddNum('villageCouncil', VarKeyVillage(GetFI('SelSovet')));    // код сельсовета
     AddNum('intracityRegion');    //  код

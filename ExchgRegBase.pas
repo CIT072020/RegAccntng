@@ -23,6 +23,7 @@ type
     FHTTP   : THTTPSend;
 
     function ReadIni : Boolean;
+    procedure GenCreate;
     function StoreINsInRes(Pars : TParsGet) : integer;
     function GetINsFromSrv(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
     procedure Docs4CurIN(IndNum, PID : string; IndNs: TStringList);
@@ -54,8 +55,9 @@ type
     *)
     function GetNSI(NsiType : integer; NsiCode : integer = 0; URL : string = ''): TResultGet;
 
-
-    constructor Create(Pars : TParsExchg);
+    constructor Create(Pars : TParsExchg); overload;
+    constructor Create(MName : string); overload;
+    constructor Create(MetaINI : TSasaIniFile); overload;
     destructor Destroy; override;
   published
   end;
@@ -83,20 +85,44 @@ begin
   end;
 end;
 
-constructor TExchgRegCitizens.Create(Pars: TParsExchg);
+// Общая часть для всех конструкторов
+procedure TExchgRegCitizens.GenCreate;
 begin
-  inherited Create;
-  FPars := Pars;
+  // Установки по умолчанию
   FHost := THostReg.Create;
   FHost.URL := RES_HOST;
   FHost.GenPoint := RES_GENPOINT;
   FHost.NsiPoint := RES_NSI;
   FHost.Ver := RES_VER;
-
   if (NOT Assigned(FPars.Meta)) then
     if (Length(FPars.MetaName) > 0) then
       ReadIni;
 end;
+
+
+constructor TExchgRegCitizens.Create(Pars: TParsExchg);
+begin
+  inherited Create;
+  FPars := Pars;
+  GenCreate;
+end;
+
+
+constructor TExchgRegCitizens.Create(MName : string);
+begin
+  inherited Create;
+  FPars := TParsExchg.Create(MName);
+  GenCreate;
+end;
+
+
+constructor TExchgRegCitizens.Create(MetaINI : TSasaIniFile);
+begin
+  inherited Create;
+  FPars := TParsExchg.Create(MetaINI);
+  GenCreate;
+end;
+
 
 destructor TExchgRegCitizens.Destroy;
 begin
@@ -144,7 +170,6 @@ begin
     on E: Exception do begin
       if (sErr <> '') then
         sErr := E.Message;
-      Result := 700;
     end;
   end;
 end;
@@ -448,14 +473,13 @@ end;
 // Передача одного документа
 function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc: TStringStream): TResultPost;
 var
-  RetCode: Integer;
+  nRet: Integer;
   sErr: string;
   Header: TStringList;
   DocDTO: TDocSetDTO;
 begin
   sErr := '';
   Result := TResultPost.Create;
-  RetCode := 900;
 
   try
     FHTTP.Headers.Clear;
@@ -474,35 +498,19 @@ begin
     end
     else
       FHTTP.Document.LoadFromFile(ParsPost.JSONSrc);
-{
-    Ret := FHTTP.HTTPMethod('POST', ParsPost.FullURL);
-    if (Ret = True) then begin
-      RetCode := FHTTP.ResultCode;
-      if (FHTTP.ResultCode < 200) or (FHTTP.ResultCode >= 400) then begin
-        StreamDoc.Seek(0, soBeginning);
-        StreamDoc.CopyFrom(FHTTP.Document, 0);
-        sErr := Utf8ToAnsi(StreamDoc.DataString) + CRLF + FHTTP.Headers[0];
-        raise Exception.Create(sErr);
-      end;
-      sErr := FHTTP.ResultString;
-    end
-    else begin
-      RetCode := FHTTP.sock.LastError;
-      sErr := FHTTP.sock.LastErrorDesc;
-      raise Exception.Create(sErr);
-    end;
-}
 
-    RetCode := SetRetCode(FHTTP.HTTPMethod('POST', ParsPost.FullURL), sErr);
-
+    nRet := SetRetCode(FHTTP.HTTPMethod('POST', ParsPost.FullURL), sErr);
   except
-    if (sErr <> '') then begin
+    on E: Exception do begin
+      if (sErr = '') then
+        sErr := E.Message;
+      nRet := UERR_POST_REG;
     end;
-    RetCode := 900;
   end;
-  Result.ResCode := RetCode;
+  Result.ResCode := nRet;
   Result.ResMsg := sErr;
 end;
+
 
 // Передать документы регистрации
 function TExchgRegCitizens.PostRegDocs(ParsPost: TParsPost): TResultPost;
@@ -522,8 +530,12 @@ begin
         ParsPost.Docs.First;
         while not ParsPost.Docs.Eof do begin
           Result := Post1Doc(ParsPost, StreamDoc);
-          if (Result.ResCode <> 0) then
+          if (Result.ResCode <> 0) then begin
+            sErr := CRLF+Format('Инд.№=%s ID=%d',
+              [ParsPost.Docs.FieldByName('LICH_NOMER').AsString, ParsPost.Docs.FieldByName('MID').AsInteger]);
+            Result.ResMsg := Result.ResMsg + sErr;
             Break;
+          end;
           ParsPost.Docs.Next;
         end;
       end
@@ -542,7 +554,7 @@ end;
 // Получить содержимое справочника
 function TExchgRegCitizens.GetNSI(NsiType: integer; NsiCode: integer = 0; URL: string = ''): TResultGet;
 var
-  nRet : Integer;
+  nRet: Integer;
   SOList: ISuperObject;
   sType, sCode, sErr: string;
 begin
@@ -563,10 +575,10 @@ begin
     try
       nRet := SetRetCode(FHTTP.HTTPMethod('GET', URL), sErr);
       if (nRet = 0) then begin
-        sErr   := MemStream2Str(FHTTP.Document);
+        sErr := MemStream2Str(FHTTP.Document);
         SOList := SO(Utf8Decode(sErr));
         nRet := 801;
-        sErr := 'No data in HTTP-Document';
+        sErr := 'No DATA in HTTP-Document';
         if Assigned(SOList) and (SOList.DataType = stArray) then begin
           if (TDocSetDTO.GetNSI(SOList, Result.Nsi) > 0) then begin
             nRet := 0;
@@ -574,15 +586,18 @@ begin
           end;
         end;
       end;
-      Result.ResCode := nRet;
-      Result.ResMsg  := sErr;
     except
-      Result.ResCode := 800;
-      Result.ResMsg  := 'Error getting NSI';
+      on E: Exception do begin
+        if (sErr = '') then
+          sErr := E.Message;
+        nRet := UERR_GET_NSI;
+      end;
     end;
   finally
     FHTTP.Free;
   end;
+  Result.ResCode := nRet;
+  Result.ResMsg := sErr;
 
 end;
 

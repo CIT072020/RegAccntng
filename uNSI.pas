@@ -7,6 +7,15 @@ uses
   superobject;
 
 const
+  // Типы (коды справочников) в ROC
+  S_SYSDOCTYPE = -2;
+  S_SYSORGAN   = -5;
+  S_SEX        = 32;
+  S_COUNTRY    = 8;
+  // Тип документа удостоверения личности
+  S_IDDOC      = 37;
+  S_DOCISORG   = 24;
+
   KEY_NULL  = 1;
   KEY_EMPTY = 2;
   KEY_VAL   = 3;
@@ -25,8 +34,10 @@ type
     class function SysDocType(ICode : Integer = 8; Func : Integer = SET_VAL) : String;
     class function Sex(SCode : string; Func : Integer = SET_VAL) : String;
     class function Country(ICode : Integer = 11200001; Func : Integer = SET_VAL) : String;
+    class function SysOrgan(ICode : Integer = 0) : String;
+    class function DocType(ICode : Integer = 54100001) : String;
+    class function PaspOrg(ICode : Integer = 0; OrgName : string = '') : String;
   end;
-
 
 implementation
 
@@ -60,14 +71,11 @@ begin
   if (Func = SET_VAL) then begin
     if (ICode = 0) then
       ICode := 8;
-    Result := UniKey(-2, ICode);
+    Result := UniKey(S_SYSDOCTYPE, ICode);
   end else begin
 
   end;
 end;
-
-
-
 
 // Мужской/женский
 class function TNsiRoc.Sex(SCode : string; Func : Integer = SET_VAL) : String;
@@ -75,24 +83,70 @@ var
   n : Int64;
 begin
   if (Func = SET_VAL) then begin
-    if (SCode = 'М') then n := 21000001 else n := 21000002;
-    Result := UniKey(32, n);
+    if (SCode = 'М') then n := 21000001
+    else n := 21000002;
+    Result := UniKey(S_SEX, n);
   end else begin
 
   end;
-
-
 end;
 
 // Код страны(гражданство, ...)
 class function TNsiRoc.Country(ICode : Integer = 11200001; Func : Integer = SET_VAL) : String;
 begin
   if (Func = SET_VAL) then begin
-    Result := UniKey(8, ICode);
+    if (ICode = 0) then
+      // Default - Belarus
+      ICode := 11200001;
+    Result := UniKey(S_COUNTRY, ICode);
   end else begin
 
   end;
 end;
+
+// Код районного отдела ГиМ (и выше)
+class function TNsiRoc.SysOrgan(ICode : Integer = 0) : String;
+begin
+  Result := UniKey(S_SYSORGAN, ICode);
+end;
+
+// Тип документа удостоверения личности
+class function TNsiRoc.DocType(ICode : Integer = 54100001) : String;
+begin
+  if (ICode = 0) then
+    // Default - Паспорт РБ
+    ICode := 54100001;
+  Result := UniKey(S_IDDOC, ICode);
+end;
+
+// Орган выдачи документа удостоверения личности
+class function TNsiRoc.PaspOrg(ICode : Integer = 0; OrgName : string = '') : String;
+begin
+  if (ICode = 0) then begin
+    // Возможно, есть в символьном поле
+  end;
+  Result := UniKey(S_DOCISORG, ICode);
+end;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 end.

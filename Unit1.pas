@@ -337,8 +337,8 @@ begin
   edCount.Text  := '10';
   cbSrcPost.ItemIndex := 0;
 
-  Pars := TParsExchg.Create(INI_NAME);
-  BlackBox := TExchgRegCitizens.Create(Pars);
+  //Pars := TParsExchg.Create();
+  BlackBox := TExchgRegCitizens.Create(INI_NAME);
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);

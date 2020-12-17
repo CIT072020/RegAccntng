@@ -1,5 +1,5 @@
 {
-    "identif": "314101966C030PB2",
+    "identif": "3141066C030PB2",
     "view": null,
     "sysDocType": {
         "klUniPK": {
@@ -92,7 +92,7 @@
     "form19_20": {
         "form19_20Base": "form19_20",
         "pid": 90017000,
-        "signAway": true,
+        "signAway": false,
         "countryPu": {
             "klUniPK": {
                 "type": 8,
