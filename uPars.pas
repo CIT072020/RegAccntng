@@ -51,6 +51,7 @@ type
     FIOrINs  : TStringList;
     // Тип данных во входном списке
     ListType : Integer;
+    NeedActual : Boolean;
 
     constructor Create(DBeg, DEnd : TDateTime; OrgCode : string = ''); overload;
     constructor Create(URL : string); overload;
@@ -138,6 +139,7 @@ constructor TParsExchg.Create(MetaINI : TSasaIniFile);
 begin
   PEGenCreate;
   Meta := MetaINI;
+  MetaName := MetaINI.FileName;
 end;
 
 // параметры для GetDocs
@@ -163,12 +165,14 @@ end;
 // Результат GET
 constructor TResultGet.Create(Pars: TParsExchg; WhatMT : Integer = DATA_ONLY);
 begin
+  if (WhatMT <> NO_DATA) then begin
   if (WhatMT = DATA_ONLY) then begin
     INs := TkbmMemTable(CreateMemTable(MT_INS, Pars.Meta, Pars.SectINs));
     Docs := TkbmMemTable(CreateMemTable(MT_DOCS, Pars.Meta, Pars.SectDocs));
     Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, Pars.SectChild));
   end else
     Nsi := TkbmMemTable(CreateMemTable(MT_NSI, Pars.Meta, Pars.SectNsi));
+    end;
 end;
 
 constructor TParsPost.Create(DSign, Cert : string; URL : string = '');

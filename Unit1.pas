@@ -607,7 +607,7 @@ begin
       Pars.Add('');
       Pars.Add('');
 
-      SOList := GetListDoc(FH, Pars);
+      //SOList := GetListDoc(FH, Pars);
       // должен вернуться массив установочных документов
       if Assigned(SOList) and (SOList.DataType = stArray) then begin
         Docs   := TkbmMemTable(CreateMemTable('Docs', dm.Meta, 'TABLE_DVIGMEN'));

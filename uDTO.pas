@@ -153,7 +153,10 @@ begin
   FDoc.FieldByName('docIssueOrgan').AsInteger := GetCode('docIssueOrgan');
   FDoc.FieldByName('PASP_VIDAN').AsString := FSO.O[CT('docIssueOrgan')].s[CT('lex1')];
   FDoc.FieldByName('docAppleDate').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('docAppleDate')]);
+
+  d := JavaToDelphiDateTime(FSO.I[CT('expireDate')]);
   FDoc.FieldByName('expireDate').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('expireDate')]);
+
   FDoc.FieldByName('docType').AsInteger := GetCode('docType');
   FDoc.FieldByName('docType_NAME').AsString := FSO.O[CT('docType')].s[CT('lex1')];
 

@@ -9,6 +9,7 @@ uses
   httpsend,
   SasaINiFile,
   uPars,
+  uDTO,
   uService;
 
 type
@@ -26,9 +27,10 @@ type
     procedure GenCreate;
     function StoreINsInRes(Pars : TParsGet) : integer;
     function GetINsFromSrv(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
-    procedure Docs4CurIN(IndNum, PID : string; IndNs: TStringList);
+    function Docs4CurIN(Pars4GET : string; DocDTO : TDocSetDTO) : TResultGet;
     function Post1Doc(ParsPost: TParsPost; StreamDoc : TStringStream) : TResultPost;
     function SetRetCode(Ret: Boolean; var sErr: string): integer;
+    function GetDSDList(ParsGet: TParsGet): TResultGet;
   protected
   public
     // Результат запроса данных (GET)
@@ -55,9 +57,9 @@ type
     *)
     function GetNSI(NsiType : integer; NsiCode : integer = 0; URL : string = ''): TResultGet;
 
-    constructor Create(Pars : TParsExchg); overload;
     constructor Create(MName : string); overload;
     constructor Create(MetaINI : TSasaIniFile); overload;
+    constructor Create(Pars : TParsExchg); overload;
     destructor Destroy; override;
   published
   end;
@@ -70,33 +72,29 @@ implementation
 uses
   SysUtils,
   StrUtils,
-  NativeXml,
-  uDTO;
+  NativeXml;
 
 // Заполнение параметров из INI-файла
 function TExchgRegCitizens.ReadIni: Boolean;
 begin
-  try
-    FPars.Meta := TSasaIniFile.Create(FPars.MetaName);
-
-    Result := True;
-  except
-    Result := False;
-  end;
+  // Установки из INI или по умолчанию
+  FHost := THostReg.Create;
+  FHost.URL      := FPars.Meta.ReadString(SCT_HOST, 'URL', RES_HOST);
+  FHost.GenPoint := FPars.Meta.ReadString(SCT_HOST, 'RESPATH', RES_GENPOINT);
+  FHost.NsiPoint := FPars.Meta.ReadString(SCT_HOST, 'NSIPATH', RES_NSI);
+  FHost.Ver      := FPars.Meta.ReadString(SCT_HOST, 'VER', RES_VER);
 end;
+
 
 // Общая часть для всех конструкторов
 procedure TExchgRegCitizens.GenCreate;
 begin
-  // Установки по умолчанию
-  FHost := THostReg.Create;
-  FHost.URL := RES_HOST;
-  FHost.GenPoint := RES_GENPOINT;
-  FHost.NsiPoint := RES_NSI;
-  FHost.Ver := RES_VER;
-  if (NOT Assigned(FPars.Meta)) then
-    if (Length(FPars.MetaName) > 0) then
-      ReadIni;
+  if (NOT Assigned(FPars.Meta)) then begin
+    if ( NOT FileExists(FPars.MetaName) ) then
+      raise Exception.Create('Bad INI-file:' + FPars.MetaName);
+    FPars.Meta := TSasaIniFile.Create(FPars.MetaName);
+  end;
+  ReadIni;
 end;
 
 
@@ -107,7 +105,7 @@ begin
   GenCreate;
 end;
 
-
+// Имя INI-файла
 constructor TExchgRegCitizens.Create(MName : string);
 begin
   inherited Create;
@@ -200,17 +198,28 @@ end;
 
 
 // Скопировать список ИН в выходную таблицу
-function TExchgRegCitizens.StoreINsInRes(Pars : TParsGet) : integer;
+function TExchgRegCitizens.StoreINsInRes(Pars: TParsGet): integer;
 var
-  i : Integer;
+  i: Integer;
 begin
   Result := Pars.FIOrINs.Count;
-  for i := 1 to Result do begin
-    FResGet.INs.Append;
-    FResGet.INs.FieldValues['IDENTIF'] := Pars.FIOrINs[i - 1];
-    FResGet.INs.Post;
-  end;
+  if (Pars.ListType = TLIST_FIO) then begin
+    ResGet.INs.Append;
+    ResGet.INs.FieldValues['IDENTIF'] := Pars.FIOrINs[0];
+    ResGet.INs.FieldValues['ORG_WHERE_NAME'] := Pars.FIOrINs[1];
+    ResGet.INs.FieldValues['ORG_FROM_NAME'] := Pars.FIOrINs[2];
+    ResGet.INs.Post;
+    Result := 1;
+  end
+  else
+    for i := 1 to Result do begin
+      FResGet.INs.Append;
+      FResGet.INs.FieldValues['IDENTIF'] := Pars.FIOrINs[i - 1];
+      FResGet.INs.Post;
+    end;
 end;
+
+
 
 
 // Перевод Num->Str
@@ -330,36 +339,173 @@ begin
 end;
 
 
-// Получить документы для текущего в списке ID
-procedure TExchgRegCitizens.Docs4CurIN(IndNum, PID : string; IndNs: TStringList);
-var
-  i: Integer;
-  SOList: ISuperObject;
-  DocDTO : TDocSetDTO;
-begin
-  try
-    if ( Length(IndNum) >= 0) then begin
-      IndNs.Clear;
-      IndNs.Add(IndNum);
-      IndNs.Add('');
-      IndNs.Add('');
-      IndNs.Add('');
-      IndNs.Add(PID);
-      IndNs.Add('');
 
-      SOList := GetListDoc(FHost, IndNs);
-      // должен вернуться массив установочных документов
-      if Assigned(SOList) and (SOList.DataType = stArray) then begin
-        DocDTO := TDocSetDTO.Create(ResGet.Docs, ResGet.Child);
-        i := DocDTO.GetDocList(SOList);
+{
+function GetListDOC(Host : THostReg; Pars: TStringList): ISuperObject;
+var
+  Ret : Boolean;
+  sDoc,
+  sErr, sPars: string;
+  ws : WideString;
+  Docs : ISuperObject;
+  HTTP: THTTPSend;
+begin
+  Result := nil;
+  HTTP := THTTPSend.Create;
+  sPars := FullPath(Host, GET_LIST_DOC, SetPars4GetDocs(Pars));
+
+  try
+    try
+      Ret := HTTP.HTTPMethod('GET', sPars);
+      if (Ret = True) then begin
+        if (HTTP.ResultCode < 200) or (HTTP.ResultCode >= 400) then begin
+          sErr := HTTP.Headers.Text;
+          raise Exception.Create(sErr);
+        end;
+        ShowDeb(IntToStr(HTTP.ResultCode) + ' ' + HTTP.ResultString);
+        sDoc := MemStream2Str(HTTP.Document);
+        ws   := Utf8Decode(sDoc);
+        Result := SO(ws);
+      end
+      else begin
+        sErr := IntToStr(HTTP.sock.LastError) + ' ' + HTTP.sock.LastErrorDesc;
+          raise Exception.Create(sErr);
       end;
+    except
     end;
+  finally
+    HTTP.Free;
+  end;
+
+  try
+
+    nRet := SetRetCode(FHTTP.HTTPMethod('GET', sPars), sErr);
+      if (nRet = 0) then begin
+        sErr := MemStream2Str(FHTTP.Document);
+        Result := SO(Utf8Decode(sErr));
+        sErr := 'No DATA in HTTP-Document';
+        if Assigned(SOList) and (SOList.DataType = stArray) then begin
+          if (TDocSetDTO.GetNSI(SOList, Result.Nsi) > 0) then begin
+            nRet := 0;
+            sErr := '';
+          end;
+        end;
+      end;
   except
-    on E:Exception do begin
-      ShowDeb(E.Message);
+    on E: Exception do begin
+      if (sErr = '') then
+        sErr := E.Message;
+      nRet := UERR_;
     end;
   end;
+  Result.ResCode := nRet;
+  Result.ResMsg := sErr;
 end;
+}
+
+// Получить документы для текущего в списке ID
+function TExchgRegCitizens.Docs4CurIN(Pars4GET : string; DocDTO : TDocSetDTO) : TResultGet;
+var
+  nRet : Integer;
+  sErr,
+  URL : string;
+  SOList: ISuperObject;
+  ResGet : TResultGet;
+begin
+  ResGet := TResultGet.Create(FPars, NO_DATA);
+  try
+    URL := FullPath(FHost, GET_LIST_DOC, Pars4Get);
+
+    FHTTP.Headers.Clear;
+    nRet := SetRetCode(FHTTP.HTTPMethod('GET', URL), sErr);
+      if (nRet = 0) then begin
+        sErr := MemStream2Str(FHTTP.Document);
+        SOList := SO(Utf8Decode(sErr));
+        sErr := 'No DSD!';
+      // должен вернуться массив установочных документов
+        if Assigned(SOList) and (SOList.DataType = stArray) then begin
+
+        if (DocDTO.GetDocList(SOList) > 0) then begin
+            nRet := 0;
+            sErr := '';
+        end;
+      end;
+
+
+    end;
+  except
+      on E: Exception do begin
+        if (sErr = '') then
+          sErr := E.Message;
+        nRet := UERR_GET_DEPART;
+      end;
+  end;
+  Result.ResCode := nRet;
+  Result.ResMsg := sErr;
+end;
+
+
+
+// Список убывших для сельсовета (параметры)
+function TExchgRegCitizens.GetDeparted(ParsGet: TParsGet): TResultGet;
+begin
+  Result := GetDSDList(ParsGet);
+end;
+
+
+// Список убывших для сельсовета (параметры)
+{
+function TExchgRegCitizens.GetDeparted(ParsGet: TParsGet): TResultGet;
+var
+  Ret: Boolean;
+  nINs: Integer;
+  CurIN, CurPID,
+  sErr : string;
+  IndNs: TStringList;
+  DocDTO : TDocSetDTO;
+  ResOneIN : TResultGet;
+begin
+  ResGet := TResultGet.Create(FPars);
+  FHTTP := THTTPSend.Create;
+  try
+
+  // Fill MemTable with IDs
+  if (Assigned(ParsGet.FIOrINs) and (ParsGet.ListType = TLIST_INS)) then
+    nINs := StoreINsInRes(ParsGet)
+  else
+    nINs := GetINsFromSrv(ParsGet, ResGet.INs);
+  if (nINs > 0) then begin
+    try
+    IndNs := TStringList.Create;
+    DocDTO := TDocSetDTO.Create(ResGet.Docs, ResGet.Child);
+    ResGet.ResCode := 0;
+    ResGet.INs.First;
+    while not ResGet.INs.Eof do begin
+      CurIN  := ResGet.INs.FieldValues['IDENTIF'];
+      CurPID := ResGet.INs.FieldValues['PID'];
+      ResOneIN := Docs4CurIN(CurIN, CurPID, IndNs, DocDTO);
+
+          if (ResOneIN.ResCode <> 0) then begin
+            sErr := Format('Инд.№=%s PID=%d - %s', [CurIN, CurPID, ResOneIN.ResMsg]);
+            ResGet.ResMsg := ResGet.ResMsg + CRLF + sErr;
+            ResGet.ResCode := ResGet.ResCode + 1;
+          end;
+
+
+      ResGet.INs.Next;
+    end;
+    finally
+    IndNs.Free;
+    DocDTO.Free;
+    end;
+  end;
+  finally
+    FHTTP.Free;
+
+  end;
+  Result := ResGet;
+end;
+}
 
 // Список убывших для сельсовета (период-сельсовет)
 function TExchgRegCitizens.GetDeparted(DBeg, DEnd: TDateTime; OrgCode: string = ''): TResultGet;
@@ -374,36 +520,6 @@ begin
     Result := GetDeparted(P);
   finally
     P.Free;
-  end;
-end;
-
-// Список убывших для сельсовета (параметры)
-function TExchgRegCitizens.GetDeparted(ParsGet: TParsGet): TResultGet;
-var
-  Ret: Boolean;
-  nINs: Integer;
-  sErr, sPars: string;
-  IndNs: TStringList;
-  //Docs: ISuperObject;
-begin
-  Result := nil;
-  FResGet := TResultGet.Create(FPars);
-
-  // Fill MemTable with IDs
-  if (Assigned(ParsGet.FIOrINs) and (ParsGet.ListType = TLIST_INS)) then
-    nINs := StoreINsInRes(ParsGet)
-  else
-    nINs := GetINsFromSrv(ParsGet, FResGet.INs);
-  if (nINs > 0) then begin
-    IndNs := TStringList.Create;
-    FResGet.INs.First;
-    while not FResGet.INs.Eof do begin
-      Docs4CurIN(FResGet.INs.FieldValues['IDENTIF'], FResGet.INs.FieldValues['PID'], IndNs);
-      FResGet.INs.Next;
-    end;
-    IndNs.Free;
-    FResGet.ResCode := 0;
-    Result := FResGet;
   end;
 end;
 
@@ -442,33 +558,55 @@ end;
 
 // Получить актуальный документ регистрации для ИН
 function TExchgRegCitizens.GetActualReg(ParsGet: TParsGet) : TResultGet;
+begin
+  Result := GetDSDList(ParsGet);
+end;
+
+
+// Получить актуальный документ регистрации для ИН
+{
+function TExchgRegCitizens.GetActualReg(ParsGet: TParsGet) : TResultGet;
 var
   Ret: Boolean;
   nINs: Integer;
+  CurIN,
   sDoc, sErr, sPars: string;
   IndNs: TStringList;
   Docs: ISuperObject;
+  DocDTO : TDocSetDTO;
 begin
-  Result := nil;
-  FResGet := TResultGet.Create(FPars);
+  ResGet := TResultGet.Create(FPars);
 
   // Fill MemTable with IDs
   if (Assigned(ParsGet.FIOrINs) and (ParsGet.ListType = TLIST_INS)) then
     nINs := StoreINsInRes(ParsGet)
   else
-    nINs := GetINsFromSrv(ParsGet, FResGet.INs);
+    nINs := GetINsFromSrv(ParsGet, ResGet.INs);
   if (nINs > 0) then begin
     IndNs := TStringList.Create;
+    try
     FResGet.INs.First;
     while not FResGet.INs.Eof do begin
-      Docs4CurIN(FResGet.INs.FieldValues['IDENTIF'], '', IndNs);
+      CurIN := FResGet.INs.FieldValues['IDENTIF'];
+      Docs4CurIN(CurIN, '', IndNs, DocDTO);
+
+          if (FResGet.ResCode <> 0) then begin
+            sErr := Format('Инд.№=%s ID=%d',
+              [CurIN, 0]);
+            Result.ResMsg := Result.ResMsg + sErr;
+            Break;
+          end;
+
       FResGet.INs.Next;
     end;
-    IndNs.Free;
     FResGet.ResCode := 0;
     Result := FResGet;
+    finally
+    IndNs.Free;
+    end;
   end;
 end;
+}
 
 // Передача одного документа
 function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc: TStringStream): TResultPost;
@@ -577,7 +715,6 @@ begin
       if (nRet = 0) then begin
         sErr := MemStream2Str(FHTTP.Document);
         SOList := SO(Utf8Decode(sErr));
-        nRet := 801;
         sErr := 'No DATA in HTTP-Document';
         if Assigned(SOList) and (SOList.DataType = stArray) then begin
           if (TDocSetDTO.GetNSI(SOList, Result.Nsi) > 0) then begin
@@ -600,6 +737,111 @@ begin
   Result.ResMsg := sErr;
 
 end;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// установка параметров для GET : получения документов по ID
+//
+// identifier=3140462K000VF6
+// name=
+// surname=
+// patronymic=
+// first=
+// count=
+function SetPars4GetDSD(ParsGet: TParsGet;INMT : TkbmMemTable) : string;
+begin
+  if (ParsGet.ListType <> TLIST_FIO) then
+    Result := Format('?identifier=%s&name=%s&surname=%s&patronymic=%s&pid=%s',
+      [ INMT.FieldValues['IDENTIF'], '', '', '',
+        INMT.FieldValues['PID'] ])
+  else
+    Result := Format('?identifier=%s&name=%s&surname=%s&patronymic=%s&pid=%s',
+      [ '', INMT.FieldValues['IDENTIF'],
+            INMT.FieldValues['ORG_WHERE_NAME'],
+            INMT.FieldValues['ORG_FROM_NAME'], '' ]);
+end;
+
+// Список DSD по одному/списку ИН
+// актуальные/убывшие -
+function TExchgRegCitizens.GetDSDList(ParsGet: TParsGet): TResultGet;
+var
+  Ret: Boolean;
+  nINs: Integer;
+  CurIN, CurPID, sErr: string;
+  IndNs: TStringList;
+  DocDTO: TDocSetDTO;
+  ResOneIN: TResultGet;
+begin
+  ResGet := TResultGet.Create(FPars);
+  FHTTP := THTTPSend.Create;
+  try
+
+  // Fill MemTable with IndNums
+    if (Assigned(ParsGet.FIOrINs)) then
+    // Во входном списке - ИН
+    //    или ФИО (получение актуального)
+      nINs := StoreINsInRes(ParsGet)
+    else    // Во входном списке - пусто, надо брать с сервера, нужны уехавшие
+      nINs := GetINsFromSrv(ParsGet, ResGet.INs);
+
+    if (nINs > 0) then begin
+      try
+        IndNs := TStringList.Create;
+        DocDTO := TDocSetDTO.Create(ResGet.Docs, ResGet.Child);
+        ResGet.ResCode := 0;
+        ResGet.INs.First;
+        while not ResGet.INs.Eof do begin
+          CurIN := ResGet.INs.FieldValues['IDENTIF'];
+          CurPID := ResGet.INs.FieldValues['PID'];
+          ResOneIN := Docs4CurIN(SetPars4GetDSD(ParsGet, ResGet.INs), DocDTO);
+          if (ResOneIN.ResCode <> 0) then begin
+            sErr := Format('Инд.№=%s PID=%s - %s', [CurIN, CurPID, ResOneIN.ResMsg]);
+            ResGet.ResMsg := ResGet.ResMsg + CRLF + sErr;
+            ResGet.ResCode := ResGet.ResCode + 1;
+          end;
+          ResGet.INs.Next;
+        end;
+      finally
+        DocDTO.Free;
+        IndNs.Free;
+      end;
+    end;
+
+  finally
+    FHTTP.Free;
+  end;
+  Result := ResGet;
+end;
+
+
+
+
 
 
 end.

@@ -14,7 +14,16 @@ uses
 const
   CRLF     = string(#13#10);
   INI_NAME = 'ExchgPars.ini';
-  
+
+  // Секции INI-файла
+  SCT_HOST    = 'HOST';
+  // Секции INI-файла для описания таблиц
+  SCT_TBL_INS = 'TABLE_INDNUM';
+  SCT_TBL_DOC = 'TABLE_DOCSETDATA';
+  SCT_TBL_CLD = 'TABLE_CHILD';
+  SCT_TBL_NSI = 'TABLE_NSI';
+
+
   // функции запросов к серверу
   GET_LIST_ID  = 1;
   GET_LIST_DOC = 2;
@@ -35,11 +44,6 @@ const
   RESOURCE_POSTDOC_PATH = '/data/save';
   RESOURCE_NSICNTT_PATH = '/kl_uni/with_links';
 
-  // Секции INI-файла для описания таблиц
-  SCT_TBL_INS = 'TABLE_INDNUM';
-  SCT_TBL_DOC = 'TABLE_DOCSETDATA';
-  SCT_TBL_CLD = 'TABLE_CHILD';
-  SCT_TBL_NSI = 'TABLE_NSI';
 
   // Имена таблиц
   MT_INS   = 'INS';
@@ -48,8 +52,9 @@ const
   MT_NSI   = 'NSI';
 
   // Режим создания выходных парметров
-  DATA_ONLY = 1;
-  NSI_ONLY  = 2;
+  NO_DATA   = 1;
+  DATA_ONLY = 2;
+  NSI_ONLY  = 3;
 
   // Режим вывода очередной отладочной записи
   DEB_CLEAR    = 1;
@@ -82,7 +87,6 @@ function CreateMemTable(sTableName: string; Meta : TSasaIniFile; MetaSect: Strin
 procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
 function FullPath(H : THostReg; Func : Integer; Pars : string) : string;
 
-function GetListDOC(Host : THostReg; Pars: TStringList): ISuperObject;
 procedure LeaveOnly1(ds: TDataSet);
 
 var
@@ -269,65 +273,6 @@ end;
 
 
 
-
-// установка параметров для GET : получения документов по ID
-//
-// identifier=3140462K000VF6
-// name=
-// surname=
-// patronymic=
-// first=
-// count=
-function SetPars4GetDocs(Pars : TStringList) : string;
-var
-  s : string;
-begin
-  s := Format('?identifier=%s&name=%s&surname=%s&patronymic=%s&pid=%s',
-    [ Pars[0], Pars[1], Pars[2], Pars[3], Pars[4] ]);
-  Result := s;
-end;
-
-function GetListDOC(Host : THostReg; Pars: TStringList): ISuperObject;
-var
-  Ret : Boolean;
-  sDoc,
-  sErr, sPars: string;
-  ws : WideString;
-  Docs : ISuperObject;
-  HTTP: THTTPSend;
-begin
-  Result := nil;
-  HTTP := THTTPSend.Create;
-  sPars := FullPath(Host, GET_LIST_DOC, SetPars4GetDocs(Pars));
-  ShowDeb(sPars);
-
-  try
-    try
-      Ret := HTTP.HTTPMethod('GET', sPars);
-      if (Ret = True) then begin
-        if (HTTP.ResultCode < 200) or (HTTP.ResultCode >= 400) then begin
-          sErr := HTTP.Headers.Text;
-          raise Exception.Create(sErr);
-        end;
-        ShowDeb(IntToStr(HTTP.ResultCode) + ' ' + HTTP.ResultString);
-        sDoc := MemStream2Str(HTTP.Document);
-        //Result := SO(Utf8Decode(sDoc));
-        ws   := Utf8Decode(sDoc);
-        Result := SO(ws);
-      end
-      else begin
-        sErr := IntToStr(HTTP.sock.LastError) + ' ' + HTTP.sock.LastErrorDesc;
-          raise Exception.Create(sErr);
-      end;
-    except
-
-
-    end;
-  finally
-    HTTP.Free;
-  end;
-
-end;
 
 procedure LeaveOnly1(ds: TDataSet);
 var
