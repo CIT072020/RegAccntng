@@ -739,8 +739,9 @@ class function TDocSetDTO.GetNsi(SOArr: ISuperObject; Nsi: TkbmMemTable; EmpTbl:
 var
   b : Boolean;
   s : string;
+  j,
   i : Integer;
-  SOPK,
+  SOCh,
   SO: ISuperObject;
 begin
   Result := 0;
@@ -757,12 +758,22 @@ begin
       Nsi.FieldByName('Lex1').AsString  := SO.S[CT('lex1')];
       Nsi.FieldByName('Lex2').AsString  := SO.S[CT('lex2')];
       Nsi.FieldByName('Lex3').AsString  := SO.S[CT('lex3')];
-      Nsi.FieldByName('DateBegin').AsDateTime := JavaToDelphiDateTime(SO.I[CT('dateBegin')]);;
+      Nsi.FieldByName('DateBegin').AsDateTime := JavaToDelphiDateTime(SO.I[CT('dateBegin')]);
+{
       b := SO.B[CT('active')];
       if (b = True) then
       Nsi.FieldByName('Active').AsInteger := 1
       else
       Nsi.FieldByName('Active').AsInteger := 1;
+}
+      Nsi.FieldByName('Active').AsBoolean := SO.B[CT('active')];
+      Nsi.FieldByName('TempId').AsString  := SO.S[CT('tempId')];
+      SOCh := SO.O[CT('childKlUniLinks')];
+      Nsi.FieldByName('NChilds').AsInteger := SOCh.AsArray.Length;
+      Nsi.FieldByName('ChildKlUniLinks').AsString  := '';
+      for j := 1 to SOCh.AsArray.Length do begin
+
+      end;
       Nsi.Post;
       i := i + 1;
     end;

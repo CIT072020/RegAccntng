@@ -193,10 +193,6 @@ begin
   Result := s;
 end;
 
-
-
-
-
 // Скопировать список ИН в выходную таблицу
 function TExchgRegCitizens.StoreINsInRes(Pars: TParsGet): integer;
 var
@@ -206,8 +202,6 @@ begin
   if (Pars.ListType = TLIST_FIO) then begin
     ResGet.INs.Append;
     ResGet.INs.FieldValues['IDENTIF'] := Pars.FIOrINs[0];
-    ResGet.INs.FieldValues['ORG_WHERE_NAME'] := Pars.FIOrINs[1];
-    ResGet.INs.FieldValues['ORG_FROM_NAME'] := Pars.FIOrINs[2];
     ResGet.INs.Post;
     Result := 1;
   end
@@ -218,9 +212,6 @@ begin
       FResGet.INs.Post;
     end;
 end;
-
-
-
 
 // Перевод Num->Str
 function MakeNumAsStr(const NumField, Src: string): string;
@@ -278,6 +269,7 @@ end;
 
 
 // Перемещение граждан за период
+{
 function GetListID(StrPars: string = ''): ISuperObject;
 var
   Ret: Boolean;
@@ -286,11 +278,6 @@ var
 begin
   Result := nil;
 
-  ShowDeb(StrPars);
-
-  HTTP := THTTPSend.Create;
-  //FHTTP := THTTPSend.Create;
-  try
     try
       Ret := HTTP.HTTPMethod('GET', StrPars);
       if (Ret = True) then begin
@@ -309,20 +296,18 @@ begin
     except
 
     end;
-  finally
-    HTTP.Free;
-  end;
-
 end;
+}
 
 
 // Индивидуальные номера граждан за период
 function TExchgRegCitizens.GetINsFromSrv(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
 var
+  nRet : Integer;
+  sErr : string;
   Pars : TStringList;
   SOList : ISuperObject;
 begin
-  Result := 0;
   if (Length(ParsGet.FullURL) = 0) then begin
     Pars := TStringList.Create;
     Pars.Add(ParsGet.Organ);
@@ -332,10 +317,48 @@ begin
     Pars.Add(IntToStr(ParsGet.Count));
     ParsGet.FullURL := FullPath(FHost, GET_LIST_ID, SetPars4GetIDs(Pars));
   end;
-  SOList := GetListID(ParsGet.FullURL);
-  if Assigned(SOList) and (SOList.DataType = stArray) then begin
-      Result := TIndNomDTO.GetIndNumList(SOList, MT);
-  end;
+
+    try
+{
+      Ret := FHTTP.HTTPMethod('GET', ParsGet.FullURL);
+      if (Ret = True) then begin
+        if (FHTTP.ResultCode < 200) or (FHTTP.ResultCode >= 400) then begin
+          sErr := FHTTP.Headers.Text;
+          raise Exception.Create(sErr);
+        end;
+        ShowDeb(IntToStr(FHTTP.ResultCode) + ' ' + FHTTP.ResultString);
+        sDoc := Utf8Decode(MemStream2Str(FHTTP.Document));
+        Result := SO(MakeNumAsStr('pid', sDoc));
+      end
+      else begin
+        sErr := IntToStr(FHTTP.sock.LastError) + ' ' + FHTTP.sock.LastErrorDesc;
+        raise Exception.Create(sErr);
+      end;
+}
+       nRet := SetRetCode(FHTTP.HTTPMethod('GET', ParsGet.FullURL), sErr);
+      if (nRet = 0) then begin
+        sErr := Utf8Decode(MemStream2Str(FHTTP.Document));
+        SOList := SO(MakeNumAsStr('pid', sErr));
+        if Assigned(SOList) and (SOList.DataType = stArray) then begin
+          sErr := 'Error converting INs';
+          if (TIndNomDTO.GetIndNumList(SOList, MT) = 0) then
+            raise Exception.Create('Departed are absent');
+        end
+        else
+          raise Exception.Create('No departed');
+      end
+      else
+        raise Exception.Create(sErr);
+    except
+      on E: Exception do begin
+        if (sErr = '') then
+          sErr := E.Message;
+        nRet := UERR_GET_INDNOMS;
+        ResGet.ResCode := nRet;
+        ResGet.ResMsg  := sErr;
+      end;
+    end;
+    Result := nRet;
 end;
 
 
@@ -412,7 +435,7 @@ var
   SOList: ISuperObject;
   ResGet : TResultGet;
 begin
-  ResGet := TResultGet.Create(FPars, NO_DATA);
+  Result := TResultGet.Create(FPars, NO_DATA);
   try
     URL := FullPath(FHost, GET_LIST_DOC, Pars4Get);
 
@@ -442,14 +465,6 @@ begin
   end;
   Result.ResCode := nRet;
   Result.ResMsg := sErr;
-end;
-
-
-
-// Список убывших для сельсовета (параметры)
-function TExchgRegCitizens.GetDeparted(ParsGet: TParsGet): TResultGet;
-begin
-  Result := GetDSDList(ParsGet);
 end;
 
 
@@ -507,6 +522,14 @@ begin
 end;
 }
 
+
+// Список убывших для сельсовета (параметры)
+function TExchgRegCitizens.GetDeparted(ParsGet: TParsGet): TResultGet;
+begin
+  ParsGet.NeedActual := False;
+  Result := GetDSDList(ParsGet);
+end;
+
 // Список убывших для сельсовета (период-сельсовет)
 function TExchgRegCitizens.GetDeparted(DBeg, DEnd: TDateTime; OrgCode: string = ''): TResultGet;
 var
@@ -524,23 +547,21 @@ begin
 end;
 
 // Актуальный документ регистрации для единственного ИН
-function TExchgRegCitizens.GetActualReg(INum : string): TResultGet;
+function TExchgRegCitizens.GetActualReg(INum: string): TResultGet;
 var
   IndNums: TStringList;
   ParsGet: TParsGet;
   Res: TResultGet;
 begin
-  Result := nil;
   IndNums := TStringList.Create;
-  ParsGet := TParsGet.Create(IndNums, TLIST_INS);
   try
     IndNums.Add(INum);
-    Result := GetActualReg(ParsGet);
+    Result := GetActualReg(IndNums);
   finally
-    ParsGet.Free;
     IndNums.Free;
   end;
 end;
+
 
 // Получить актуальный документ регистрации для списка ИН
 function TExchgRegCitizens.GetActualReg(IndNs: TStringList): TResultGet;
@@ -559,6 +580,7 @@ end;
 // Получить актуальный документ регистрации для ИН
 function TExchgRegCitizens.GetActualReg(ParsGet: TParsGet) : TResultGet;
 begin
+  ParsGet.NeedActual := True;
   Result := GetDSDList(ParsGet);
 end;
 
@@ -754,18 +776,6 @@ end;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 // установка параметров для GET : получения документов по ID
 //
 // identifier=3140462K000VF6
@@ -787,14 +797,24 @@ begin
             INMT.FieldValues['ORG_FROM_NAME'], '' ]);
 end;
 
+
+function SetErr4GetDSD(ParsGet: TParsGet; INMT: TkbmMemTable): string;
+begin
+  if (ParsGet.ListType <> TLIST_FIO) then
+  // на входе - список ИН
+    Result := Format('Инд.№=%s PID=%s - ', [INMT.FieldValues['IDENTIF'], INMT.FieldValues['PID']])
+  else
+  // на входе - ФИО
+    Result := Format('ФИО: %s %s %s - ', [ParsGet.FIOrINs[0], ParsGet.FIOrINs[1], ParsGet.FIOrINs[2]]);
+end;
+
 // Список DSD по одному/списку ИН
 // актуальные/убывшие -
 function TExchgRegCitizens.GetDSDList(ParsGet: TParsGet): TResultGet;
 var
   Ret: Boolean;
   nINs: Integer;
-  CurIN, CurPID, sErr: string;
-  IndNs: TStringList;
+  sErr: string;
   DocDTO: TDocSetDTO;
   ResOneIN: TResultGet;
 begin
@@ -803,36 +823,37 @@ begin
   try
 
   // Fill MemTable with IndNums
-    if (Assigned(ParsGet.FIOrINs)) then
+    if (ParsGet.NeedActual = True) then
     // Во входном списке - ИН
     //    или ФИО (получение актуального)
       nINs := StoreINsInRes(ParsGet)
-    else    // Во входном списке - пусто, надо брать с сервера, нужны уехавшие
+    else begin
+    // Во входном списке - пусто, надо брать с сервера, нужны уехавшие
       nINs := GetINsFromSrv(ParsGet, ResGet.INs);
+      if (nINs = 0) then
+        nINs := ResGet.INs.RecordCount
+      else
+        Exit;
+    end;
 
     if (nINs > 0) then begin
       try
-        IndNs := TStringList.Create;
         DocDTO := TDocSetDTO.Create(ResGet.Docs, ResGet.Child);
         ResGet.ResCode := 0;
         ResGet.INs.First;
         while not ResGet.INs.Eof do begin
-          CurIN := ResGet.INs.FieldValues['IDENTIF'];
-          CurPID := ResGet.INs.FieldValues['PID'];
           ResOneIN := Docs4CurIN(SetPars4GetDSD(ParsGet, ResGet.INs), DocDTO);
           if (ResOneIN.ResCode <> 0) then begin
-            sErr := Format('Инд.№=%s PID=%s - %s', [CurIN, CurPID, ResOneIN.ResMsg]);
-            ResGet.ResMsg := ResGet.ResMsg + CRLF + sErr;
+            sErr := SetErr4GetDSD(ParsGet, ResGet.INs);
+            ResGet.ResMsg := ResGet.ResMsg + CRLF + sErr + ResOneIN.ResMsg;;
             ResGet.ResCode := ResGet.ResCode + 1;
           end;
           ResGet.INs.Next;
         end;
       finally
         DocDTO.Free;
-        IndNs.Free;
       end;
     end;
-
   finally
     FHTTP.Free;
   end;

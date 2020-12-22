@@ -7,6 +7,7 @@ uses
  StdCtrls,
  kbmMemTable,
  DBFunc,
+ adstable, adsdata, adscnnct, ace,
  superdate, superobject, supertypes,
  {$IFDEF SYNA} httpsend,  {$ENDIF}
  SasaINiFile, FuncPr;
@@ -88,6 +89,7 @@ procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
 function FullPath(H : THostReg; Func : Integer; Pars : string) : string;
 
 procedure LeaveOnly1(ds: TDataSet);
+function CreateADST(MT:TkbmMemTable; TType : integer; Conn : TAdsConnection) : Integer;
 
 var
   ShowM : TMemo;
@@ -233,6 +235,7 @@ begin
 end;
 
 
+
 procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
 var
   AddS : string;
@@ -288,5 +291,109 @@ begin
       ds.Delete;
   end;
 end;
+
+
+
+
+
+
+function FType2StrSQL(T: TFieldType): string;
+var
+  i: Integer;
+begin
+  for i := 0 to ADS_MAX_FIELD_TYPE - 1 do
+    if (AdsDataTypeMap[i] = T) then begin
+      Result := ArrSootv[i].Name;
+      Break;
+    end;
+end;
+
+function ADSTCreateOnDefs(TName : string; FDefs : TFieldDefs; var StrInStr : string) : string;
+var
+  MaxF,
+  i : Integer;
+  sSizeSQL,
+  sSizeACr,
+  sACr,
+  sSQL,
+  sFD : string;
+begin
+  MaxF  := FDefs.Count;
+  sSQL := '';
+  sACr := '';
+  for i := 0 to MaxF - 1 do begin
+    case FDefs[i].DataType of
+      ftString:
+      begin
+        sSizeSQL := Format('(%d)', [FDefs[i].Size]);
+        sSizeACr := Format(',%d', [FDefs[i].Size]);
+      end;
+    else
+      sSizeSQL := '';
+      sSizeACr := '';
+    end;
+    sSQL := sSQL + Format('%s %s%s,', [ FDefs[i].Name, FType2StrSQL(FDefs[i].DataType), sSizeSQL]);
+    sACr := sACr + Format('%s, %s %s;', [ FDefs[i].Name, ArrStr2Fld[Integer(FDefs[i].DataType)].Name, sSizeACr]);
+  end;
+  sSQL[Length(sSQL)] := ')';
+  StrInStr := sACr;
+  Result := Format('CREATE TABLE "%s" (%s AS FREE TABLE ', [TName, sSQL]);
+end;
+
+
+function SafeNewNsi(Path, TName : string): Boolean;
+var
+  s : string;
+begin
+  if (FileExists(Path)) then begin
+
+
+
+  end;
+Result := True;
+end;
+
+
+function CreateADST(MT: TkbmMemTable; TType: integer; Conn: TAdsConnection): Integer;
+var
+  MayCreate : Boolean;
+  i, MaxF, n: Integer;
+  DupAds,
+  StrucInStr, TName, FName, sSQL: string;
+  t: TAdsTable;
+begin
+  TName := Format('ROC%d', [TType]);
+  FName := IncludeTrailingBackslash(Conn.ConnectPath) + TName;
+  MaxF := MT.FieldDefs.Count;
+  t := TAdsTable.Create(Conn.Owner);
+  try
+    sSQL := ADSTCreateOnDefs(TName, MT.FieldDefs, StrucInStr);
+    Conn.IsConnected := True;
+    t.TableName := TName;
+    t.AdsConnection := Conn;
+    n := Conn.Execute(sSQL);
+  //t.AdsCreateTable(FName, ttAdsADT, ANSI, 0, StrucInStr);
+    t.Active := True;
+
+    MaxF := MT.Fields.Count;
+    with MT do begin
+      First;
+      while not Eof do begin
+        t.Append;
+        for i := 0 to MaxF - 1 do
+          t.Fields[i].Value := Fields[i].Value;
+        t.Post;
+        Next;
+      end;
+    end;
+    t.Active := False;
+
+  finally
+    t.Close;
+    t.Free;
+  end;
+  Result := 0;
+end;
+
 
 end.

@@ -501,4 +501,10 @@ object Form1: TForm1
     Left = 1209
     Top = 297
   end
+  object cnctNsi: TAdsConnection
+    ConnectPath = 'D:\App\'#1051#1040#1048#1057#1095'\Spr\ROC\'
+    AdsServerTypes = [stADS_LOCAL]
+    Left = 1160
+    Top = 304
+  end
 end

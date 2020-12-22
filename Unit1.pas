@@ -64,6 +64,7 @@ type
     dsNsi: TDataSource;
     edNsiCode: TDBEditEh;
     cbSrcPost: TDBComboBoxEh;
+    cnctNsi: TAdsConnection;
     procedure btnGetActualClick(Sender: TObject);
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -646,8 +647,9 @@ begin
     BlackBox.ResGet := BlackBox.GetDeparted(P);
   end;
   GETRes := BlackBox.ResGet;
+  ShowDeb(GETRes.ResMsg);
 
-  if (Assigned(BlackBox.ResGet)) then begin
+  if (GETRes.INs.RecordCount > 0) then begin
     DataSource1.DataSet := BlackBox.ResGet.INs;
     dsDocs.DataSet := BlackBox.ResGet.Docs;
     dsChild.DataSet := BlackBox.ResGet.Child;
@@ -722,6 +724,7 @@ begin
   end
   else
     BlackBox.ResGet := BlackBox.GetActualReg(edtIN.Text);
+  ShowDeb(IntToStr(BlackBox.ResGet.ResCode) + ' ' + BlackBox.ResGet.ResMsg);
   if (Assigned(BlackBox.ResGet)) then begin
     dsDocs.DataSet := BlackBox.ResGet.Docs;
     dsChild.DataSet := BlackBox.ResGet.Child;
@@ -753,6 +756,9 @@ begin
       BlackBox.ResGet.Nsi.First;
     end;
     ShowDeb(IntToStr(BlackBox.ResGet.ResCode) + ' ' + BlackBox.ResGet.ResMsg);
+    if (BlackBox.ResGet.Nsi.RecordCount > 0) then begin
+      CreateADST(BlackBox.ResGet.Nsi, NsiType, cnctNsi);
+    end;
   end;
 end;
 
