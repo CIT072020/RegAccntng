@@ -452,6 +452,16 @@ object Form1: TForm1
     Text = 'cbSrcPost'
     Visible = True
   end
+  object cbAdsCvrt: TDBCheckBoxEh
+    Left = 1232
+    Top = 216
+    Width = 97
+    Height = 17
+    Caption = 'ADS-'#1082#1086#1087#1080#1103
+    TabOrder = 38
+    ValueChecked = 'True'
+    ValueUnchecked = 'False'
+  end
   object DataSource1: TDataSource
     Left = 112
     Top = 414

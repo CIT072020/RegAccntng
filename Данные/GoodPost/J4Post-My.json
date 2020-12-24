@@ -185,7 +185,12 @@
                 "code": 3
             }
         },
-        "education": null,
+        "education": {
+            "klUniPK": {
+                "type": 502,
+                "code": 0
+            }
+        },
         "student": false,
         "infants": []
     },

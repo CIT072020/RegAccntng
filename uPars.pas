@@ -5,6 +5,7 @@ interface
 uses
   Classes,
   //DB,
+  adscnnct, adstable,
   kbmMemTable,
   //superobject,
   //httpsend,
@@ -13,21 +14,19 @@ uses
 
 
 type
-  TAuth = class
-  end;
-
-  // параметры для создания объекта
+  // параметры для создания объекта обмена с ROC
   TParsExchg = class(TObject)
   private
     FMeta : TSasaIniFile;
     procedure PEGenCreate;
   public
     MetaName : string;
+    SectADM : string;
     SectINs : string;
     SectDocs : string;
     SectChild : string;
     SectNsi : string;
-    // Код органа регистрации (с/совета)
+    // Код органа регистрации (ГиМ)
     Organ : string;
 
     property Meta : TSasaIniFile read FMeta write FMeta;
@@ -51,11 +50,23 @@ type
     FIOrINs  : TStringList;
     // Тип данных во входном списке
     ListType : Integer;
+    // Нужны актуальные сведения по ИН или убывшие
     NeedActual : Boolean;
 
     constructor Create(DBeg, DEnd : TDateTime; OrgCode : string = ''); overload;
     constructor Create(URL : string); overload;
     constructor Create(INs : TStringList; LType : Integer = TLIST_FIO); overload;
+  end;
+
+  // параметры для GetNsi
+  TParsNsi = class
+    NsiType : Integer;
+    NsiCode : Integer;
+    FullURL : string;
+    ConnADS : TAdsConnection;
+    ADSCopy : Boolean;
+
+    constructor Create(NType : Integer; Conn : TAdsConnection); overload;
   end;
 
   // параметры для PostDocs
@@ -123,6 +134,7 @@ uses
 procedure TParsExchg.PEGenCreate;
 begin
   // Имена секций со структурами таблиц по умолчанию
+  SectADM   := SCT_ADMIN;
   SectINs   := SCT_TBL_INS;
   SectDocs  := SCT_TBL_DOC;
   SectChild := SCT_TBL_CLD;
@@ -161,6 +173,18 @@ begin
   FIOrINs := INs;
   ListType := LType;
 end;
+
+//
+constructor TParsNsi.Create(NType : Integer; Conn : TAdsConnection);
+begin
+  NsiType := NType;
+  NsiCode := 0;
+  ConnADS := Conn;
+  ADSCopy := True;
+  FullURL := '';
+end;
+
+
 
 // Результат GET
 constructor TResultGet.Create(Pars: TParsExchg; WhatMT : Integer = DATA_ONLY);

@@ -65,6 +65,7 @@ type
     edNsiCode: TDBEditEh;
     cbSrcPost: TDBComboBoxEh;
     cnctNsi: TAdsConnection;
+    cbAdsCvrt: TDBCheckBoxEh;
     procedure btnGetActualClick(Sender: TObject);
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -332,8 +333,8 @@ begin
 
   ShowM := edMemo;
   edOrgan.Text  := '26';
-  dtBegin.Value := StrToDate('06.10.2020');
-  dtEnd.Value   := StrToDate('08.10.2020');
+  dtBegin.Value := StrToDate('20.12.2020');
+  dtEnd.Value   := StrToDate('26.12.2020');
   edFirst.Text  := '0';
   edCount.Text  := '10';
   cbSrcPost.ItemIndex := 0;
@@ -737,6 +738,8 @@ procedure TForm1.btnGetNSIClick(Sender: TObject);
 var
   ValidPars: Boolean;
   NsiCode, NsiType: integer;
+  Path2Nsi : string;
+  ParsNsi : TParsNsi;
 begin
   try
     NsiType := StrToInt(edNsiType.Text);
@@ -750,15 +753,17 @@ begin
     ValidPars := False;
   end;
   if (ValidPars = True) then begin
-    BlackBox.ResGet := BlackBox.GetNSI(NsiType, NsiCode);
-    if (Assigned(BlackBox.ResGet)) then begin
+      cnctNsi.IsConnected := False;
+      cnctNsi.ConnectPath := IncludeTrailingBackslash(BlackBox.BBPars.Meta.ReadString('ADMIN', 'NSIPATH', '.'));
+    ParsNsi := TParsNsi.Create(NsiType, cnctNsi);
+    ParsNsi.ADSCopy := cbAdsCvrt.Checked;
+    ParsNsi.NsiCode := NsiCode;
+    BlackBox.ResGet := BlackBox.GetNSI(ParsNsi);
+    if (BlackBox.ResGet.ResCode = 0) then begin
       dsNsi.DataSet := BlackBox.ResGet.Nsi;
       BlackBox.ResGet.Nsi.First;
     end;
     ShowDeb(IntToStr(BlackBox.ResGet.ResCode) + ' ' + BlackBox.ResGet.ResMsg);
-    if (BlackBox.ResGet.Nsi.RecordCount > 0) then begin
-      CreateADST(BlackBox.ResGet.Nsi, NsiType, cnctNsi);
-    end;
   end;
 end;
 

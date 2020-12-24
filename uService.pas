@@ -17,13 +17,13 @@ const
   INI_NAME = 'ExchgPars.ini';
 
   // Секции INI-файла
+  SCT_ADMIN   = 'ADMIN';
   SCT_HOST    = 'HOST';
   // Секции INI-файла для описания таблиц
   SCT_TBL_INS = 'TABLE_INDNUM';
   SCT_TBL_DOC = 'TABLE_DOCSETDATA';
   SCT_TBL_CLD = 'TABLE_CHILD';
   SCT_TBL_NSI = 'TABLE_NSI';
-
 
   // функции запросов к серверу
   GET_LIST_ID  = 1;
@@ -64,6 +64,7 @@ const
 
   // Коды ошибок
   UERR_GET_NSI = 600;
+  UERR_CVRT_NSI = 650;
   UERR_GET_INDNOMS = 700;
   UERR_GET_DEPART = 800;
   UERR_GET_ACTUAL = 900;
@@ -89,7 +90,8 @@ procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
 function FullPath(H : THostReg; Func : Integer; Pars : string) : string;
 
 procedure LeaveOnly1(ds: TDataSet);
-function CreateADST(MT:TkbmMemTable; TType : integer; Conn : TAdsConnection) : Integer;
+function SafeNewNsi(Path, TName: string; WorkF: string = ''): string;
+function ADSTCreateOnDefs(TName : string; FDefs : TFieldDefs; var StrInStr : string) : string;
 
 var
   ShowM : TMemo;
@@ -98,6 +100,7 @@ implementation
 
 uses
   SysUtils,
+  FileUtil,
   StrUtils;
 
 // Обработка имен полей  
@@ -153,7 +156,7 @@ var
   FieldType: TFieldType;
   FieldSize: Integer;
   FieldDef: TFieldDef;
-  fld: TField;
+  //fld: TField;
   tb: TkbmMemTable;
   arr, arrFields: TArrStrings;
   MetaDef,
@@ -192,7 +195,7 @@ begin
       end;
       StrToArr(sOpis, arr, ',', false);
       SetLength(arr, 2);
-      FieldSize := 0;
+      //FieldSize := 0;
       if StringToFieldType(arr[0], FieldType) then begin
         FieldSize := GetFieldSize(arr[1]);
         FieldDef := tb.FieldDefs.AddFieldDef;
@@ -293,14 +296,11 @@ begin
 end;
 
 
-
-
-
-
-function FType2StrSQL(T: TFieldType): string;
+function FieldType2StrSQL(T: TFieldType): string;
 var
   i: Integer;
 begin
+  Result := '';
   for i := 0 to ADS_MAX_FIELD_TYPE - 1 do
     if (AdsDataTypeMap[i] = T) then begin
       Result := ArrSootv[i].Name;
@@ -308,6 +308,9 @@ begin
     end;
 end;
 
+// Создание символьной строки с описанием структуры ADS-таблицы
+// Result   - для SQL CREATE TABLE
+// StrInStr - для AdsCreateTable
 function ADSTCreateOnDefs(TName : string; FDefs : TFieldDefs; var StrInStr : string) : string;
 var
   MaxF,
@@ -315,8 +318,7 @@ var
   sSizeSQL,
   sSizeACr,
   sACr,
-  sSQL,
-  sFD : string;
+  sSQL : string;
 begin
   MaxF  := FDefs.Count;
   sSQL := '';
@@ -332,68 +334,48 @@ begin
       sSizeSQL := '';
       sSizeACr := '';
     end;
-    sSQL := sSQL + Format('%s %s%s,', [ FDefs[i].Name, FType2StrSQL(FDefs[i].DataType), sSizeSQL]);
+    sSQL := sSQL + Format('%s %s%s,', [ FDefs[i].Name, FieldType2StrSQL(FDefs[i].DataType), sSizeSQL]);
     sACr := sACr + Format('%s, %s %s;', [ FDefs[i].Name, ArrStr2Fld[Integer(FDefs[i].DataType)].Name, sSizeACr]);
   end;
+  // Последней была запятая
   sSQL[Length(sSQL)] := ')';
   StrInStr := sACr;
   Result := Format('CREATE TABLE "%s" (%s AS FREE TABLE ', [TName, sSQL]);
 end;
 
-
-function SafeNewNsi(Path, TName : string): Boolean;
+// Перезапись существующей таблицы
+function SafeNewNsi(Path, TName: string; WorkF: string = ''): string;
+const
+  TMP_ADD = 'Upd';
 var
-  s : string;
+  ErrDel: Boolean;
+  RealName, TmpName : string;
 begin
-  if (FileExists(Path)) then begin
-
-
-
-  end;
-Result := True;
-end;
-
-
-function CreateADST(MT: TkbmMemTable; TType: integer; Conn: TAdsConnection): Integer;
-var
-  MayCreate : Boolean;
-  i, MaxF, n: Integer;
-  DupAds,
-  StrucInStr, TName, FName, sSQL: string;
-  t: TAdsTable;
-begin
-  TName := Format('ROC%d', [TType]);
-  FName := IncludeTrailingBackslash(Conn.ConnectPath) + TName;
-  MaxF := MT.FieldDefs.Count;
-  t := TAdsTable.Create(Conn.Owner);
+  Result := TName;
   try
-    sSQL := ADSTCreateOnDefs(TName, MT.FieldDefs, StrucInStr);
-    Conn.IsConnected := True;
-    t.TableName := TName;
-    t.AdsConnection := Conn;
-    n := Conn.Execute(sSQL);
-  //t.AdsCreateTable(FName, ttAdsADT, ANSI, 0, StrucInStr);
-    t.Active := True;
-
-    MaxF := MT.Fields.Count;
-    with MT do begin
-      First;
-      while not Eof do begin
-        t.Append;
-        for i := 0 to MaxF - 1 do
-          t.Fields[i].Value := Fields[i].Value;
-        t.Post;
-        Next;
+    if (WorkF = '') then begin
+      if (FileExists(Path + TName + '.adt') or FileExists(Path + TName + '.adm')) then begin
+        Result := TMP_ADD + TName;
+        ErrDel := DeleteFiles(Path + Result + '.ad?');
+      end;
+    end
+    else begin
+    // Переименовать при необходимости
+      if (TName <> WorkF) then begin
+        RealName := Path + TName;
+        TmpName := Path + TMP_ADD + TName;
+        ErrDel := DeleteFiles(RealName + '.ad?');
+        ErrDel := RenameFile(TmpName + '.adt', RealName + '.adt');
+        if FileExists(TmpName + '.adm') then begin
+          ErrDel := RenameFile(TmpName + '.adm', RealName + '.adm');
+        end;
       end;
     end;
-    t.Active := False;
-
-  finally
-    t.Close;
-    t.Free;
+  except
   end;
-  Result := 0;
 end;
+
+
 
 
 end.

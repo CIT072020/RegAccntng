@@ -30,7 +30,9 @@ type
     function GetFI(sField: String): Integer;
     function GetFD(sField: String): TDateTime;
     // Код из справочного реквизита
-    function GetCode(sField: String): Integer;
+    //function GetCode(sField: String; KeyField : string = 'klUniPK'): Integer;
+    function GetCode(sField: String; KeyField: string = 'klUniPK'): Variant;
+    function GetName(sField: String): string;
 
     // Паспортные данные
     procedure GetPasp;
@@ -99,11 +101,37 @@ begin
   Result := FDoc.FieldByName(sField).AsDateTime;
 end;
 
-// Код из справочного реквизита
-function TDocSetDTO.GetCode(sField: String): Integer;
+
+// Поля ключевого реквизита
+{
+function TDocSetDTO.GetKeyField(sField: String; KeyField : string = 'klUniPK'): Integer;
 begin
-  Result := FSO.O[sField].O['klUniPK'].I['code'];
+  Result := FSO.O[KeyField].I['code'];
 end;
+}
+
+// Код из справочного реквизита
+function TDocSetDTO.GetCode(sField: String; KeyField: string = 'klUniPK'): Variant;
+begin
+  try
+    Result := FSO.O[sField].O[KeyField].I['code'];
+  except
+    Result := null;
+  end;
+end;
+
+// Наименование из справочного реквизита
+function TDocSetDTO.GetName(sField: String): string;
+begin
+  try
+    Result := FSO.O[sField].S['lex1'];
+  except
+    Result := '';
+  end;
+end;
+
+
+
 
 // Список убывших
 class function TIndNomDTO.GetIndNumList(SOArr: ISuperObject; IndNum : TkbmMemTable; EmpTbl : Boolean = True): Integer;
@@ -138,10 +166,6 @@ end;
 
 
 
-
-
-
-
   // Паспортные данные
 procedure TDocSetDTO.GetPasp;
 var
@@ -151,22 +175,21 @@ begin
   FDoc.FieldByName('PASP_NOMER').AsString := FSO.S[CT('docNum')];
   FDoc.FieldByName('PASP_DATE').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('docDateIssue')]);
   FDoc.FieldByName('docIssueOrgan').AsInteger := GetCode('docIssueOrgan');
-  FDoc.FieldByName('PASP_VIDAN').AsString := FSO.O[CT('docIssueOrgan')].s[CT('lex1')];
+  FDoc.FieldByName('PASP_VIDAN').AsString := GetName('docIssueOrgan');
+
   FDoc.FieldByName('docAppleDate').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('docAppleDate')]);
 
-  d := JavaToDelphiDateTime(FSO.I[CT('expireDate')]);
+  //d := JavaToDelphiDateTime(FSO.I[CT('expireDate')]);
   FDoc.FieldByName('expireDate').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('expireDate')]);
 
   FDoc.FieldByName('docType').AsInteger := GetCode('docType');
-  FDoc.FieldByName('docType_NAME').AsString := FSO.O[CT('docType')].s[CT('lex1')];
+  FDoc.FieldByName('docType_NAME').AsString := GetName('docType');
 
-  d := STOD(FSO.S[CT('bdate')]);
-  FDoc.FieldByName('DateR').AsDateTime := d;
+  FDoc.FieldByName('DateR').AsDateTime := STOD(FSO.S[CT('bdate')]);
   FDoc.FieldByName('CITIZEN').AsInteger := GetCode('citizenship');
-  FDoc.FieldByName('CITIZEN_NAME').AsString := FSO.O[CT('citizenship')].s[CT('lex1')];
+  FDoc.FieldByName('CITIZEN_NAME').AsString := GetName('citizenship');
 
-  FDoc.FieldByName('GOSUD_R').AsInteger := FSO.O[CT('countryB')].O[CT('klUniPK')].i[CT('code')];
-  FDoc.FieldByName('GOSUD_R_NAME').AsString := FSO.O[CT('countryB')].s[CT('lex1')];
+  GetPlaceOfBirth;
 
   FDoc.FieldByName('FAMILIA_B').AsString := FSO.S[CT('surnameBel')];
   FDoc.FieldByName('NAME_B').AsString := FSO.S[CT('nameBel')];
@@ -185,10 +208,12 @@ var
   d: TDateTime;
 begin
   try
-
+    FDoc.FieldByName('GOSUD_R').AsInteger := GetCode('countryB');
+    FDoc.FieldByName('GOSUD_R_NAME').AsString := GetName('countryB');
   except
   end;
 end;
+
 
 // Место проживания
 procedure TDocSetDTO.GetPlaceOfLiving;
@@ -225,12 +250,16 @@ var
   SOChild: ISuperObject;
 begin
   if (Assigned(SOf20) and (Not SOf20.IsType(stNull))) then begin
-    IsF20 := SOf20.B[CT('signAway')];
-    if (IsF20 = True) then
-      FDoc.FieldByName('signAway').AsInteger := 1
-    else
-      FDoc.FieldByName('signAway').AsInteger := 0;
+    FDoc.FieldByName('signAway').AsBoolean := SOf20.B[CT('signAway')];
+    FDoc.FieldByName('GOSUD_O').AsInteger := GetCode('countryPu');
+    FDoc.FieldByName('GOSUD_O_NAME').AsString := GetName('countryPu');
+    FDoc.FieldByName('OBL_O_NAME').AsString := SOf20.S[CT('areaPu')];
+    FDoc.FieldByName('RAJON_O_NAME').AsString := SOf20.S[CT('regionPu')];
+    FDoc.FieldByName('GOROD_O_NAME').AsString := SOf20.S[CT('cityPu')];
+    FDoc.FieldByName('typeCityPu').AsInteger := GetCode('typeCityPu');
+    FDoc.FieldByName('typeCityPu_NAME').AsString := GetName('typeCityPu');
 
+    FDoc.FieldByName('DATE_O').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('datePu')]);
         // Сведения о детях
     try
       SOChild := FSO.O[CT('form19_20')].O[CT('infants')];
@@ -290,7 +319,7 @@ begin
       //FDoc.FieldByName('view').AsInteger := GetCode('view');
       FDoc.FieldByName('LICH_NOMER').AsString := FSO.S[CT('identif')];
       FDoc.FieldByName('sysDocType').AsInteger := GetCode('sysDocType');
-      FDoc.FieldByName('sysDocName').AsString := FSO.O[CT('sysDocType')].s[CT('lex1')];
+      FDoc.FieldByName('sysDocName').AsString := GetName('sysDocType');
       FDoc.FieldByName('Familia').AsString := FSO.S[CT('surname')];
       FDoc.FieldByName('Name').AsString := FSO.S[CT('name')];
       FDoc.FieldByName('Otch').AsString := FSO.S[CT('sname')];
@@ -303,10 +332,10 @@ begin
       FDoc.FieldByName('POL').AsString := s;
 
       FDoc.FieldByName('sysOrgan').AsInteger := GetCode('sysOrgan');
-      FDoc.FieldByName('ORGAN').AsString := FSO.O[CT('sysOrgan')].s[CT('lex1')];
+      FDoc.FieldByName('ORGAN').AsString := GetName('sysOrgan');
 
       FDoc.FieldByName('SelSovet').AsInteger := GetCode('villageCouncil');
-      FDoc.FieldByName('SelSovet_Name').AsString := FSO.O[CT('villageCouncil')].s[CT('lex1')];
+      FDoc.FieldByName('SelSovet_Name').AsString := GetName('villageCouncil');
 
       FDoc.FieldByName('WORK_NAME').AsString := FSO.S[CT('workPlace')];
       FDoc.FieldByName('DOLG_NAME').AsString := FSO.S[CT('workPosition')];
@@ -642,15 +671,14 @@ begin
     StreamDoc.WriteString('"form19_20":{');
     AddStr('form19_20Base', 'form19_20');
     AddNum('signAway', 'false');
-    AddDJ('dateReg', GetFD('DATEZ'));
     AddNum('countryPu', TNsiRoc.Country(GetFI('GOSUD_O')));
-    AddNum('areaPu', VarKeyArea(GetFI('OBL_O')));
-    //AddNum('regionPu', VarKeyRegion(GetFI('RAION_O')));
+    AddStr('areaPu', GetFS('OBL_O_NAME'));
+    AddStr('regionPu', GetFS('RAJON_O_NAME'));
+    AddDJ('dateReg', GetFD('DATEZ'));
 
   // Последней была запятая, вернемся для записи конца объекта
     StreamDoc.Seek(-1, soCurrent);
     StreamDoc.WriteString('},');
-
   except
   end;
 end;
@@ -729,6 +757,52 @@ end;
 
 
 
+function GetChildLinks(SOArr: ISuperObject; LeftM: string): string;
+
+  function CT(s: string): string;
+  begin
+    Result := s;
+  end;
+
+const
+  LeftPad = '              ';
+var
+  v, s: string;
+  NCh, i: Integer;
+  SOCh, SO: ISuperObject;
+begin
+  try
+    s := '';
+    i := 0;
+    while (i <= SOArr.AsArray.Length - 1) do begin
+      SO := SOArr.AsArray.O[i];
+      s := s + Format('%srid = %-20d%s', [LeftM, SO.I[CT('rid')], CRLF]);
+      s := s + Format('%stype:   type:%8d code: %12d lex1: %s%s', [LeftM,
+        SO.O[CT('type')].O[CT('klUniPK')].i[CT('type')],
+        SO.O[CT('type')].O[CT('klUniPK')].i[CT('code')],
+        SO.O[CT('type')].s[CT('lex1')], CRLF]);
+
+      SOCh := SO.O[CT('type')].O[CT('childKlUniLinks')];
+      if (Assigned(SOCh) and (Not SOCh.IsType(stNull))) then begin
+        NCh := SOCh.AsArray.Length;
+        if (NCh > 0) then begin
+          v := GetChildLinks(SOCh, LeftM + LeftPad);
+          s := s + v;
+        end;
+      end;
+
+      s := s + Format('%sparType: type:%8d code: %12d lex1: %s%s', [LeftM,
+        SO.O[CT('parType')].O[CT('klUniPK')].i[CT('type')],
+        SO.O[CT('parType')].O[CT('klUniPK')].i[CT('code')],
+        SO.O[CT('parType')].s[CT('lex1')], CRLF]);
+      i := i + 1;
+    end;
+    Result := s;
+  except
+    Result := 'Err-SO';
+  end;
+end;
+
 
 class function TDocSetDTO.GetNsi(SOArr: ISuperObject; Nsi: TkbmMemTable; EmpTbl: Boolean = True): Integer;
   function CT(s: string): string;
@@ -739,6 +813,7 @@ class function TDocSetDTO.GetNsi(SOArr: ISuperObject; Nsi: TkbmMemTable; EmpTbl:
 var
   b : Boolean;
   s : string;
+  NCh,
   j,
   i : Integer;
   SOCh,
@@ -752,28 +827,23 @@ begin
     while (i <= SOArr.AsArray.Length - 1) do begin
       SO := SOArr.AsArray.O[i];
       Nsi.Append;
-      SO := SOArr.AsArray.O[i];
       Nsi.FieldByName('Type').AsInteger := SO.O[CT('klUniPK')].I[CT('type')];
       Nsi.FieldByName('Code').AsInteger := SO.O[CT('klUniPK')].I[CT('code')];
       Nsi.FieldByName('Lex1').AsString  := SO.S[CT('lex1')];
       Nsi.FieldByName('Lex2').AsString  := SO.S[CT('lex2')];
       Nsi.FieldByName('Lex3').AsString  := SO.S[CT('lex3')];
       Nsi.FieldByName('DateBegin').AsDateTime := JavaToDelphiDateTime(SO.I[CT('dateBegin')]);
-{
-      b := SO.B[CT('active')];
-      if (b = True) then
-      Nsi.FieldByName('Active').AsInteger := 1
-      else
-      Nsi.FieldByName('Active').AsInteger := 1;
-}
       Nsi.FieldByName('Active').AsBoolean := SO.B[CT('active')];
       Nsi.FieldByName('TempId').AsString  := SO.S[CT('tempId')];
-      SOCh := SO.O[CT('childKlUniLinks')];
-      Nsi.FieldByName('NChilds').AsInteger := SOCh.AsArray.Length;
-      Nsi.FieldByName('ChildKlUniLinks').AsString  := '';
-      for j := 1 to SOCh.AsArray.Length do begin
 
-      end;
+      SOCh := SO.O[CT('childKlUniLinks')];
+      NCh := SOCh.AsArray.Length;
+      Nsi.FieldByName('NChilds').AsInteger := NCh;
+      if (NCh > 0) then
+        s := GetChildLinks(SOCh, '')
+      else
+        s := '';
+      Nsi.FieldByName('ChildKlUniLinks').AsString  := s;
       Nsi.Post;
       i := i + 1;
     end;
