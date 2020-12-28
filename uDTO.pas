@@ -247,33 +247,41 @@ procedure TDocSetDTO.GetForm19_20(SOf20: ISuperObject; MasterI: integer);
 var
   IsF20: Boolean;
   NCh: Integer;
-  SOChild: ISuperObject;
+  OldSO, SOChild: ISuperObject;
 begin
-  if (Assigned(SOf20) and (Not SOf20.IsType(stNull))) then begin
-    FDoc.FieldByName('signAway').AsBoolean := SOf20.B[CT('signAway')];
-    FDoc.FieldByName('GOSUD_O').AsInteger := GetCode('countryPu');
-    FDoc.FieldByName('GOSUD_O_NAME').AsString := GetName('countryPu');
-    FDoc.FieldByName('OBL_O_NAME').AsString := SOf20.S[CT('areaPu')];
-    FDoc.FieldByName('RAJON_O_NAME').AsString := SOf20.S[CT('regionPu')];
-    FDoc.FieldByName('GOROD_O_NAME').AsString := SOf20.S[CT('cityPu')];
-    FDoc.FieldByName('typeCityPu').AsInteger := GetCode('typeCityPu');
-    FDoc.FieldByName('typeCityPu_NAME').AsString := GetName('typeCityPu');
+  OldSO := FSO;
+  try
+    if (Assigned(SOf20) and (Not SOf20.IsType(stNull))) then begin
+      FSO := SOf20;
+      FDoc.FieldByName('signAway').AsBoolean := SOf20.B[CT('signAway')];
+      FDoc.FieldByName('GOSUD_O').AsInteger := GetCode('countryPu');
+      FDoc.FieldByName('GOSUD_O_NAME').AsString := GetName('countryPu');
+      FDoc.FieldByName('OBL_O_NAME').AsString := SOf20.S[CT('areaPu')];
+      FDoc.FieldByName('RAION_O_NAME').AsString := SOf20.S[CT('regionPu')];
+      FDoc.FieldByName('GOROD_O_NAME').AsString := SOf20.S[CT('cityPu')];
+      FDoc.FieldByName('typeCityPu').AsInteger := GetCode('typeCityPu');
+      FDoc.FieldByName('typeCityPu_NAME').AsString := GetName('typeCityPu');
 
-    FDoc.FieldByName('DATE_O').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('datePu')]);
+      FDoc.FieldByName('DATE_O').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('datePu')]);
         // Сведения о детях
-    try
-      SOChild := FSO.O[CT('form19_20')].O[CT('infants')];
-      NCh := SOChild.AsArray.Length;
-    except
-      NCh := 0;
-    end;
+      try
+        SOChild := FSO.O[CT('infants')];
+        NCh := SOChild.AsArray.Length;
+      except
+        NCh := 0;
+      end;
 
-    if (Assigned(SOChild)) and (NCh > 0) then begin
-      GetChild(SOChild, MasterI);
+      if (Assigned(SOChild)) and (NCh > 0) then begin
+        GetChild(SOChild, MasterI);
+      end;
+      FDoc.FieldByName('DETI').AsInteger := NCh;
     end;
-    FDoc.FieldByName('DETI').AsInteger := NCh;
+  finally
+    FSO := OldSO;
   end;
 end;
+
+
 
 
 // Данные по детям из внутреннего массива
@@ -551,7 +559,7 @@ var
 
 
   // Место рождения
-procedure SchPlaceOfBorn;
+procedure PostPlaceOfBorn;
 begin
   try
     AddNum('countryB', TNsiRoc.Country(GetFI('GOSUD_R')));
@@ -562,7 +570,7 @@ begin
 end;
 
   // Место проживания
-procedure SchPlaceOfLiv;
+procedure PostPlaceOfLive;
 begin
   try
     AddNum('contryL', TNsiRoc.Country(GetFI('countryL')));
@@ -586,7 +594,7 @@ begin
 end;
 
   // Схема Паспорт
-procedure SchPasport;
+procedure PostPasport;
 begin
   try
     AddStr('docSery', GetFS('PASP_SERIA'));                       // серия основного документа
@@ -610,7 +618,7 @@ begin
 end;
 
 // Структура dsdAddressLive
-procedure DsdAddress;
+procedure PostDsdAddress;
 begin
   try
     StreamDoc.WriteString('"dsdAddressLive":{');
@@ -665,16 +673,45 @@ end;
 
 
 // Форма 19-20
-procedure Form19_20Write;
+procedure PostForm19_20;
 begin
   try
     StreamDoc.WriteString('"form19_20":{');
     AddStr('form19_20Base', 'form19_20');
     AddNum('signAway', 'false');
+    AddNum('dateReс');
+    AddDJ('dateReg', GetFD('DATEZ'));
+
+    AddNum('marks');
+    AddNum('notes');
+    AddNum('reason');
+    AddNum('term');
+
+    AddNum('datePu');
     AddNum('countryPu', TNsiRoc.Country(GetFI('GOSUD_O')));
     AddStr('areaPu', GetFS('OBL_O_NAME'));
     AddStr('regionPu', GetFS('RAJON_O_NAME'));
-    AddDJ('dateReg', GetFD('DATEZ'));
+    AddNum('typeCityPu');
+    AddNum('cityPu', GetFS('GOROD_O_NAME'));
+    AddNum('typeStreetPu');
+    AddNum('streetPu');
+    AddNum('housePu');
+    AddNum('korpsPu');
+    AddNum('appPu');
+
+    AddNum('termReg');
+    AddNum('dateRegTill');
+    AddNum('causeIssue');
+    AddNum('deathDate');
+    AddNum('signNoTake');
+    AddNum('signNoReg');
+    AddNum('signDestroy');
+    AddNum('noAddrPu');
+    AddNum('regType');
+    AddNum('maritalStatus');
+    AddNum('education');
+    AddNum('student');
+    AddNum('infants', '[]');
 
   // Последней была запятая, вернемся для записи конца объекта
     StreamDoc.Seek(-1, soCurrent);
@@ -701,7 +738,7 @@ begin
     AddStr('bdate', DTOSDef(GetFD('DateR'), tdClipper, '')); // 19650111
 
     // Схема Паспорт
-    SchPasport;
+    PostPasport;
 
     AddNum('dsdDateRec');                                        // iuse
     AddStr('regNum');                                            // рег. № карточки
@@ -712,10 +749,10 @@ begin
     AddNum('organDoc');                                          // iuse
 
     // Место рождения
-    SchPlaceOfBorn;
+    PostPlaceOfBorn;
 
     // Место проживания
-    SchPlaceOfLiv;
+    PostPlaceOfLive;
 
     AddStr('workPlace', GetFS('WORK_NAME'));
     AddStr('workPosition', GetFS('DOLG_NAME'));
@@ -724,11 +761,11 @@ begin
     AddNum('intracityRegion');    //  код
 
     // Форма 19-20
-    //!!! Form19_20Write;
+    //!!! PostForm19_20;
     AddNum('form19_20');    //###  код органа
 
     // Адрес регистрации
-    DsdAddress;
+    PostDsdAddress;
 
     AddNum('getPassportDate');    //iuse
     AddNum('images');    //###  код органа

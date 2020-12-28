@@ -150,43 +150,23 @@
         "korpsPu": null,
         "appPu": null,
         "dateReg": null,
-        "termReg": {
-            "klUniPK": {
-                "type": 27,
-                "code": 4
-            }
-        },
+        "termReg": null,
         "dateRegTill": null,
-        "causeIssue": {
-            "klUniPK": {
-                "type": 39,
-                "code": 59200021
-            }
-        },
+        "causeIssue": null,
         "deathDate": null,
         "signNoTake": false,
         "signNoReg": false,
         "signDestroy": false,
-        "noAddrPu": {
-            "klUniPK": {
-                "type": 70,
-                "code": 12
-            }
-        },
+        "noAddrPu": null,
         "regType": {
             "klUniPK": {
                 "type": 500,
                 "code": 2
             }
         },
-        "maritalStatus": {
-            "klUniPK": {
-                "type": 501,
-                "code": 3
-            }
-        },
+        "maritalStatus": null,
         "education": null,
-        "student": false,
+        "student": null,
         "infants": []
     },
     "dsdAddressLive": {

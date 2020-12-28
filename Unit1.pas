@@ -332,7 +332,7 @@ begin
   tbTalonPribDeti.Open;
 
   ShowM := edMemo;
-  edOrgan.Text  := '26';
+  edOrgan.Text  := '12';
   dtBegin.Value := StrToDate('20.12.2020');
   dtEnd.Value   := StrToDate('26.12.2020');
   edFirst.Text  := '0';
@@ -648,7 +648,7 @@ begin
     BlackBox.ResGet := BlackBox.GetDeparted(P);
   end;
   GETRes := BlackBox.ResGet;
-  ShowDeb(GETRes.ResMsg);
+  ShowDeb(IntToStr(GETRes.ResCode) + ' ' + GETRes.ResMsg);
 
   if (GETRes.INs.RecordCount > 0) then begin
     DataSource1.DataSet := BlackBox.ResGet.INs;
