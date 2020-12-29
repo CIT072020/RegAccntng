@@ -12,6 +12,16 @@ uses
   uService;
 
 type
+  // Поддержка ЭЦП и сертификатов
+  TSecureExchg = class
+  private
+  protected
+  public
+    class function SetHeadSign : string;
+    class function SetHeadCertif : string;
+  published
+  end;
+
   // Чтение списка ИН
   TIndNomDTO = class
   public
@@ -69,6 +79,16 @@ uses
   NativeXml,
   FuncPr,
   uNSI;
+
+class function TSecureExchg.SetHeadSign: string;
+begin
+  Result := 'amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h';
+end;
+
+class function TSecureExchg.SetHeadCertif: string;
+begin
+  Result := '109uu21nu0t17togdy70-fuib';
+end;
 
 
 constructor TDocSetDTO.Create(MTDoc, MTChild : TDataSet);
@@ -261,6 +281,10 @@ begin
       FDoc.FieldByName('GOROD_O_NAME').AsString := SOf20.S[CT('cityPu')];
       FDoc.FieldByName('typeCityPu').AsInteger := GetCode('typeCityPu');
       FDoc.FieldByName('typeCityPu_NAME').AsString := GetName('typeCityPu');
+
+      FDoc.FieldByName('regType').AsInteger := GetCode('regType');
+      FDoc.FieldByName('regType_NAME').AsString := GetName('regType');
+
 
       FDoc.FieldByName('DATE_O').AsDateTime := JavaToDelphiDateTime(FSO.I[CT('datePu')]);
         // Сведения о детях
@@ -549,7 +573,7 @@ var
 
   procedure AddDJ(ss1: String; dValue: TDateTime);
   begin
-    if (dValue = 0) then
+    if (dValue = 0) or (Dtos(dValue) = '01.01.1970') then
       sss := 'null'
     else
       sss := IntToStr(Delphi2JavaDate(dValue));
@@ -690,9 +714,9 @@ begin
     AddNum('datePu');
     AddNum('countryPu', TNsiRoc.Country(GetFI('GOSUD_O')));
     AddStr('areaPu', GetFS('OBL_O_NAME'));
-    AddStr('regionPu', GetFS('RAJON_O_NAME'));
+    AddStr('regionPu', GetFS('RAION_O_NAME'));
     AddNum('typeCityPu');
-    AddNum('cityPu', GetFS('GOROD_O_NAME'));
+    AddStr('cityPu', GetFS('GOROD_O_NAME'));
     AddNum('typeStreetPu');
     AddNum('streetPu');
     AddNum('housePu');
@@ -707,7 +731,8 @@ begin
     AddNum('signNoReg');
     AddNum('signDestroy');
     AddNum('noAddrPu');
-    AddNum('regType');
+    AddNum('regType', TNsiRoc.RegistrType(GetFI('regType')));
+
     AddNum('maritalStatus');
     AddNum('education');
     AddNum('student');
@@ -741,7 +766,7 @@ begin
     PostPasport;
 
     AddNum('dsdDateRec');                                        // iuse
-    AddStr('regNum');                                            // рег. № карточки
+    AddNum('regNum');                                            // рег. № карточки
     AddNum('dateRec');                                           // iuse
     AddNum('ateAddress');                                        // iuse
     AddNum('aisPasspDocStatus');                                 // iuse
@@ -761,14 +786,14 @@ begin
     AddNum('intracityRegion');    //  код
 
     // Форма 19-20
-    //!!! PostForm19_20;
-    AddNum('form19_20');    //###  код органа
+    //AddNum('form19_20');    //###  код органа
+    PostForm19_20;
 
     // Адрес регистрации
     PostDsdAddress;
 
     AddNum('getPassportDate');    //iuse
-    AddNum('images');    //###  код органа
+    AddNum('images', '[]');    //###  код органа
     AddNum('addressLast');    //iuse
     AddNum('dossieStatus');    //iuse
     AddNum('status');    //###  код органа

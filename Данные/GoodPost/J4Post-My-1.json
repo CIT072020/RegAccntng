@@ -1,5 +1,5 @@
 {
-    "identif": "7489423A002PB5",
+    "identif": "3141066C030PB2",
     "view": null,
     "sysDocType": {
         "klUniPK": {
@@ -7,9 +7,9 @@
             "code": 8
         }
     },
-    "surname": "МЕДВЕДЕВ",
-    "name": "АРТЕМ",
-    "sname": "АНДРЕЕВИЧ",
+    "surname": "ПОПОВ",
+    "name": "АЛЕКСАНДР",
+    "sname": "ИВАНОВИЧ",
     "sex": {
         "klUniPK": {
             "type": 32,
@@ -28,11 +28,11 @@
             "code": 26
         }
     },
-    "bdate": "20170622",
+    "bdate": "19661014",
     "dsdDateRec": null,
-    "docSery": "I-ЛЮ",
-    "docNum": "0480737",
-    "docDateIssue": 1498683600000,
+    "docSery": "AB",
+    "docNum": "2422242",
+    "docDateIssue": 1305147600000,
     "docAppleDate": null,
     "dateRec": null,
     "countryB": null,
@@ -43,7 +43,7 @@
     "docType": {
         "klUniPK": {
             "type": 37,
-            "code": 54100005
+            "code": 54100015
         }
     },
     "docOrgan": null,
@@ -54,23 +54,23 @@
     "cityL": null,
     "typeStreetL": null,
     "streetL": null,
-    "house": null,
+    "house": "32",
     "korps": null,
     "app": null,
     "organDoc": null,
     "workPlace": null,
-    "workPosition": "ПЕНСИОНЕР",
+    "workPosition": null,
     "docIssueOrgan": {
         "klUniPK": {
             "type": 24,
-            "code": 17608931
+            "code": 17601017
         }
     },
-    "surnameBel": "МЯДЗВЕДЗЕЎ",
-    "nameBel": "АРЦЁМ",
-    "snameBel": "АНДРЭЕВІЧ",
-    "surnameEn": "",
-    "nameEn": "",
+    "surnameBel": null,
+    "nameBel": null,
+    "snameBel": null,
+    "surnameEn": null,
+    "nameEn": null,
     "areaBBel": null,
     "regionBBel": null,
     "cityBBel": null,
@@ -80,7 +80,12 @@
             "code": 0
         }
     },
-    "intracityRegion": null,
+    "intracityRegion": {
+        "klUniPK": {
+            "type": 99,
+            "code": 0
+        }
+    },
     "ateAddress": null,
     "expireDate": null,
     "aisPasspDocStatus": null,

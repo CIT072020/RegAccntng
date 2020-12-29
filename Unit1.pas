@@ -37,14 +37,11 @@ type
     DataSource2: TDataSource;
     tbTalonPrib: TAdsTable;
     tbTalonPribDeti: TAdsTable;
-    btnGetCurID: TButton;
     cbCreateSO: TCheckBox;
-    btnGetList: TButton;
     gdDocs: TDBGridEh;
     dsDocs: TDataSource;
     gdChild: TDBGridEh;
     dsChild: TDataSource;
-    btnGetWithPars: TButton;
     btnGetDocs: TButton;
     dtBegin: TDBDateTimeEditEh;
     dtEnd: TDBDateTimeEditEh;

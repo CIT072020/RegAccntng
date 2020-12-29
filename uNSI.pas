@@ -15,6 +15,7 @@ const
   // Тип документа удостоверения личности
   S_IDDOC      = 37;
   S_DOCISORG   = 24;
+  S_REGTYPE    = 500;
 
   KEY_NULL  = 1;
   KEY_EMPTY = 2;
@@ -37,6 +38,7 @@ type
     class function SysOrgan(ICode : Integer = 0) : String;
     class function DocType(ICode : Integer = 54100001) : String;
     class function PaspOrg(ICode : Integer = 0; OrgName : string = '') : String;
+    class function RegistrType(ICode : Integer = 1) : String;
   end;
 
 implementation
@@ -128,7 +130,14 @@ begin
   Result := UniKey(S_DOCISORG, ICode);
 end;
 
-
+// Тип регистрации граждан (пост., врем.)
+class function TNsiRoc.RegistrType(ICode : Integer = 1) : String;
+begin
+  if (ICode = 0) then
+    // Default - Постоянная
+    ICode := 1;
+  Result := UniKey(S_REGTYPE, ICode);
+end;
 
 
 

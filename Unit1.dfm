@@ -221,31 +221,13 @@ object Form1: TForm1
     TitleFont.Name = 'Tahoma'
     TitleFont.Style = []
   end
-  object btnGetCurID: TButton
-    Left = 1256
-    Top = 483
-    Width = 121
-    Height = 25
-    Caption = 'GET '#1090#1077#1082#1091#1097#1080#1081' ID'
-    TabOrder = 17
-    OnClick = btnGetCurIDClick
-  end
   object cbCreateSO: TCheckBox
     Left = 744
     Top = 117
     Width = 153
     Height = 17
     Caption = 'Create Super Object'
-    TabOrder = 18
-  end
-  object btnGetList: TButton
-    Left = 1256
-    Top = 448
-    Width = 121
-    Height = 25
-    Caption = 'GET '#1057#1087#1080#1089#1086#1082' ID'
-    TabOrder = 19
-    OnClick = btnGetListClick
+    TabOrder = 17
   end
   object gdDocs: TDBGridEh
     Left = 487
@@ -259,7 +241,7 @@ object Form1: TForm1
     FooterFont.Height = -11
     FooterFont.Name = 'Tahoma'
     FooterFont.Style = []
-    TabOrder = 20
+    TabOrder = 18
     TitleFont.Charset = DEFAULT_CHARSET
     TitleFont.Color = clWindowText
     TitleFont.Height = -11
@@ -278,21 +260,12 @@ object Form1: TForm1
     FooterFont.Height = -11
     FooterFont.Name = 'Tahoma'
     FooterFont.Style = []
-    TabOrder = 21
+    TabOrder = 19
     TitleFont.Charset = DEFAULT_CHARSET
     TitleFont.Color = clWindowText
     TitleFont.Height = -11
     TitleFont.Name = 'Tahoma'
     TitleFont.Style = []
-  end
-  object btnGetWithPars: TButton
-    Left = 1251
-    Top = 408
-    Width = 121
-    Height = 25
-    Caption = 'GET with Pars'
-    TabOrder = 22
-    OnClick = btnGetWithParsClick
   end
   object btnGetDocs: TButton
     Left = 944
@@ -300,7 +273,7 @@ object Form1: TForm1
     Width = 121
     Height = 25
     Caption = 'GET- '#1091#1073#1099#1074#1096#1080#1077' - BB'
-    TabOrder = 23
+    TabOrder = 20
     OnClick = btnGetDocsClick
   end
   object dtBegin: TDBDateTimeEditEh
@@ -310,7 +283,7 @@ object Form1: TForm1
     Height = 21
     EditButtons = <>
     Kind = dtkDateEh
-    TabOrder = 24
+    TabOrder = 21
     Visible = True
   end
   object dtEnd: TDBDateTimeEditEh
@@ -320,7 +293,7 @@ object Form1: TForm1
     Height = 21
     EditButtons = <>
     Kind = dtkDateEh
-    TabOrder = 25
+    TabOrder = 22
     Visible = True
   end
   object edOrgan: TDBEditEh
@@ -329,7 +302,7 @@ object Form1: TForm1
     Width = 121
     Height = 21
     EditButtons = <>
-    TabOrder = 26
+    TabOrder = 23
     Text = '11'
     Visible = True
   end
@@ -339,7 +312,7 @@ object Form1: TForm1
     Width = 121
     Height = 21
     EditButtons = <>
-    TabOrder = 27
+    TabOrder = 24
     Text = '1'
     Visible = True
   end
@@ -349,7 +322,7 @@ object Form1: TForm1
     Width = 121
     Height = 21
     EditButtons = <>
-    TabOrder = 28
+    TabOrder = 25
     Text = '14'
     Visible = True
   end
@@ -359,7 +332,7 @@ object Form1: TForm1
     Width = 119
     Height = 25
     Caption = 'POST-DOC-BB'
-    TabOrder = 29
+    TabOrder = 26
     OnClick = btnPostDocClick
   end
   object btnGetActual: TButton
@@ -368,7 +341,7 @@ object Form1: TForm1
     Width = 121
     Height = 25
     Caption = 'GET- '#1072#1082#1090#1091#1072#1083#1100#1085#1099#1077' - BB'
-    TabOrder = 30
+    TabOrder = 27
     OnClick = btnGetActualClick
   end
   object lstINs: TListBox
@@ -378,7 +351,7 @@ object Form1: TForm1
     Height = 73
     ItemHeight = 13
     MultiSelect = True
-    TabOrder = 31
+    TabOrder = 28
   end
   object edtIN: TDBEditEh
     Left = 1232
@@ -386,8 +359,8 @@ object Form1: TForm1
     Width = 121
     Height = 21
     EditButtons = <>
-    TabOrder = 32
-    Text = '4221074A011PB0'
+    TabOrder = 29
+    Text = '3141066C030PB2'
     Visible = True
   end
   object btnGetNSI: TButton
@@ -396,7 +369,7 @@ object Form1: TForm1
     Width = 121
     Height = 25
     Caption = 'GET- '#1053#1057#1048' - BB'
-    TabOrder = 33
+    TabOrder = 30
     OnClick = btnGetNSIClick
   end
   object edNsiType: TDBEditEh
@@ -405,7 +378,7 @@ object Form1: TForm1
     Width = 65
     Height = 21
     EditButtons = <>
-    TabOrder = 34
+    TabOrder = 31
     Visible = True
   end
   object gdNsi: TDBGridEh
@@ -420,7 +393,7 @@ object Form1: TForm1
     FooterFont.Height = -11
     FooterFont.Name = 'Tahoma'
     FooterFont.Style = []
-    TabOrder = 35
+    TabOrder = 32
     TitleFont.Charset = DEFAULT_CHARSET
     TitleFont.Color = clWindowText
     TitleFont.Height = -11
@@ -433,7 +406,7 @@ object Form1: TForm1
     Width = 41
     Height = 21
     EditButtons = <>
-    TabOrder = 36
+    TabOrder = 33
     Visible = True
   end
   object cbSrcPost: TDBComboBoxEh
@@ -448,7 +421,7 @@ object Form1: TForm1
       'J4Post.json'
       'J4PostNoPasp.json'
       'J4PostNoIN.json')
-    TabOrder = 37
+    TabOrder = 34
     Text = 'cbSrcPost'
     Visible = True
   end
@@ -458,7 +431,7 @@ object Form1: TForm1
     Width = 97
     Height = 17
     Caption = 'ADS-'#1082#1086#1087#1080#1103
-    TabOrder = 38
+    TabOrder = 35
     ValueChecked = 'True'
     ValueUnchecked = 'False'
   end

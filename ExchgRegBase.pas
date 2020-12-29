@@ -277,7 +277,7 @@ end;
 // Индивидуальные номера граждан за период
 function TExchgRegCitizens.GetINsFromSrv(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
 var
-  nRet : Integer;
+  Ret : Integer;
   sErr : string;
   Pars : TStringList;
   SOList : ISuperObject;
@@ -293,8 +293,8 @@ begin
   end;
 
     try
-       nRet := SetRetCode(FHTTP.HTTPMethod('GET', ParsGet.FullURL), sErr);
-      if (nRet = 0) then begin
+       Ret := SetRetCode(FHTTP.HTTPMethod('GET', ParsGet.FullURL), sErr);
+      if (Ret = 0) then begin
         sErr := Utf8Decode(MemStream2Str(FHTTP.Document));
         SOList := SO(MakeNumAsStr('pid', sErr));
         if Assigned(SOList) and (SOList.DataType = stArray) then begin
@@ -311,19 +311,19 @@ begin
       on E: Exception do begin
         if (sErr = '') then
           sErr := E.Message;
-        nRet := UERR_GET_INDNOMS;
-        ResGet.ResCode := nRet;
+        Ret := UERR_GET_INDNOMS;
+        ResGet.ResCode := Ret;
         ResGet.ResMsg  := sErr;
       end;
     end;
-    Result := nRet;
+    Result := Ret;
 end;
 
 
 // Получить документы для текущего в списке ID
 function TExchgRegCitizens.Docs4CurIN(Pars4GET : string; DocDTO : TDocSetDTO) : TResultGet;
 var
-  nRet : Integer;
+  Ret : Integer;
   sErr,
   URL : string;
   SOList: ISuperObject;
@@ -333,8 +333,8 @@ begin
     URL := FullPath(FHost, GET_LIST_DOC, Pars4Get);
 
     FHTTP.Headers.Clear;
-    nRet := SetRetCode(FHTTP.HTTPMethod('GET', URL), sErr);
-      if (nRet = 0) then begin
+    Ret := SetRetCode(FHTTP.HTTPMethod('GET', URL), sErr);
+      if (Ret = 0) then begin
         sErr := MemStream2Str(FHTTP.Document);
         SOList := SO(Utf8Decode(sErr));
         sErr := 'No DSD!';
@@ -342,7 +342,7 @@ begin
         if Assigned(SOList) and (SOList.DataType = stArray) then begin
 
         if (DocDTO.GetDocList(SOList) > 0) then begin
-            nRet := 0;
+            Ret := 0;
             sErr := '';
         end;
       end;
@@ -351,10 +351,10 @@ begin
       on E: Exception do begin
         if (sErr = '') then
           sErr := E.Message;
-        nRet := UERR_GET_DEPART;
+        Ret := UERR_GET_DEPART;
       end;
   end;
-  Result.ResCode := nRet;
+  Result.ResCode := Ret;
   Result.ResMsg := sErr;
 end;
 
@@ -504,8 +504,7 @@ end;
 // Полученный справочник - в ADS
 function TExchgRegCitizens.CreateADST(MT: TkbmMemTable; TType: integer; Conn: TAdsConnection; ResGet: TResultGet): Integer;
 var
-  MayCreate: Boolean;
-  nRet, i, MaxF, n: Integer;
+  Ret, i, MaxF, n: Integer;
   CurName, sErr, StrucInStr, TName, FName, sSQL: string;
   t: TAdsTable;
 begin
@@ -521,7 +520,7 @@ begin
       t.TableName := CurName;
       t.AdsConnection := Conn;
       Conn.Execute(sSQL);
-      // Возможно без SQL
+      // Вариант без SQL
       //t.AdsCreateTable(FName, ttAdsADT, ANSI, 0, StrucInStr);
       t.Active := True;
 
@@ -539,26 +538,26 @@ begin
       t.Active := False;
       Conn.IsConnected := False;
       SafeNewNsi(Conn.ConnectPath, TName, CurName);
-      nRet := 0;
+      Ret := 0;
     except
       on E: Exception do begin
         if (sErr = '') then
           sErr := E.Message;
-        nRet := UERR_CVRT_NSI;
+        Ret := UERR_CVRT_NSI;
       end;
     end;
   finally
     t.Free;
   end;
-  Result := nRet;
-  ResGet.ResCode := nRet;
+  Result := Ret;
+  ResGet.ResCode := Ret;
   ResGet.ResMsg := sErr;
 end;
 
 // Получить содержимое справочника
 function TExchgRegCitizens.GetNSI(ParsNsi : TParsNsi) : TResultGet;
 var
-  nRet: Integer;
+  Ret: Integer;
   SOList: ISuperObject;
   URL,
   sType, sCode, sErr: string;
@@ -578,18 +577,18 @@ begin
   FHTTP := THTTPSend.Create;
   try
     try
-      nRet := SetRetCode(FHTTP.HTTPMethod('GET', URL), sErr);
-      if (nRet = 0) then begin
+      Ret := SetRetCode(FHTTP.HTTPMethod('GET', URL), sErr);
+      if (Ret = 0) then begin
         sErr := MemStream2Str(FHTTP.Document);
         SOList := SO(Utf8Decode(sErr));
         sErr := 'No DATA in HTTP-Document';
         if Assigned(SOList) and (SOList.DataType = stArray) then begin
           if (TDocSetDTO.GetNSI(SOList, Result.Nsi) > 0) then begin
-            nRet := 0;
+            Ret := 0;
             sErr := '';
             if ((ParsNsi.ADSCopy = True) and (Result.Nsi.RecordCount > 0)) then begin
 
-              CreateADST(ResGet.Nsi, ParsNsi.NsiType, ParsNsi.ConnADS, Result);
+              CreateADST(Result.Nsi, ParsNsi.NsiType, ParsNsi.ConnADS, Result);
               Exit;
 
             end;
@@ -600,13 +599,13 @@ begin
       on E: Exception do begin
         if (sErr = '') then
           sErr := E.Message;
-        nRet := UERR_GET_NSI;
+        Ret := UERR_GET_NSI;
       end;
     end;
   finally
     FHTTP.Free;
   end;
-  Result.ResCode := nRet;
+  Result.ResCode := Ret;
   Result.ResMsg := sErr;
   ResGet := Result;
 end;
@@ -615,7 +614,7 @@ end;
 // Передача одного документа
 function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc: TStringStream): TResultPost;
 var
-  nRet: Integer;
+  Ret: Integer;
   sErr: string;
   Header: TStringList;
   DocDTO: TDocSetDTO;
@@ -625,8 +624,8 @@ begin
 
   try
     FHTTP.Headers.Clear;
-    FHTTP.Headers.Add('sign:' + ParsPost.USign);
-    FHTTP.Headers.Add('certificate:' + ParsPost.USert);
+    FHTTP.Headers.Add('sign:' + TSecureExchg.SetHeadSign);
+    FHTTP.Headers.Add('certificate:' + TSecureExchg.SetHeadCertif);
     FHTTP.MimeType := 'application/json;charset=UTF-8';
     if (ParsPost.JSONSrc = '') then begin
       DocDTO := TDocSetDTO.Create(ParsPost.Docs, ParsPost.Child);
@@ -641,15 +640,15 @@ begin
     else
       FHTTP.Document.LoadFromFile(ParsPost.JSONSrc);
 
-    nRet := SetRetCode(FHTTP.HTTPMethod('POST', ParsPost.FullURL), sErr);
+    Ret := SetRetCode(FHTTP.HTTPMethod('POST', ParsPost.FullURL), sErr);
   except
     on E: Exception do begin
       if (sErr = '') then
         sErr := E.Message;
-      nRet := UERR_POST_REG;
+      Ret := UERR_POST_REG;
     end;
   end;
-  Result.ResCode := nRet;
+  Result.ResCode := Ret;
   Result.ResMsg := sErr;
 
 end;

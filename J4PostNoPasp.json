@@ -88,85 +88,40 @@
         "form19_20Base": "form19_20",
         "pid": null,
         "signAway": false,
-        "countryPu": {
-            "klUniPK": {
-                "type": 8,
-                "code": 11200001
-            }
-        },
-        "areaPu": "АБХАЗСКАЯ АССР",
-        "regionPu": "МСТИСЛАВЛЬСКИЙ",
-        "cityPu": "\"ВАСИЛЁК\"",
+        "countryPu": null,
+        "areaPu": null,
+        "regionPu": null,
+        "cityPu": null,
         "datePu": null,
-        "marks": {
-            "klUniPK": {
-                "type": 2,
-                "code": 0
-            }
-        },
+        "marks": null,
         "notes": null,
-        "reason": {
-            "klUniPK": {
-                "type": 3,
-                "code": 2
-            }
-        },
+        "reason": null,
         "term": null,
-        "dateRec": 1543978800000,
-        "typeCityPu": {
-            "klUniPK": {
-                "type": 35,
-                "code": 11100068
-            }
-        },
-        "typeStreetPu": {
-            "klUniPK": {
-                "type": 38,
-                "code": 0
-            }
-        },
+        "dateRec": null,
+        "typeCityPu": null,
+        "typeStreetPu": null,
         "streetPu": null,
         "housePu": null,
         "korpsPu": null,
         "appPu": null,
         "dateReg": null,
-        "termReg": {
-            "klUniPK": {
-                "type": 27,
-                "code": 4
-            }
-        },
+        "termReg": null,
         "dateRegTill": null,
-        "causeIssue": {
-            "klUniPK": {
-                "type": 39,
-                "code": 59200021
-            }
-        },
+        "causeIssue": null,
         "deathDate": null,
-        "signNoTake": false,
-        "signNoReg": false,
-        "signDestroy": false,
-        "noAddrPu": {
-            "klUniPK": {
-                "type": 70,
-                "code": 12
-            }
-        },
+        "signNoTake": null,
+        "signNoReg": null,
+        "signDestroy": null,
+        "noAddrPu": null,
         "regType": {
             "klUniPK": {
                 "type": 500,
                 "code": 2
             }
         },
-        "maritalStatus": {
-            "klUniPK": {
-                "type": 501,
-                "code": 3
-            }
-        },
+        "maritalStatus": null,
         "education": null,
-        "student": false,
+        "student": null,
         "infants": []
     },
     "dsdAddressLive": {

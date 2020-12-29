@@ -5,7 +5,6 @@ uses
   Forms,
   Unit1 in 'Unit1.pas' {Form1},
   uDvigMen in 'uDvigMen.pas',
-  uExchg in 'uExchg.pas',
   uService in 'uService.pas',
   ExchgRegBase in 'ExchgRegBase.pas',
   uPars in 'uPars.pas',
