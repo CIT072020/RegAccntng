@@ -1,5 +1,5 @@
 {
-    "identif": null,
+    "identif": "7489423A002PB5",
     "view": null,
     "sysDocType": {
         "klUniPK": {
@@ -7,9 +7,9 @@
             "code": 8
         }
     },
-    "surname": "ЮРЧЕНКО",
-    "name": "КИРИЛЛ",
-    "sname": "ЮРЬЕВИЧ",
+    "surname": "МЕДВЕДЕВ",
+    "name": "АРТЕМ",
+    "sname": "АНДРЕЕВИЧ",
     "sex": {
         "klUniPK": {
             "type": 32,
@@ -28,11 +28,11 @@
             "code": 26
         }
     },
-    "bdate": "20120730",
+    "bdate": "20170622",
     "dsdDateRec": null,
     "docSery": "I-ЛЮ",
-    "docNum": "0353599",
-    "docDateIssue": 1344286800000,
+    "docNum": "0480737",
+    "docDateIssue": 1498683600000,
     "docAppleDate": null,
     "dateRec": null,
     "countryB": null,
@@ -59,16 +59,16 @@
     "app": null,
     "organDoc": null,
     "workPlace": null,
-    "workPosition": null,
+    "workPosition": "ПЕНСИОНЕР",
     "docIssueOrgan": {
         "klUniPK": {
             "type": 24,
             "code": 17608931
         }
     },
-    "surnameBel": null,
-    "nameBel": null,
-    "snameBel": null,
+    "surnameBel": "МЯДЗВЕДЗЕЎ",
+    "nameBel": "АРЦЁМ",
+    "snameBel": "АНДРЭЕВІЧ",
     "surnameEn": "",
     "nameEn": "",
     "areaBBel": null,

@@ -721,6 +721,7 @@ begin
     end;
   end
   else
+      // Ничего не выбрано, берем из TextBox
     BlackBox.ResGet := BlackBox.GetActualReg(edtIN.Text);
   ShowDeb(IntToStr(BlackBox.ResGet.ResCode) + ' ' + BlackBox.ResGet.ResMsg);
   if (Assigned(BlackBox.ResGet)) then begin

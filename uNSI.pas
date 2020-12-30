@@ -72,6 +72,7 @@ class function TNsiRoc.SysDocType(ICode : Integer = 8; Func : Integer = SET_VAL)
 begin
   if (Func = SET_VAL) then begin
     if (ICode = 0) then
+    //Default - форма 19-20
       ICode := 8;
     Result := UniKey(S_SYSDOCTYPE, ICode);
   end else begin
@@ -85,7 +86,7 @@ var
   n : Int64;
 begin
   if (Func = SET_VAL) then begin
-    if (SCode = 'М') then n := 21000001
+    if (UpperCase(SCode) = 'М') then n := 21000001
     else n := 21000002;
     Result := UniKey(S_SEX, n);
   end else begin
