@@ -752,7 +752,7 @@ begin
   end;
   if (ValidPars = True) then begin
       cnctNsi.IsConnected := False;
-      cnctNsi.ConnectPath := IncludeTrailingBackslash(BlackBox.BBPars.Meta.ReadString('ADMIN', 'NSIPATH', '.'));
+      cnctNsi.ConnectPath := IncludeTrailingBackslash(BlackBox.BBPars.Meta.ReadString(SCT_ADMIN, 'ADSPATH', '.'));
     ParsNsi := TParsNsi.Create(NsiType, cnctNsi);
     ParsNsi.ADSCopy := cbAdsCvrt.Checked;
     ParsNsi.NsiCode := NsiCode;
