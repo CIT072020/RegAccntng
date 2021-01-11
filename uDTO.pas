@@ -1,14 +1,20 @@
 unit uDTO;
 
+{$DEFINE SIGN}
+{$DEFINE AVEST_GISUN}
+
 interface
 
 uses
   Classes,
+  Types,
+  Windows,
   DB,
   kbmMemTable,
   superobject,
   superdate,
-  //httpsend,
+  uAvest,
+  AvCryptMail,
   uService;
 
 type
@@ -71,9 +77,13 @@ type
     class function GetNsi(SOArr: ISuperObject; Nsi: TkbmMemTable; EmpTbl: Boolean = True): Integer;
   end;
 
+
+function CreateETSP(var sUtf8 : Utf8String; var strErr : String) : Boolean;
+
 implementation
 
 uses
+  Forms,
   SysUtils,
   Variants,
   NativeXml,
@@ -919,6 +929,89 @@ end;
 
 
 
+//----------------------------------------------------------------
+function CreateETSP(var sUtf8:Utf8String; var strErr:String):Boolean;
+var
+  n,m:Integer;
+  s:Utf8String;
+  ss:WideString;
+  CurKeyBoard:LongWord;
+  RegIntPIN,
+  sss,
+  sOld:String;
+
+  sKey,sSign,sHash:String;
+  d:TDateTime;
+  {$IFDEF AVEST_GISUN}
+  AvestSignType : Integer;
+  Avest : TAvest;
+  res : DWORD;
+  lOpenDefSession,l:Boolean;
+  {$ENDIF}
+begin
+  strErr := '';
+  Result := true;
+  {$IFDEF SIGN}
+    if (true) then begin
+
+      MemoWrite(ExtractFilePath(Application.ExeName)+'Body.xml', sUtf8);
+      sSign := '';
+      sHash := '';
+      if (false) then begin
+      end else begin
+      {$IFDEF AVEST_GISUN}
+        sKey := 'C:\ProgramData\Avest\AvCMXWebP\x86\' + NAME_AVEST_DLL;
+        Avest := TAvest.Create(sKey, strErr);
+        try
+        if (Avest<>nil) and Avest.IsActive then begin
+          sOld:=getCurMessage;
+          if sOld<>''
+            then CloseMessage();
+          CurKeyBoard:=GetTypeKeyBoard;
+          ActivateENGKeyboard;
+
+          //if Gisun.AvestEnabledPIN and (Gisun.RegInt.PIN<>'') then begin
+          RegIntPIN := '28vadim65';
+          Avest.SetLoginParams(RegIntPIN, '');
+
+          sKey := '+';  // !!! вернуть сертификат в переменную sKey !!!
+          lOpenDefSession := True;
+          //AvestSignType := AVCMF_REPEAT_AUTHENTICATION;
+          AvestSignType := 1;
+          res := Avest.SignText(ANSIString(sUtf8), sSign, sKey, lOpenDefSession, AvestSignType, false);
+          if CurKeyBoard>0 then
+            ActivateKeyboardLayout(CurKeyBoard,KLF_ACTIVATE);
+          if sKey='+' then sKey:=''; // !!!
+          Avest.Debug := True;
+          if res=0 then begin
+            if Avest.Debug then begin
+              MemoWrite('sign',sSign);
+              MemoWrite('cert.cer',sKey);
+            end;
+          end else begin
+            Result := false;
+            s := Avest.ErrorInfo(res);
+            strErr := 'ошибка Ё÷ѕ: '+ s;
+            raise Exception.Create(s);
+          end;
+          //SetOwnerForm(Gisun.CurAkt);
+          if sOld<>''
+            then OpenMessage(sOld,'',0);
+          Application.ProcessMessages;
+        end;
+
+        finally
+          FreeAndNil(Avest);
+        end;
+
+      {$ENDIF}
+      end;
+    end else begin      //==========================================================
+    end;
+  {$ELSE}
+    Result:=true;
+  {$ENDIF}
+end;
 
 
 end.

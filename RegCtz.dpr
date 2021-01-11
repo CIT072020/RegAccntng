@@ -9,7 +9,8 @@ uses
   ExchgRegBase in 'ExchgRegBase.pas',
   uPars in 'uPars.pas',
   uDTO in 'uDTO.pas',
-  uNSI in 'uNSI.pas';
+  uNSI in 'uNSI.pas',
+  uAvest in 'uAvest.pas';
 
 {$R *.res}
 

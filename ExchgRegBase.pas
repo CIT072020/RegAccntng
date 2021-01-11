@@ -615,8 +615,10 @@ end;
 function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc: TStringStream): TResultPost;
 var
   Ret: Integer;
+  sUTF : UTF8String;
   sErr: string;
   Header: TStringList;
+  LStrings : TStringList;
   DocDTO: TDocSetDTO;
 begin
   sErr := '';
@@ -630,17 +632,35 @@ begin
     if (ParsPost.JSONSrc = '') then begin
       DocDTO := TDocSetDTO.Create(ParsPost.Docs, ParsPost.Child);
       StreamDoc.Seek(0, soBeginning);
-      if (DocDTO.MemDoc2JSON(ParsPost.Docs, ParsPost.Child, StreamDoc, False) = True) then
-        FHTTP.Document.CopyFrom(StreamDoc, 0)
+      if (DocDTO.MemDoc2JSON(ParsPost.Docs, ParsPost.Child, StreamDoc, False) = True) then begin
+        FHTTP.Document.CopyFrom(StreamDoc, 0);
+        sUTF := StreamDoc.DataString;
+      end
       else begin
         sErr := 'Error creating POST card';
         raise Exception.Create(sErr);
       end;
     end
-    else
+    else begin
       FHTTP.Document.LoadFromFile(ParsPost.JSONSrc);
+      LStrings := TStringList.Create;
+      try
+        LStrings.Loadfromfile(ParsPost.JSONSrc);
+        sUTF := LStrings.Text;
+      finally
+        FreeAndNil(LStrings);
+      end;
+    end;
+
+    if (CreateETSP(sUTF, sErr) = True) then begin
+
 
     Ret := SetRetCode(FHTTP.HTTPMethod('POST', ParsPost.FullURL), sErr);
+
+    end;
+
+
+
   except
     on E: Exception do begin
       if (sErr = '') then
