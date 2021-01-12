@@ -15,16 +15,34 @@ uses
   superdate,
   uAvest,
   AvCryptMail,
+  SasaINiFile,
   uService;
 
 type
   // Поддержка ЭЦП и сертификатов
   TSecureExchg = class
   private
+    FMeta : TSasaIniFile;
+    FSign : string;
+    FCertif : string;
+    FAvest : TAvest;
+    FDeb  : Boolean;
+    FSignPost : Boolean;
+
+    procedure DebSec(FileDeb: String; x: Variant);
+
   protected
   public
-    class function SetHeadSign : string;
-    class function SetHeadCertif : string;
+    property Meta : TSasaIniFile read FMeta write FMeta;
+    property SignPost : Boolean read FSignPost write FSignPost;
+    property Avest : TAvest read FAvest write FAvest;
+
+    function SetHeadSign : string;
+    function SetHeadCertif : string;
+    function CreateETSP(var sUtf8 : Utf8String; var strErr : String) : Boolean;
+
+    constructor Create(MetaINI : TSasaIniFile);
+
   published
   end;
 
@@ -78,8 +96,6 @@ type
   end;
 
 
-function CreateETSP(var sUtf8 : Utf8String; var strErr : String) : Boolean;
-
 implementation
 
 uses
@@ -90,14 +106,25 @@ uses
   FuncPr,
   uNSI;
 
-class function TSecureExchg.SetHeadSign: string;
+constructor TSecureExchg.Create(MetaINI : TSasaIniFile);
 begin
-  Result := 'amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h';
+  inherited Create;
+  Meta := MetaINI;
+  FDeb := True;
+  Avest := TAvest.Create;
 end;
 
-class function TSecureExchg.SetHeadCertif: string;
+
+function TSecureExchg.SetHeadSign: string;
 begin
-  Result := '109uu21nu0t17togdy70-fuib';
+  FSign  := 'amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h';
+  Result := FSign;
+end;
+
+function TSecureExchg.SetHeadCertif: string;
+begin
+  FCertif := '109uu21nu0t17togdy70-fuib';
+  Result  := FCertif;
 end;
 
 
@@ -811,6 +838,7 @@ begin
   // Последней была запятая, вернемся для записи конца объекта
     StreamDoc.Seek(-1, soCurrent);
     StreamDoc.WriteString('}');
+
     sUTF := AnsiToUtf8(StreamDoc.DataString);
     //ws := UTF8Encode();
     StreamDoc.Seek(0, soBeginning);
@@ -927,41 +955,57 @@ end;
 
 
 
+//----------------------------------------------------------------
+procedure TSecureExchg.DebSec(FileDeb: String; x: Variant);
+begin
+  if (FDeb = True) then begin
+    MemoWrite(FileDeb, x);
+  end;
+end;
+
+function TSecureExchg.AvestReady(var strErr: String): Boolean;
+var
+  s: string;
+begin
+  Result := True;
+  if (Avest.IsActive = False) then begin
+    s := Meta.ReadString(SCT_SECURE, 'CSPNAME', NAME_AVEST_DLL);
+    Result := Avest.LoadDLL(s, strErr);
+  end;
+end;
+
+
 
 
 //----------------------------------------------------------------
-function CreateETSP(var sUtf8:Utf8String; var strErr:String):Boolean;
+function TSecureExchg.CreateETSP(var sUtf8:Utf8String; var strErr:String):Boolean;
 var
   n,m:Integer;
   s:Utf8String;
   ss:WideString;
   CurKeyBoard:LongWord;
   RegIntPIN,
-  sss,
   sOld:String;
 
-  sKey,sSign,sHash:String;
+  sSert,sSign,sHash:String;
   d:TDateTime;
   {$IFDEF AVEST_GISUN}
   AvestSignType : Integer;
-  Avest : TAvest;
   res : DWORD;
   lOpenDefSession,l:Boolean;
   {$ENDIF}
 begin
   strErr := '';
-  Result := true;
-  {$IFDEF SIGN}
-    if (true) then begin
+  Result := True;
+    if (SignPost = True) then begin
 
-      MemoWrite(ExtractFilePath(Application.ExeName)+'Body.xml', sUtf8);
+      if (AvestReady(strErr)) then begin
+
+
+      DebSec(ExtractFilePath(Application.ExeName)+'Body.xml', sUtf8);
       sSign := '';
       sHash := '';
-      if (false) then begin
-      end else begin
-      {$IFDEF AVEST_GISUN}
-        sKey := 'C:\ProgramData\Avest\AvCMXWebP\x86\' + NAME_AVEST_DLL;
-        Avest := TAvest.Create(sKey, strErr);
+
         try
         if (Avest<>nil) and Avest.IsActive then begin
           sOld:=getCurMessage;
@@ -972,21 +1016,22 @@ begin
 
           //if Gisun.AvestEnabledPIN and (Gisun.RegInt.PIN<>'') then begin
           RegIntPIN := '28vadim65';
+          //RegIntPIN := '';
           Avest.SetLoginParams(RegIntPIN, '');
 
-          sKey := '+';  // !!! вернуть сертификат в переменную sKey !!!
+          sSert := '+';  // !!! вернуть сертификат в переменную sSert !!!
           lOpenDefSession := True;
           //AvestSignType := AVCMF_REPEAT_AUTHENTICATION;
           AvestSignType := 1;
-          res := Avest.SignText(ANSIString(sUtf8), sSign, sKey, lOpenDefSession, AvestSignType, false);
+          res := Avest.SignText(ANSIString(sUtf8), sSign, sSert, lOpenDefSession, AvestSignType, false);
           if CurKeyBoard>0 then
             ActivateKeyboardLayout(CurKeyBoard,KLF_ACTIVATE);
-          if sKey='+' then sKey:=''; // !!!
+          if sSert='+' then sSert:=''; // !!!
           Avest.Debug := True;
           if res=0 then begin
             if Avest.Debug then begin
               MemoWrite('sign',sSign);
-              MemoWrite('cert.cer',sKey);
+              MemoWrite('cert.cer',sSert);
             end;
           end else begin
             Result := false;
@@ -1004,13 +1049,9 @@ begin
           FreeAndNil(Avest);
         end;
 
-      {$ENDIF}
-      end;
-    end else begin      //==========================================================
+      end else
+        Result := False;
     end;
-  {$ELSE}
-    Result:=true;
-  {$ENDIF}
 end;
 
 

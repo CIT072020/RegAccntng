@@ -19,6 +19,7 @@ const
   // Секции INI-файла
   SCT_ADMIN   = 'ADMIN';
   SCT_HOST    = 'HOST';
+  SCT_SECURE  = 'SECURE';
   // Секции INI-файла для описания таблиц
   SCT_TBL_INS = 'TABLE_INDNUM';
   SCT_TBL_DOC = 'TABLE_DOCSETDATA';
