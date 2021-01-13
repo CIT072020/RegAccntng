@@ -23,6 +23,7 @@ type
     FResGet : TResultGet;
     FResSet : TResultPost;
     FHTTP   : THTTPSend;
+    Fsecure : TSecureExchg;
 
     function ReadIni : Boolean;
     procedure GenCreate;
@@ -39,6 +40,7 @@ type
     property ResGet : TResultGet read FResGet write FResGet;
     // Результат отправки данных (POST)
     property ResPost : TResultPost read FResSet write FResSet;
+    property Secure : TSecureExchg read Fsecure write Fsecure;
 
     (* Получить список документов [убытия]
     *)
@@ -101,6 +103,7 @@ begin
     FPars.Meta := TSasaIniFile.Create(FPars.MetaName);
   end;
   ReadIni;
+  Secure := TSecureExchg.Create(FPars.Meta);
 end;
 
 
@@ -130,7 +133,7 @@ end;
 
 destructor TExchgRegCitizens.Destroy;
 begin
-
+  FreeAndNil(FSecure);
 end;
 
 
@@ -615,20 +618,16 @@ end;
 function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc: TStringStream): TResultPost;
 var
   Ret: Integer;
-  sUTF : UTF8String;
+  sUTF: UTF8String;
   sErr: string;
   Header: TStringList;
-  LStrings : TStringList;
+  LStrings: TStringList;
   DocDTO: TDocSetDTO;
 begin
   sErr := '';
   Result := TResultPost.Create;
 
   try
-    FHTTP.Headers.Clear;
-    FHTTP.Headers.Add('sign:' + TSecureExchg.SetHeadSign);
-    FHTTP.Headers.Add('certificate:' + TSecureExchg.SetHeadCertif);
-    FHTTP.MimeType := 'application/json;charset=UTF-8';
     if (ParsPost.JSONSrc = '') then begin
       DocDTO := TDocSetDTO.Create(ParsPost.Docs, ParsPost.Child);
       StreamDoc.Seek(0, soBeginning);
@@ -652,14 +651,20 @@ begin
       end;
     end;
 
-    if (CreateETSP(sUTF, sErr) = True) then begin
+    if (Secure.CreateETSP(sUTF, sErr) = True) then begin
+      FHTTP.Headers.Clear;
+      FHTTP.Headers.Add('sign:' + Secure.Sign);
+      FHTTP.Headers.Add('certificate:' + Secure.Certif);
+      FHTTP.MimeType := 'application/json;charset=UTF-8';
+      StreamDoc.Seek(0, soBeginning);
+      StreamDoc.WriteString(sUTF);
+      FHTTP.Document.CopyFrom(StreamDoc, 0);
 
+      Ret := SetRetCode(FHTTP.HTTPMethod('POST', ParsPost.FullURL), sErr);
 
-    Ret := SetRetCode(FHTTP.HTTPMethod('POST', ParsPost.FullURL), sErr);
-
-    end;
-
-
+    end
+    else
+      raise Exception.Create(sErr);
 
   except
     on E: Exception do begin
@@ -672,6 +677,7 @@ begin
   Result.ResMsg := sErr;
 
 end;
+
 
 // Передать документы регистрации
 function TExchgRegCitizens.PostRegDocs(ParsPost: TParsPost): TResultPost;
@@ -686,6 +692,7 @@ begin
   FHTTP := THTTPSend.Create;
   try
     try
+      Secure.Avest.Debug := True;
       ParsPost.FullURL := FullPath(FHost, POST_DOC, '');
       if (ParsPost.JSONSrc = '') then begin
         ParsPost.Docs.First;

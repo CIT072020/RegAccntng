@@ -26,13 +26,15 @@ type
     FSign : string;
     FCertif : string;
     FAvest : TAvest;
-    FDeb  : Boolean;
     FSignPost : Boolean;
 
     procedure DebSec(FileDeb: String; x: Variant);
+    function AvestReady(var strErr: String): Boolean;
 
   protected
   public
+    property Sign : string read FSign write FSign;
+    property Certif : string read FCertif write FCertif;
     property Meta : TSasaIniFile read FMeta write FMeta;
     property SignPost : Boolean read FSignPost write FSignPost;
     property Avest : TAvest read FAvest write FAvest;
@@ -110,8 +112,8 @@ constructor TSecureExchg.Create(MetaINI : TSasaIniFile);
 begin
   inherited Create;
   Meta := MetaINI;
-  FDeb := True;
   Avest := TAvest.Create;
+  SignPost := Meta.ReadBool(SCT_SECURE, 'SIGNPOST', False);
 end;
 
 
@@ -958,7 +960,7 @@ end;
 //----------------------------------------------------------------
 procedure TSecureExchg.DebSec(FileDeb: String; x: Variant);
 begin
-  if (FDeb = True) then begin
+  if (Avest.Debug = True) then begin
     MemoWrite(FileDeb, x);
   end;
 end;
@@ -978,80 +980,51 @@ end;
 
 
 //----------------------------------------------------------------
-function TSecureExchg.CreateETSP(var sUtf8:Utf8String; var strErr:String):Boolean;
+function TSecureExchg.CreateETSP(var sUtf8: Utf8String; var strErr: String): Boolean;
 var
-  n,m:Integer;
-  s:Utf8String;
-  ss:WideString;
-  CurKeyBoard:LongWord;
-  RegIntPIN,
-  sOld:String;
-
-  sSert,sSign,sHash:String;
-  d:TDateTime;
-  {$IFDEF AVEST_GISUN}
-  AvestSignType : Integer;
-  res : DWORD;
-  lOpenDefSession,l:Boolean;
-  {$ENDIF}
+  RegIntPIN, sSert, sSign : String;
+  AvestSignType: Integer;
+  res: DWORD;
+  lOpenDefSession, l: Boolean;
 begin
   strErr := '';
   Result := True;
-    if (SignPost = True) then begin
+  if (SignPost = True) then begin
+    if (AvestReady(strErr)) then begin
+      DebSec(ExtractFilePath(Application.ExeName) + 'Body.xml', sUtf8);
+      try
 
-      if (AvestReady(strErr)) then begin
+        RegIntPIN := '28vadim65';
+      //RegIntPIN := '';
+        Avest.SetLoginParams(RegIntPIN, '');
 
-
-      DebSec(ExtractFilePath(Application.ExeName)+'Body.xml', sUtf8);
-      sSign := '';
-      sHash := '';
-
-        try
-        if (Avest<>nil) and Avest.IsActive then begin
-          sOld:=getCurMessage;
-          if sOld<>''
-            then CloseMessage();
-          CurKeyBoard:=GetTypeKeyBoard;
-          ActivateENGKeyboard;
-
-          //if Gisun.AvestEnabledPIN and (Gisun.RegInt.PIN<>'') then begin
-          RegIntPIN := '28vadim65';
-          //RegIntPIN := '';
-          Avest.SetLoginParams(RegIntPIN, '');
-
-          sSert := '+';  // !!! вернуть сертификат в переменную sSert !!!
-          lOpenDefSession := True;
+        sSign := '';
+        sSert := '+';  // !!! вернуть сертификат в переменную sSert !!!
+        lOpenDefSession := True;
           //AvestSignType := AVCMF_REPEAT_AUTHENTICATION;
-          AvestSignType := 1;
-          res := Avest.SignText(ANSIString(sUtf8), sSign, sSert, lOpenDefSession, AvestSignType, false);
-          if CurKeyBoard>0 then
-            ActivateKeyboardLayout(CurKeyBoard,KLF_ACTIVATE);
-          if sSert='+' then sSert:=''; // !!!
-          Avest.Debug := True;
-          if res=0 then begin
-            if Avest.Debug then begin
-              MemoWrite('sign',sSign);
-              MemoWrite('cert.cer',sSert);
-            end;
-          end else begin
-            Result := false;
-            s := Avest.ErrorInfo(res);
-            strErr := 'ошибка Ё÷ѕ: '+ s;
-            raise Exception.Create(s);
-          end;
-          //SetOwnerForm(Gisun.CurAkt);
-          if sOld<>''
-            then OpenMessage(sOld,'',0);
-          Application.ProcessMessages;
+        AvestSignType := 1;
+        res := Avest.SignText(ANSIString(sUtf8), sSign, sSert, lOpenDefSession, AvestSignType, true);
+        if sSert = '+' then
+          sSert := ''; // !!!
+        if res = 0 then begin
+          DebSec('sign', sSign);
+          DebSec('cert.cer', sSert);
+          Sign   := sSign;
+          Certif := sSert;
+          sUtf8  := sSert;
+        end
+        else begin
+          Result := false;
+          strErr := 'ќшибка Ё÷ѕ: ' + Avest.ErrorInfo(res);
         end;
 
-        finally
-          FreeAndNil(Avest);
-        end;
+      finally
+      end;
 
-      end else
-        Result := False;
-    end;
+    end
+    else
+      Result := False;
+  end;
 end;
 
 
