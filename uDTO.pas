@@ -989,9 +989,11 @@ var
 begin
   strErr := '';
   Result := True;
+  sSign  := '';
+  sSert  := '';
   if (SignPost = True) then begin
     if (AvestReady(strErr)) then begin
-      DebSec(ExtractFilePath(Application.ExeName) + 'Body.xml', sUtf8);
+      DebSec('Body.xml', sUtf8);
       try
 
         RegIntPIN := '28vadim65';
@@ -1003,15 +1005,16 @@ begin
         lOpenDefSession := True;
           //AvestSignType := AVCMF_REPEAT_AUTHENTICATION;
         AvestSignType := 1;
-        res := Avest.SignText(ANSIString(sUtf8), sSign, sSert, lOpenDefSession, AvestSignType, true);
+        res := Avest.SignText(ANSIString(sUtf8), sSign, sSert, lOpenDefSession, AvestSignType, false);
         if sSert = '+' then
           sSert := ''; // !!!
         if res = 0 then begin
           DebSec('sign', sSign);
           DebSec('cert.cer', sSert);
+          DebSec('BodyN.xml', sUtf8);
           Sign   := sSign;
           Certif := sSert;
-          sUtf8  := sSert;
+          //sUtf8  := sSert;
         end
         else begin
           Result := false;
@@ -1025,6 +1028,8 @@ begin
     else
       Result := False;
   end;
+  Sign   := sSign;
+  Certif := sSert;
 end;
 
 

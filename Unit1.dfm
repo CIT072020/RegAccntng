@@ -102,7 +102,7 @@ object Form1: TForm1
   end
   object gdIDs: TDBGridEh
     Left = 8
-    Top = 390
+    Top = 418
     Width = 465
     Height = 128
     DataSource = DataSource1
@@ -130,7 +130,7 @@ object Form1: TForm1
   end
   object Button4: TButton
     Left = 320
-    Top = 542
+    Top = 570
     Width = 75
     Height = 25
     Caption = 'test date'
@@ -139,7 +139,7 @@ object Form1: TForm1
   end
   object Edit1: TEdit
     Left = 423
-    Top = 544
+    Top = 572
     Width = 201
     Height = 21
     TabOrder = 9
@@ -147,7 +147,7 @@ object Form1: TForm1
   end
   object Edit2: TEdit
     Left = 856
-    Top = 544
+    Top = 572
     Width = 185
     Height = 21
     TabOrder = 10
@@ -155,7 +155,7 @@ object Form1: TForm1
   end
   object ComboBox1: TComboBox
     Left = 672
-    Top = 544
+    Top = 572
     Width = 145
     Height = 21
     ItemHeight = 13
@@ -168,7 +168,7 @@ object Form1: TForm1
   end
   object btnSort: TButton
     Left = 8
-    Top = 534
+    Top = 562
     Width = 75
     Height = 25
     Caption = #1057#1086#1088#1090#1080#1088#1086#1074#1082#1072
@@ -204,7 +204,7 @@ object Form1: TForm1
   end
   object GridTalon: TDBGridEh
     Left = 8
-    Top = 590
+    Top = 618
     Width = 1209
     Height = 177
     DataSource = DataSource2
@@ -231,7 +231,7 @@ object Form1: TForm1
   end
   object gdDocs: TDBGridEh
     Left = 487
-    Top = 390
+    Top = 418
     Width = 320
     Height = 128
     DataSource = dsDocs
@@ -250,7 +250,7 @@ object Form1: TForm1
   end
   object gdChild: TDBGridEh
     Left = 819
-    Top = 390
+    Top = 418
     Width = 320
     Height = 128
     DataSource = dsChild
@@ -383,9 +383,9 @@ object Form1: TForm1
   end
   object gdNsi: TDBGridEh
     Left = 944
-    Top = 246
+    Top = 280
     Width = 422
-    Height = 128
+    Height = 121
     DataSource = dsNsi
     FooterColor = clWindow
     FooterFont.Charset = DEFAULT_CHARSET
@@ -435,9 +435,19 @@ object Form1: TForm1
     ValueChecked = 'True'
     ValueUnchecked = 'False'
   end
+  object cbESTP: TDBCheckBoxEh
+    Left = 944
+    Top = 248
+    Width = 121
+    Height = 17
+    Caption = #1069#1062#1055' '#1076#1083#1103' POST'
+    TabOrder = 36
+    ValueChecked = 'True'
+    ValueUnchecked = 'False'
+  end
   object DataSource1: TDataSource
     Left = 112
-    Top = 414
+    Top = 442
   end
   object AdsConnection: TAdsConnection
     ConnectPath = 'D:\App\'#1051#1040#1048#1057#1095'\Data\SelSovet.add'
@@ -447,12 +457,12 @@ object Form1: TForm1
     Password = 'sysdba'
     StoreConnected = False
     Left = 1088
-    Top = 545
+    Top = 573
   end
   object DataSource2: TDataSource
     DataSet = tbTalonPrib
     Left = 160
-    Top = 654
+    Top = 682
   end
   object tbTalonPrib: TAdsTable
     IndexName = 'ADS_DEFAULT'
@@ -461,7 +471,7 @@ object Form1: TForm1
     TableName = #1058#1072#1083#1086#1085#1099#1055#1088#1080#1073#1099#1090#1080#1103
     IndexCollationMismatch = icmIgnore
     Left = 1144
-    Top = 545
+    Top = 573
   end
   object tbTalonPribDeti: TAdsTable
     IndexName = 'ADS_DEFAULT'
@@ -470,15 +480,15 @@ object Form1: TForm1
     TableName = #1058#1072#1083#1086#1085#1099#1055#1088#1080#1073#1099#1090#1080#1103#1044#1077#1090#1080
     IndexCollationMismatch = icmIgnore
     Left = 1192
-    Top = 545
+    Top = 573
   end
   object dsDocs: TDataSource
     Left = 616
-    Top = 441
+    Top = 469
   end
   object dsChild: TDataSource
     Left = 992
-    Top = 457
+    Top = 485
   end
   object dsNsi: TDataSource
     Left = 1209

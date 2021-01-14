@@ -63,6 +63,7 @@ type
     cbSrcPost: TDBComboBoxEh;
     cnctNsi: TAdsConnection;
     cbAdsCvrt: TDBCheckBoxEh;
+    cbESTP: TDBCheckBoxEh;
     procedure btnGetActualClick(Sender: TObject);
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -692,6 +693,8 @@ begin
     //PPost.Docs := nil;
   end;
 
+  BlackBox.Secure.SignPost    := cbESTP.Checked;
+  BlackBox.Secure.Avest.Debug := True;
   BlackBox.ResPost := BlackBox.PostRegDocs(PPost);
   if (Assigned(BlackBox.ResPost)) then begin
   end;

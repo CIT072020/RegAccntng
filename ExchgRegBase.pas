@@ -692,7 +692,6 @@ begin
   FHTTP := THTTPSend.Create;
   try
     try
-      Secure.Avest.Debug := True;
       ParsPost.FullURL := FullPath(FHost, POST_DOC, '');
       if (ParsPost.JSONSrc = '') then begin
         ParsPost.Docs.First;
