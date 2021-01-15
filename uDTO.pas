@@ -27,12 +27,14 @@ type
     FCertif : string;
     FAvest : TAvest;
     FSignPost : Boolean;
+    FPin : string;
 
     procedure DebSec(FileDeb: String; x: Variant);
     function AvestReady(var strErr: String): Boolean;
 
   protected
   public
+    property Pin : string read FPin write FPin;
     property Sign : string read FSign write FSign;
     property Certif : string read FCertif write FCertif;
     property Meta : TSasaIniFile read FMeta write FMeta;
@@ -982,39 +984,38 @@ end;
 //----------------------------------------------------------------
 function TSecureExchg.CreateETSP(var sUtf8: Utf8String; var strErr: String): Boolean;
 var
-  RegIntPIN, sSert, sSign : String;
+  RegIntPIN, sSert, sSignedUTF : String;
   AvestSignType: Integer;
   res: DWORD;
   lOpenDefSession, l: Boolean;
 begin
   strErr := '';
   Result := True;
-  sSign  := '';
+  sSignedUTF  := '';
   sSert  := '';
   if (SignPost = True) then begin
     if (AvestReady(strErr)) then begin
-      DebSec('Body.xml', sUtf8);
+      DebSec('Body.json', sUtf8);
       try
 
         RegIntPIN := '28vadim65';
       //RegIntPIN := '';
         Avest.SetLoginParams(RegIntPIN, '');
 
-        sSign := '';
+        sSignedUTF := '';
         sSert := '+';  // !!! вернуть сертификат в переменную sSert !!!
         lOpenDefSession := True;
           //AvestSignType := AVCMF_REPEAT_AUTHENTICATION;
         AvestSignType := 1;
-        res := Avest.SignText(ANSIString(sUtf8), sSign, sSert, lOpenDefSession, AvestSignType, false);
+        res := Avest.SignText(ANSIString(sUtf8), sSignedUTF, sSert, lOpenDefSession, AvestSignType, true);
         if sSert = '+' then
           sSert := ''; // !!!
         if res = 0 then begin
-          DebSec('sign', sSign);
+          // Подписанное сообщение
+          DebSec('sign', sSignedUTF);
+          // DER-представление сертификата
           DebSec('cert.cer', sSert);
-          DebSec('BodyN.xml', sUtf8);
-          Sign   := sSign;
-          Certif := sSert;
-          //sUtf8  := sSert;
+          sUtf8  := sSignedUTF;
         end
         else begin
           Result := false;
@@ -1028,7 +1029,6 @@ begin
     else
       Result := False;
   end;
-  Sign   := sSign;
   Certif := sSert;
 end;
 

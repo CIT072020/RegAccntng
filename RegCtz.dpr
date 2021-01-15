@@ -10,12 +10,14 @@ uses
   uPars in 'uPars.pas',
   uDTO in 'uDTO.pas',
   uNSI in 'uNSI.pas',
-  uAvest in 'uAvest.pas';
+  uAvest in 'uAvest.pas',
+  AuthF in 'AuthF.pas' {FormAuth};
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.CreateForm(TForm1, Form1);
+  Application.CreateForm(TFormAuth, FormAuth);
   Application.Run;
 end.

@@ -136,6 +136,17 @@ begin
   FreeAndNil(FSecure);
 end;
 
+function IsJSON(const s: string): Boolean;
+var
+  l: Integer;
+begin
+  l := Length(s);
+  if (l > 2) AND (LeftStr(s, 1) = '{') AND (RightStr(s, 1) = '}') then
+    Result := True
+  else
+    Result := False;
+end;
+
 
 // Установка кодов возврата после HTTPSend
 function TExchgRegCitizens.SetRetCode(Ret: Boolean; var sErr: string): integer;
@@ -153,7 +164,7 @@ begin
         try
           StreamDoc.Seek(0, soBeginning);
           StreamDoc.CopyFrom(FHTTP.Document, 0);
-          if (FHTTP.ResultCode = 500) then begin
+          if ( IsJSON(StreamDoc.DataString) = True) then begin
             SOErr := SO(Utf8Decode(StreamDoc.DataString));
             Result := SOErr.I['status'];
             sErr := SOErr.S['message'];
@@ -653,7 +664,8 @@ begin
 
     if (Secure.CreateETSP(sUTF, sErr) = True) then begin
       FHTTP.Headers.Clear;
-      FHTTP.Headers.Add('sign:' + Secure.Sign);
+      FHTTP.Headers.Add('sign:');
+      //FHTTP.Headers.Add('sign:' + Secure.Sign);
       FHTTP.Headers.Add('certificate:' + Secure.Certif);
       FHTTP.MimeType := 'application/json;charset=UTF-8';
       StreamDoc.Seek(0, soBeginning);
