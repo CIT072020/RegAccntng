@@ -20,14 +20,11 @@ type
     procedure VixodClick(Sender: TObject);
     procedure ParolChange(Sender: TObject);
     procedure ChBClick(Sender: TObject);
-    procedure InitPars(aPars: AParams);
-    procedure SetResult(var UL, UP : string);
+
+    procedure InitPars(Pin : string);
+    procedure SetResult(var UP : string);
     procedure LoginKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure ParolKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-  private
-    { Private declarations }
-  public
-    { Public declarations }
   end;
 
 var
@@ -35,17 +32,14 @@ var
 
 implementation
 
-
 {$R *.dfm}
 
-procedure TFormAuth.InitPars(aPars: AParams);
+procedure TFormAuth.InitPars(Pin : string);
 begin
-  Parol.Text := aPars[1];
+  Parol.Text := Pin;
 end;
 
-procedure TFormAuth.SetResult(var UL, UP : string);
-var
-  aPars: AParams;
+procedure TFormAuth.SetResult(var UP : string);
 begin
   UP := Parol.Text;
 end;
@@ -62,12 +56,13 @@ end;
 
 procedure TFormAuth.ParolChange(Sender: TObject);
 begin
-if ChB.Checked then Parol.PasswordChar:=#0 else Parol.PasswordChar:='*'
+if ChB.Checked then Parol.PasswordChar:=#0 else Parol.PasswordChar:='*';
 end;
 
 procedure TFormAuth.ChBClick(Sender: TObject);
 begin
-if ChB.Checked then Parol.PasswordChar:=#0 else Parol.PasswordChar:='*'
+if ChB.Checked then Parol.PasswordChar:=#0 else Parol.PasswordChar:='*';
+Parol.SetFocus;
 end;
 
 procedure TFormAuth.ParolKeyUp(Sender: TObject; var Key: Word;

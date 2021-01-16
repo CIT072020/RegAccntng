@@ -984,29 +984,22 @@ end;
 //----------------------------------------------------------------
 function TSecureExchg.CreateETSP(var sUtf8: Utf8String; var strErr: String): Boolean;
 var
-  RegIntPIN, sSert, sSignedUTF : String;
+  sSert, sSignedUTF : String;
   AvestSignType: Integer;
   res: DWORD;
   lOpenDefSession, l: Boolean;
 begin
   strErr := '';
   Result := True;
-  sSignedUTF  := '';
   sSert  := '';
   if (SignPost = True) then begin
     if (AvestReady(strErr)) then begin
       DebSec('Body.json', sUtf8);
       try
-
-        RegIntPIN := '28vadim65';
-      //RegIntPIN := '';
-        Avest.SetLoginParams(RegIntPIN, '');
-
         sSignedUTF := '';
         sSert := '+';  // !!! вернуть сертификат в переменную sSert !!!
         lOpenDefSession := True;
-          //AvestSignType := AVCMF_REPEAT_AUTHENTICATION;
-        AvestSignType := 1;
+        AvestSignType := 1; // AVCMF_ADD_SIGN_CERT
         res := Avest.SignText(ANSIString(sUtf8), sSignedUTF, sSert, lOpenDefSession, AvestSignType, true);
         if sSert = '+' then
           sSert := ''; // !!!
@@ -1015,7 +1008,7 @@ begin
           DebSec('sign', sSignedUTF);
           // DER-представление сертификата
           DebSec('cert.cer', sSert);
-          sUtf8  := sSignedUTF;
+          sUtf8 := sSignedUTF;
         end
         else begin
           Result := false;

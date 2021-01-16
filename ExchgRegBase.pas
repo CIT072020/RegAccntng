@@ -160,6 +160,12 @@ begin
   try
     if (Ret = True) then begin
       if (FHTTP.ResultCode <> 200) then begin
+
+        if (FHTTP.ResultCode = 502) then begin
+            sErr := FHTTP.Headers[0];
+            raise Exception.Create(sErr);
+        end;
+
         StreamDoc := TStringStream.Create('');
         try
           StreamDoc.Seek(0, soBeginning);
@@ -175,6 +181,7 @@ begin
         finally
           StreamDoc.Free;
         end;
+
       end;
       sErr := FHTTP.ResultString;
       Result := 0;
@@ -359,6 +366,11 @@ begin
             Ret := 0;
             sErr := '';
         end;
+      end;
+    end
+    else begin
+      if (Ret = 502) then begin
+        sErr := sErr + CRLF + 'Ошибка в параметрах: ' + URL;
       end;
     end;
   except

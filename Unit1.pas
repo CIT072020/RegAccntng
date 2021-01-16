@@ -107,7 +107,8 @@ implementation
 uses
   kbmMemTable,
   SasaINiFile,
-  uService;
+  uAvest,
+  uService, AuthF;
 
 {$R *.dfm}
 
@@ -665,15 +666,51 @@ begin
 end;
 
 
+
+
+
+
+
+
+
+
+// Проверка корректности подключения к словарной базе
+function SetAvestPass(Avest: TAvest): Boolean;
+var
+  sPin: string;
+begin
+  Result := False;
+  if (Length(Avest.Password) = 0)
+    OR (Avest.hDefSession = nil) then begin
+    // Подключаться еще не пытались, нужен PIN
+    FormAuth := TFormAuth.Create(nil);
+    try
+      if (FormAuth.ShowModal = mrOk) then begin
+        FormAuth.SetResult(sPin);
+        if (Length(sPin) > 0) then begin
+          Avest.SetLoginParams(sPin, '');
+          Result := True;
+        end;
+      end;
+    finally
+      FormAuth.Free;
+      FormAuth := nil;
+    end;
+  end
+  else
+    Result := True;
+end;
+
+
 // Записать Актуальные установочные данные для ИН
 procedure TForm1.btnPostDocClick(Sender: TObject);
 const
   exmSign = 'amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h';
   exmSert = '109uu21nu0t17togdy70-fuib';
 var
-  iSrc : Integer;
-  PPost : TParsPost;
-  Res : TResultPost;
+  iSrc: Integer;
+  PPost: TParsPost;
+  Res: TResultPost;
 begin
   //edMemo.Clear;
   PPost := TParsPost.Create(exmSign, exmSert);
@@ -693,11 +730,13 @@ begin
     //PPost.Docs := nil;
   end;
 
-  BlackBox.Secure.SignPost    := cbESTP.Checked;
+  BlackBox.Secure.SignPost := cbESTP.Checked;
+  if (BlackBox.Secure.SignPost = True) then
+    if (SetAvestPass(BlackBox.Secure.Avest) = False) then
+      Exit;
+
   BlackBox.Secure.Avest.Debug := True;
   BlackBox.ResPost := BlackBox.PostRegDocs(PPost);
-  if (Assigned(BlackBox.ResPost)) then begin
-  end;
   ShowDeb(IntToStr(BlackBox.ResPost.ResCode) + ' ' + BlackBox.ResPost.ResMsg);
 
 end;
