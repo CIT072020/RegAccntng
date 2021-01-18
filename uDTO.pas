@@ -27,6 +27,7 @@ type
     FCertif : string;
     FAvest : TAvest;
     FSignPost : Boolean;
+    FSignGet : Boolean;
     FPin : string;
 
     procedure DebSec(FileDeb: String; x: Variant);
@@ -199,7 +200,7 @@ class function TIndNomDTO.GetIndNumList(SOArr: ISuperObject; IndNum : TkbmMemTab
 var
   s : string;
   i : Integer;
-  SO: ISuperObject;
+  FSO: ISuperObject;
 begin
   Result := 0;
   try
@@ -207,15 +208,17 @@ begin
       IndNum.EmptyTable;
     i := 0;
     while (i <= SOArr.AsArray.Length - 1) do begin
-      SO := SOArr.AsArray.O[i];
+      FSO := SOArr.AsArray.O[i];
+      //SO := SOArr.AsArray.O[i];
       IndNum.Append;
-      IndNum.FieldByName('IDENTIF').AsString        := SO.S[CT('IDENTIFIER')];
-      IndNum.FieldByName('ORG_WHERE_CODE').AsString := SO.O[CT('SYS_ORGAN_WHERE')].S[CT('CODE')];
-      IndNum.FieldByName('ORG_WHERE_NAME').AsString := SO.O[CT('SYS_ORGAN_WHERE')].S[CT('LEX')];
-      IndNum.FieldByName('ORG_FROM_CODE').AsString  := SO.O[CT('SYS_ORGAN_FROM')].S[CT('CODE')];
-      IndNum.FieldByName('ORG_FROM_NAME').AsString  := SO.O[CT('SYS_ORGAN_FROM')].S[CT('LEX')];
-      IndNum.FieldByName('DATEREC').AsDateTime      := sdDateTimeFromString(SO.S[CT('REG_DATE')], false);
-      IndNum.FieldByName('PID').AsString            := SO.S[CT('pid')];
+      IndNum.FieldByName('IDENTIF').AsString        := FSO.S[CT('IDENTIFIER')];
+      IndNum.FieldByName('ORG_WHERE_CODE').AsInteger := FSO.O[CT('SYS_ORGAN_WHERE')].I[CT('CODE')];
+      //IndNum.FieldByName('ORG_WHERE_CODE').AsInteger := GetCode('SYS_ORGAN_WHERE');
+      IndNum.FieldByName('ORG_WHERE_NAME').AsString := FSO.O[CT('SYS_ORGAN_WHERE')].S[CT('LEX')];
+      IndNum.FieldByName('ORG_FROM_CODE').AsInteger  := FSO.O[CT('SYS_ORGAN_FROM')].I[CT('CODE')];
+      IndNum.FieldByName('ORG_FROM_NAME').AsString  := FSO.O[CT('SYS_ORGAN_FROM')].S[CT('LEX')];
+      IndNum.FieldByName('DATEREC').AsDateTime      := sdDateTimeFromString(FSO.S[CT('REG_DATE')], false);
+      IndNum.FieldByName('PID').AsString            := FSO.S[CT('pid')];
       IndNum.Post;
       i := i + 1;
     end;

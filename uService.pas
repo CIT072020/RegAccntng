@@ -59,9 +59,11 @@ const
   NSI_ONLY  = 3;
 
   // Режим вывода очередной отладочной записи
+{
   DEB_CLEAR    = 1;
   DEB_NEWLINE  = 2;
   DEB_SAMELINE = 3;
+}
 
   // Коды ошибок
   UERR_GET_NSI = 600;
@@ -87,7 +89,7 @@ function Delphi2JavaDate(d:TDateTime):SuperInt;
 function MemStream2Str(const MS: TMemoryStream; const FullStream: Boolean = True; const ADefault: string = ''): string;
 
 function CreateMemTable(sTableName: string; Meta : TSasaIniFile; MetaSect: String; AutoCreate: Boolean = True; AutoOpen: Boolean = True): TDataSet;
-procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
+procedure ShowDeb(const s: string; const ClearAll: Boolean = True);
 function FullPath(H : THostReg; Func : Integer; Pars : string) : string;
 
 procedure LeaveOnly1(ds: TDataSet);
@@ -100,6 +102,7 @@ var
 implementation
 
 uses
+  Types,
   SysUtils,
   FileUtil,
   StrUtils;
@@ -239,21 +242,19 @@ begin
 end;
 
 
-
-procedure ShowDeb(const s: string; const Mode : Integer = DEB_NEWLINE);
+// Вывод отладки в Memo
+procedure ShowDeb(const s: string; const ClearAll: Boolean = True);
 var
-  AddS : string;
+  AddS: string;
+  //Pos  : TPoint;
 begin
-
   AddS := '';
-  case Mode of
-    DEB_CLEAR   : ShowM.Text := '';
-    //DEB_NEWLINE : AddS := Char(13) + Char(10);
-    DEB_NEWLINE : AddS := #13#10;
-  end;
-
+  if (ClearAll = True) then
+    ShowM.Text := ''
+  else
+    AddS := CRLF;
   ShowM.Text := ShowM.Text + AddS + s;
-
+  //Pos := ShowM.CaretPos;
 end;
 
 function FullPath(H : THostReg; Func : Integer; Pars : string) : string;

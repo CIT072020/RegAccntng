@@ -7,9 +7,6 @@ uses
   Dialogs, StdCtrls, Buttons, Mask, DBCtrlsEh, IniFiles;
 
 type
-AParams = array[0..1] of string;
-
-type
   TFormAuth = class(TForm)
     Parol: TDBEditEh;
     Label2: TLabel;
@@ -23,7 +20,6 @@ type
 
     procedure InitPars(Pin : string);
     procedure SetResult(var UP : string);
-    procedure LoginKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure ParolKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
   end;
 
@@ -72,11 +68,5 @@ if (Key = VK_RETURN) then
    Vxod.Click;
 end;
 
-procedure TFormAuth.LoginKeyUp(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
-begin
-if (Key = VK_RETURN) then
-   Parol.SetFocus;
-end;
 
 end.

@@ -18,9 +18,9 @@ object Form1: TForm1
   object lblSSovCode: TLabel
     Left = 944
     Top = 12
-    Width = 81
+    Width = 83
     Height = 13
-    Caption = #1050#1086#1076' '#1089#1077#1083#1100#1089#1086#1074#1077#1090#1072
+    Caption = #1050#1086#1076' '#1086#1090#1076#1077#1083#1072' '#1043#1080#1052
   end
   object lblIndNum: TLabel
     Left = 1232
@@ -222,8 +222,8 @@ object Form1: TForm1
     TitleFont.Style = []
   end
   object cbCreateSO: TCheckBox
-    Left = 744
-    Top = 117
+    Left = 504
+    Top = 125
     Width = 153
     Height = 17
     Caption = 'Create Super Object'
@@ -442,6 +442,18 @@ object Form1: TForm1
     Height = 17
     Caption = #1069#1062#1055' '#1076#1083#1103' POST'
     TabOrder = 36
+    ValueChecked = 'True'
+    ValueUnchecked = 'False'
+  end
+  object cbClearLog: TDBCheckBoxEh
+    Left = 824
+    Top = 120
+    Width = 97
+    Height = 17
+    Caption = #1054#1095#1080#1089#1090#1082#1072' '#1083#1086#1075#1072
+    Checked = True
+    State = cbChecked
+    TabOrder = 37
     ValueChecked = 'True'
     ValueUnchecked = 'False'
   end

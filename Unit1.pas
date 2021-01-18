@@ -64,6 +64,7 @@ type
     cnctNsi: TAdsConnection;
     cbAdsCvrt: TDBCheckBoxEh;
     cbESTP: TDBCheckBoxEh;
+    cbClearLog: TDBCheckBoxEh;
     procedure btnGetActualClick(Sender: TObject);
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -634,7 +635,6 @@ var
   D1, D2: TDateTime;
   P: TParsGet;
 begin
-  edMemo.Clear;
   D1 := dtBegin.Value;
   D2 := dtEnd.Value;
   if (Integer(edFirst.Value) = 0) AND (Integer(edCount.Value) = 0) then
@@ -647,7 +647,7 @@ begin
     BlackBox.ResGet := BlackBox.GetDeparted(P);
   end;
   GETRes := BlackBox.ResGet;
-  ShowDeb(IntToStr(GETRes.ResCode) + ' ' + GETRes.ResMsg);
+  ShowDeb(IntToStr(GETRes.ResCode) + ' ' + GETRes.ResMsg, cbClearLog.Checked);
 
   if (GETRes.INs.RecordCount > 0) then begin
     DataSource1.DataSet := BlackBox.ResGet.INs;
@@ -674,7 +674,7 @@ end;
 
 
 
-// Проверка корректности подключения к словарной базе
+// Сохранить PIN
 function SetAvestPass(Avest: TAvest): Boolean;
 var
   sPin: string;
@@ -737,7 +737,7 @@ begin
 
   BlackBox.Secure.Avest.Debug := True;
   BlackBox.ResPost := BlackBox.PostRegDocs(PPost);
-  ShowDeb(IntToStr(BlackBox.ResPost.ResCode) + ' ' + BlackBox.ResPost.ResMsg);
+  ShowDeb(IntToStr(BlackBox.ResPost.ResCode) + ' ' + BlackBox.ResPost.ResMsg, cbClearLog.Checked);
 
 end;
 
@@ -765,7 +765,7 @@ begin
   else
       // Ничего не выбрано, берем из TextBox
     BlackBox.ResGet := BlackBox.GetActualReg(edtIN.Text);
-  ShowDeb(IntToStr(BlackBox.ResGet.ResCode) + ' ' + BlackBox.ResGet.ResMsg);
+  ShowDeb(IntToStr(BlackBox.ResGet.ResCode) + ' ' + BlackBox.ResGet.ResMsg, cbClearLog.Checked);
   if (Assigned(BlackBox.ResGet)) then begin
     dsDocs.DataSet := BlackBox.ResGet.Docs;
     dsChild.DataSet := BlackBox.ResGet.Child;
@@ -803,7 +803,7 @@ begin
       dsNsi.DataSet := BlackBox.ResGet.Nsi;
       BlackBox.ResGet.Nsi.First;
     end;
-    ShowDeb(IntToStr(BlackBox.ResGet.ResCode) + ' ' + BlackBox.ResGet.ResMsg);
+    ShowDeb(IntToStr(BlackBox.ResGet.ResCode) + ' ' + BlackBox.ResGet.ResMsg, cbClearLog.Checked);
   end;
 end;
 
