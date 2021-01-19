@@ -40,11 +40,13 @@ type
     property Certif : string read FCertif write FCertif;
     property Meta : TSasaIniFile read FMeta write FMeta;
     property SignPost : Boolean read FSignPost write FSignPost;
+    property SignGet : Boolean read FSignGet write FSignGet;
     property Avest : TAvest read FAvest write FAvest;
 
-    function SetHeadSign : string;
-    function SetHeadCertif : string;
+    //function SetHeadSign : string;
+    //function SetHeadCertif : string;
     function CreateETSP(var sUtf8 : Utf8String; var strErr : String) : Boolean;
+    function VerifyETSP(var sUtf8: Utf8String; var strErr: String): Boolean;
 
     constructor Create(MetaINI : TSasaIniFile);
 
@@ -114,12 +116,15 @@ uses
 constructor TSecureExchg.Create(MetaINI : TSasaIniFile);
 begin
   inherited Create;
-  Meta := MetaINI;
-  Avest := TAvest.Create;
+  FSign    := 'amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h';
+  FCertif  := '109uu21nu0t17togdy70-fuib';
+  Meta     := MetaINI;
+  Avest    := TAvest.Create;
   SignPost := Meta.ReadBool(SCT_SECURE, 'SIGNPOST', False);
+  SignGet  := Meta.ReadBool(SCT_SECURE, 'SIGNGET', False);
 end;
 
-
+{
 function TSecureExchg.SetHeadSign: string;
 begin
   FSign  := 'amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h';
@@ -130,6 +135,39 @@ function TSecureExchg.SetHeadCertif: string;
 begin
   FCertif := '109uu21nu0t17togdy70-fuib';
   Result  := FCertif;
+end;
+}
+
+// Список убывших
+class function TIndNomDTO.GetIndNumList(SOArr: ISuperObject; IndNum : TkbmMemTable; EmpTbl : Boolean = True): Integer;
+var
+  s : string;
+  i : Integer;
+  FSO: ISuperObject;
+begin
+  Result := 0;
+  try
+    if (EmpTbl = True) then
+      IndNum.EmptyTable;
+    i := 0;
+    while (i <= SOArr.AsArray.Length - 1) do begin
+      FSO := SOArr.AsArray.O[i];
+      //SO := SOArr.AsArray.O[i];
+      IndNum.Append;
+      IndNum.FieldByName('IDENTIF').AsString        := FSO.S[CT('IDENTIFIER')];
+      IndNum.FieldByName('ORG_WHERE_CODE').AsInteger := FSO.O[CT('SYS_ORGAN_WHERE')].I[CT('CODE')];
+      IndNum.FieldByName('ORG_WHERE_NAME').AsString := FSO.O[CT('SYS_ORGAN_WHERE')].S[CT('LEX')];
+      IndNum.FieldByName('ORG_FROM_CODE').AsInteger  := FSO.O[CT('SYS_ORGAN_FROM')].I[CT('CODE')];
+      IndNum.FieldByName('ORG_FROM_NAME').AsString  := FSO.O[CT('SYS_ORGAN_FROM')].S[CT('LEX')];
+      IndNum.FieldByName('DATEREC').AsDateTime      := sdDateTimeFromString(FSO.S[CT('REG_DATE')], false);
+      IndNum.FieldByName('PID').AsString            := FSO.S[CT('pid')];
+      IndNum.Post;
+      i := i + 1;
+    end;
+    Result := i;
+  except
+    Result := -1;
+  end;
 end;
 
 
@@ -191,43 +229,6 @@ begin
     Result := '';
   end;
 end;
-
-
-
-
-// Список убывших
-class function TIndNomDTO.GetIndNumList(SOArr: ISuperObject; IndNum : TkbmMemTable; EmpTbl : Boolean = True): Integer;
-var
-  s : string;
-  i : Integer;
-  FSO: ISuperObject;
-begin
-  Result := 0;
-  try
-    if (EmpTbl = True) then
-      IndNum.EmptyTable;
-    i := 0;
-    while (i <= SOArr.AsArray.Length - 1) do begin
-      FSO := SOArr.AsArray.O[i];
-      //SO := SOArr.AsArray.O[i];
-      IndNum.Append;
-      IndNum.FieldByName('IDENTIF').AsString        := FSO.S[CT('IDENTIFIER')];
-      IndNum.FieldByName('ORG_WHERE_CODE').AsInteger := FSO.O[CT('SYS_ORGAN_WHERE')].I[CT('CODE')];
-      //IndNum.FieldByName('ORG_WHERE_CODE').AsInteger := GetCode('SYS_ORGAN_WHERE');
-      IndNum.FieldByName('ORG_WHERE_NAME').AsString := FSO.O[CT('SYS_ORGAN_WHERE')].S[CT('LEX')];
-      IndNum.FieldByName('ORG_FROM_CODE').AsInteger  := FSO.O[CT('SYS_ORGAN_FROM')].I[CT('CODE')];
-      IndNum.FieldByName('ORG_FROM_NAME').AsString  := FSO.O[CT('SYS_ORGAN_FROM')].S[CT('LEX')];
-      IndNum.FieldByName('DATEREC').AsDateTime      := sdDateTimeFromString(FSO.S[CT('REG_DATE')], false);
-      IndNum.FieldByName('PID').AsString            := FSO.S[CT('pid')];
-      IndNum.Post;
-      i := i + 1;
-    end;
-    Result := i;
-  except
-    Result := -1;
-  end;
-end;
-
 
 
   // Паспортные данные
@@ -1027,6 +1028,52 @@ begin
   end;
   Certif := sSert;
 end;
+
+//----------------------------------------------------------------
+function TSecureExchg.VerifyETSP(var sUtf8: Utf8String; var strErr: String): Boolean;
+var
+  sSert, sSignedUTF : String;
+  AvestSignType: Integer;
+  res: DWORD;
+  lOpenDefSession, l: Boolean;
+begin
+  strErr := '';
+  Result := True;
+  sSert  := '';
+  if (SignGet = True) then begin
+    if (AvestReady(strErr)) then begin
+      DebSec('Body.json', sUtf8);
+      try
+        sSignedUTF := '';
+        sSert := '+';  // !!! вернуть сертификат в переменную sSert !!!
+        lOpenDefSession := True;
+        AvestSignType := 1; // AVCMF_ADD_SIGN_CERT
+        res := Avest.SignText(ANSIString(sUtf8), sSignedUTF, sSert, lOpenDefSession, AvestSignType, true);
+        if sSert = '+' then
+          sSert := ''; // !!!
+        if res = 0 then begin
+          // Подписанное сообщение
+          DebSec('signBase64', sSignedUTF);
+          // DER-представление сертификата
+          DebSec('cert.cer', sSert);
+          sUtf8 := sSignedUTF;
+        end
+        else begin
+          Result := false;
+          strErr := 'Ошибка ЭЦП: ' + Avest.ErrorInfo(res);
+        end;
+
+      finally
+      end;
+
+    end
+    else
+      Result := False;
+  end;
+  Certif := sSert;
+
+end;
+
 
 
 end.
