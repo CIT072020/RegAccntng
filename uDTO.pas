@@ -43,10 +43,8 @@ type
     property SignGet : Boolean read FSignGet write FSignGet;
     property Avest : TAvest read FAvest write FAvest;
 
-    //function SetHeadSign : string;
-    //function SetHeadCertif : string;
     function CreateETSP(var sUtf8 : Utf8String; var strErr : String) : Boolean;
-    function VerifyETSP(var sUtf8: Utf8String; var strErr: String): Boolean;
+    function VerifyETSP(var sSignedUTF: Utf8String; const sSign, sCert : string; var strErr: String): Boolean;
 
     constructor Create(MetaINI : TSasaIniFile);
 
@@ -110,6 +108,7 @@ uses
   SysUtils,
   Variants,
   NativeXml,
+  EncdDecd,
   FuncPr,
   uNSI;
 
@@ -986,33 +985,42 @@ end;
 
 
 //----------------------------------------------------------------
+// Подписать JSON-документ и преобразовать в Base64
 function TSecureExchg.CreateETSP(var sUtf8: Utf8String; var strErr: String): Boolean;
 var
-  sSert, sSignedUTF : String;
+  sPubKey,
+  sCert, sSignedUTF : String;
   AvestSignType: Integer;
   res: DWORD;
   lOpenDefSession, l: Boolean;
 begin
-  strErr := '';
-  Result := True;
-  sSert  := '';
+  strErr  := '';
+  Result  := True;
+  sPubKey := '';
+  sCert   := '';
   if (SignPost = True) then begin
     if (AvestReady(strErr)) then begin
       DebSec('Body.json', sUtf8);
       try
         sSignedUTF := '';
-        sSert := '+';  // !!! вернуть сертификат в переменную sSert !!!
+        sCert := '+';  // !!! вернуть сертификат в переменную sCert !!!
         lOpenDefSession := True;
-        AvestSignType := 1; // AVCMF_ADD_SIGN_CERT
-        res := Avest.SignText(ANSIString(sUtf8), sSignedUTF, sSert, lOpenDefSession, AvestSignType, true);
-        if sSert = '+' then
-          sSert := ''; // !!!
+        //AvestSignType := 1; // AVCMF_ADD_SIGN_CERT
+        AvestSignType := 2; // AVCMF_DETACHED + AVCMF_ADD_SIGN_CERT
+        res := Avest.SignText(ANSIString(sUtf8), sSignedUTF, sCert, lOpenDefSession, AvestSignType, true);
+        if sCert = '+' then
+          sCert := ''; // !!!
         if res = 0 then begin
           // Подписанное сообщение
-          DebSec('sign', sSignedUTF);
+          DebSec('signed', sSignedUTF);
           // DER-представление сертификата
-          DebSec('cert.cer', sSert);
+          DebSec('cert.cer', sCert);
           sUtf8 := sSignedUTF;
+          res := Avest.GetPublicKey(Avest.hDefSession, sPubKey);
+          if (res = 0) then begin
+            sPubKey := EncodeString(sPubKey);
+            DebSec('PubKey', sPubKey);
+          end;
         end
         else begin
           Result := false;
@@ -1026,37 +1034,31 @@ begin
     else
       Result := False;
   end;
-  Certif := sSert;
+  Certif := sCert;
+  Sign   := sPubKey;
 end;
 
 //----------------------------------------------------------------
-function TSecureExchg.VerifyETSP(var sUtf8: Utf8String; var strErr: String): Boolean;
+// Проверить подпись
+function TSecureExchg.VerifyETSP(var sSignedUTF: Utf8String; const sSign, sCert : string; var strErr: String): Boolean;
 var
-  sSert, sSignedUTF : String;
-  AvestSignType: Integer;
+  sUtf8 : Utf8String;
   res: DWORD;
   lOpenDefSession, l: Boolean;
 begin
   strErr := '';
   Result := True;
-  sSert  := '';
   if (SignGet = True) then begin
     if (AvestReady(strErr)) then begin
-      DebSec('Body.json', sUtf8);
+      DebSec('SignedBody', sSignedUTF);
+      sUtf8 := DecodeString(sSignedUTF);
       try
-        sSignedUTF := '';
-        sSert := '+';  // !!! вернуть сертификат в переменную sSert !!!
         lOpenDefSession := True;
-        AvestSignType := 1; // AVCMF_ADD_SIGN_CERT
-        res := Avest.SignText(ANSIString(sUtf8), sSignedUTF, sSert, lOpenDefSession, AvestSignType, true);
-        if sSert = '+' then
-          sSert := ''; // !!!
+        res := Avest.VerifyTextSimple(ANSIString(sUtf8), sSign, sCert, lOpenDefSession, '');
         if res = 0 then begin
           // Подписанное сообщение
-          DebSec('signBase64', sSignedUTF);
-          // DER-представление сертификата
-          DebSec('cert.cer', sSert);
-          sUtf8 := sSignedUTF;
+          DebSec('BodyUnsigned.JSON', sUtf8);
+          sSignedUTF := sUTF8;
         end
         else begin
           Result := false;
@@ -1070,7 +1072,6 @@ begin
     else
       Result := False;
   end;
-  Certif := sSert;
 
 end;
 

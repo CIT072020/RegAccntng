@@ -340,31 +340,45 @@ begin
     Result := Ret;
 end;
 
+procedure SetCert(Headers : TStringList; var Sign, Cert : string);
+var
+  i : Integer;
+begin
+  i := Headers.IndexOfName('sign');
+  if (i >= 0) then
+    Sign := Headers.Values['sign'];
+  Cert := Headers.Values['certificate'];
+end;
+
 
 // Получить документы для текущего в списке ID
-function TExchgRegCitizens.Docs4CurIN(Pars4GET : string; DocDTO : TDocSetDTO) : TResultGet;
+function TExchgRegCitizens.Docs4CurIN(Pars4GET: string; DocDTO: TDocSetDTO): TResultGet;
 var
-  Ret : Integer;
-  sErr,
-  URL : string;
+  Ret: Integer;
+  sBody: Utf8String;
+  sSign, sCert, sErr, URL: string;
   SOList: ISuperObject;
 begin
   Result := TResultGet.Create(FPars, NO_DATA);
   try
-    URL := FullPath(FHost, GET_LIST_DOC, Pars4Get);
+    URL := FullPath(FHost, GET_LIST_DOC, Pars4GET);
 
     FHTTP.Headers.Clear;
     Ret := SetRetCode(FHTTP.HTTPMethod('GET', URL), sErr);
-      if (Ret = 0) then begin
-        sErr := MemStream2Str(FHTTP.Document);
-        SOList := SO(Utf8Decode(sErr));
-        sErr := 'No DSD!';
+    if (Ret = 0) then begin
+      sBody := MemStream2Str(FHTTP.Document);
+      SetCert(FHTTP.Headers, sSign, sCert);
+
+      if (Secure.VerifyETSP(sBody, sSign, sCert, sErr) = True) then begin
+        SOList := SO(Utf8Decode(sBody));
+        sErr := 'Нет установочных данных!';
       // должен вернуться массив установочных документов
         if Assigned(SOList) and (SOList.DataType = stArray) then begin
 
-        if (DocDTO.GetDocList(SOList) > 0) then begin
+          if (DocDTO.GetDocList(SOList) > 0) then begin
             Ret := 0;
             sErr := '';
+          end;
         end;
       end;
     end
@@ -374,15 +388,21 @@ begin
       end;
     end;
   except
-      on E: Exception do begin
-        if (sErr = '') then
-          sErr := E.Message;
-        Ret := UERR_GET_DEPART;
-      end;
+    on E: Exception do begin
+      if (sErr = '') then
+        sErr := E.Message;
+      Ret := UERR_GET_DEPART;
+    end;
   end;
   Result.ResCode := Ret;
   Result.ResMsg := sErr;
 end;
+
+
+
+
+
+
 
 
 // Список убывших для сельсовета (параметры)
