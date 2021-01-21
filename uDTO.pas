@@ -25,8 +25,10 @@ type
     FMeta : TSasaIniFile;
     FSign : string;
     FCertif : string;
+    FPubKey : string;
     FAvest : TAvest;
     FSignPost : Boolean;
+    FSignMode : Integer;
     FSignGet : Boolean;
     FPin : string;
 
@@ -38,13 +40,15 @@ type
     property Pin : string read FPin write FPin;
     property Sign : string read FSign write FSign;
     property Certif : string read FCertif write FCertif;
+    property PubKey : string read FPubKey write FPubKey;
     property Meta : TSasaIniFile read FMeta write FMeta;
     property SignPost : Boolean read FSignPost write FSignPost;
+    property SignMode : Integer read FSignMode write FSignMode;
     property SignGet : Boolean read FSignGet write FSignGet;
     property Avest : TAvest read FAvest write FAvest;
 
-    function CreateETSP(var sUtf8 : Utf8String; var strErr : String) : Boolean;
-    function VerifyETSP(var sSignedUTF: Utf8String; const sSign, sCert : string; var strErr: String): Boolean;
+    function CreateESign(var sUtf8: Utf8String; SignType : Integer; var strErr: String): Boolean;
+    function VerifyESign(var sSignedUTF: Utf8String; const sSign, sCert : string; var strErr: String): Boolean;
 
     constructor Create(MetaINI : TSasaIniFile);
 
@@ -119,7 +123,10 @@ begin
   FCertif  := '109uu21nu0t17togdy70-fuib';
   Meta     := MetaINI;
   Avest    := TAvest.Create;
+  Avest.FDeleteCRLF := True;
   SignPost := Meta.ReadBool(SCT_SECURE, 'SIGNPOST', False);
+  // Default - AVCMF_ADD_SIGN_CERT
+  SignMode := Meta.ReadInteger(SCT_SECURE, 'SIGNMODE', 1);
   SignGet  := Meta.ReadBool(SCT_SECURE, 'SIGNGET', False);
 end;
 
@@ -986,45 +993,46 @@ end;
 
 //----------------------------------------------------------------
 // Подписать JSON-документ и преобразовать в Base64
-function TSecureExchg.CreateETSP(var sUtf8: Utf8String; var strErr: String): Boolean;
+function TSecureExchg.CreateESign(var sUtf8: Utf8String; SignType : Integer; var strErr: String): Boolean;
 var
   sPubKey,
   sCert, sSignedUTF : String;
-  AvestSignType: Integer;
   res: DWORD;
   lOpenDefSession, l: Boolean;
 begin
   strErr  := '';
   Result  := True;
-  sPubKey := '';
   sCert   := '';
+  sPubKey := '';
+  sSignedUTF := '';
   if (SignPost = True) then begin
     if (AvestReady(strErr)) then begin
       DebSec('Body.json', sUtf8);
       try
-        sSignedUTF := '';
         sCert := '+';  // !!! вернуть сертификат в переменную sCert !!!
         lOpenDefSession := True;
         //AvestSignType := 1; // AVCMF_ADD_SIGN_CERT
-        AvestSignType := 2; // AVCMF_DETACHED + AVCMF_ADD_SIGN_CERT
-        res := Avest.SignText(ANSIString(sUtf8), sSignedUTF, sCert, lOpenDefSession, AvestSignType, true);
-        if sCert = '+' then
-          sCert := ''; // !!!
+        //AvestSignType := 2; // AVCMF_DETACHED + AVCMF_ADD_SIGN_CERT
+        //AvestSignType := 3; // AVCMF_DETACHED
+
+        res := Avest.SignText(ANSIString(sUtf8), sSignedUTF, sCert, lOpenDefSession, SignType, true);
         if res = 0 then begin
           // Подписанное сообщение
-          DebSec('signed', sSignedUTF);
+          DebSec('signed64', sSignedUTF);
           // DER-представление сертификата
-          DebSec('cert.cer', sCert);
-          sUtf8 := sSignedUTF;
+          DebSec('cert64.cer', sCert);
           res := Avest.GetPublicKey(Avest.hDefSession, sPubKey);
           if (res = 0) then begin
-            sPubKey := EncodeString(sPubKey);
             DebSec('PubKey', sPubKey);
+            sPubKey := Avest.EncodeStringEx(sPubKey);
+            DebSec('PubKeyBase64', sPubKey);
           end;
         end
         else begin
           Result := false;
           strErr := 'Ошибка ЭЦП: ' + Avest.ErrorInfo(res);
+        // получить сертификат не удалось ?
+          sCert := ''; // !!!
         end;
 
       finally
@@ -1035,12 +1043,13 @@ begin
       Result := False;
   end;
   Certif := sCert;
-  Sign   := sPubKey;
+  PubKey := sPubKey;
+  Sign   := sSignedUTF;
 end;
 
 //----------------------------------------------------------------
 // Проверить подпись
-function TSecureExchg.VerifyETSP(var sSignedUTF: Utf8String; const sSign, sCert : string; var strErr: String): Boolean;
+function TSecureExchg.VerifyESign(var sSignedUTF: Utf8String; const sSign, sCert : string; var strErr: String): Boolean;
 var
   sUtf8 : Utf8String;
   res: DWORD;

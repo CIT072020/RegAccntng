@@ -369,7 +369,7 @@ begin
       sBody := MemStream2Str(FHTTP.Document);
       SetCert(FHTTP.Headers, sSign, sCert);
 
-      if (Secure.VerifyETSP(sBody, sSign, sCert, sErr) = True) then begin
+      if (Secure.VerifyESign(sBody, sSign, sCert, sErr) = True) then begin
         SOList := SO(Utf8Decode(sBody));
         sErr := 'Нет установочных данных!';
       // должен вернуться массив установочных документов
@@ -694,10 +694,10 @@ begin
       end;
     end;
 
-    if (Secure.CreateETSP(sUTF, sErr) = True) then begin
+    if (Secure.CreateESign(sUTF, Secure.SignMode, sErr) = True) then begin
       FHTTP.Headers.Clear;
-      FHTTP.Headers.Add('sign:');
-      //FHTTP.Headers.Add('sign:' + Secure.Sign);
+      //FHTTP.Headers.Add('sign:');
+      FHTTP.Headers.Add('sign:' + Secure.Sign);
       FHTTP.Headers.Add('certificate:' + Secure.Certif);
       FHTTP.MimeType := 'application/json;charset=UTF-8';
       StreamDoc.Seek(0, soBeginning);
