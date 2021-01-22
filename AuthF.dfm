@@ -44,7 +44,7 @@ object FormAuth: TFormAuth
     Top = 60
     Width = 75
     Height = 25
-    Caption = #1042#1093#1086#1076
+    Caption = #1043#1086#1090#1086#1074#1086
     TabOrder = 1
     OnClick = VxodClick
     Glyph.Data = {

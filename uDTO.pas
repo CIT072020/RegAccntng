@@ -126,7 +126,7 @@ begin
   Avest.FDeleteCRLF := True;
   SignPost := Meta.ReadBool(SCT_SECURE, 'SIGNPOST', False);
   // Default - AVCMF_ADD_SIGN_CERT
-  SignMode := Meta.ReadInteger(SCT_SECURE, 'SIGNMODE', 1);
+  SignMode := Meta.ReadInteger(SCT_SECURE, 'SIGNMODE', SIGN_WITH_DATA);
   SignGet  := Meta.ReadBool(SCT_SECURE, 'SIGNGET', False);
 end;
 
@@ -1018,9 +1018,9 @@ begin
         res := Avest.SignText(ANSIString(sUtf8), sSignedUTF, sCert, lOpenDefSession, SignType, true);
         if res = 0 then begin
           // Подписанное сообщение
-          DebSec('signed64', sSignedUTF);
+          DebSec('sign64', sSignedUTF);
           // DER-представление сертификата
-          DebSec('cert64.cer', sCert);
+          DebSec('cert64', sCert);
           res := Avest.GetPublicKey(Avest.hDefSession, sPubKey);
           if (res = 0) then begin
             DebSec('PubKey', sPubKey);
@@ -1060,7 +1060,8 @@ begin
   if (SignGet = True) then begin
     if (AvestReady(strErr)) then begin
       DebSec('SignedBody', sSignedUTF);
-      sUtf8 := DecodeString(sSignedUTF);
+      //sUtf8 := DecodeString(sSignedUTF);
+      sUtf8 := sSignedUTF;
       try
         lOpenDefSession := True;
         res := Avest.VerifyTextSimple(ANSIString(sUtf8), sSign, sCert, lOpenDefSession, '');

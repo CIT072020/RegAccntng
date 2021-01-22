@@ -9,6 +9,7 @@ uses
   superobject,
   httpsend,
   SasaINiFile,
+  FuncPr,
   uPars,
   uDTO,
   uService;
@@ -340,14 +341,22 @@ begin
     Result := Ret;
 end;
 
-procedure SetCert(Headers : TStringList; var Sign, Cert : string);
+function SetCert(Headers : TStringList; Cert : string) : string;
 var
+  CertLen,
   i : Integer;
+  p : string;
 begin
-  i := Headers.IndexOfName('sign');
-  if (i >= 0) then
-    Sign := Headers.Values['sign'];
-  Cert := Headers.Values['certificate'];
+  Result := '';
+  CertLen := Length(Cert);
+  for i := 0 to Headers.Count -1 do begin
+    if (Pos(Cert, Headers[i]) = 1) then begin
+      p := Copy(Headers[i], CertLen + 2, Length(Headers[i]) - CertLen - 1);
+      Result := DecodeBase64(p);
+      Break;
+    end;
+  end;
+  //MemoRead(Cert + '64', p);
 end;
 
 
@@ -367,7 +376,8 @@ begin
     Ret := SetRetCode(FHTTP.HTTPMethod('GET', URL), sErr);
     if (Ret = 0) then begin
       sBody := MemStream2Str(FHTTP.Document);
-      SetCert(FHTTP.Headers, sSign, sCert);
+      sCert := SetCert(FHTTP.Headers, 'certificate');
+      sSign := SetCert(FHTTP.Headers, 'sign');
 
       if (Secure.VerifyESign(sBody, sSign, sCert, sErr) = True) then begin
         SOList := SO(Utf8Decode(sBody));
@@ -662,10 +672,12 @@ function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc: TStringStrea
 var
   Ret: Integer;
   sUTF: UTF8String;
+  s,
   sErr: string;
   Header: TStringList;
   LStrings: TStringList;
   DocDTO: TDocSetDTO;
+  BRet : Boolean;
 begin
   sErr := '';
   Result := TResultPost.Create;
@@ -675,7 +687,7 @@ begin
       DocDTO := TDocSetDTO.Create(ParsPost.Docs, ParsPost.Child);
       StreamDoc.Seek(0, soBeginning);
       if (DocDTO.MemDoc2JSON(ParsPost.Docs, ParsPost.Child, StreamDoc, False) = True) then begin
-        FHTTP.Document.CopyFrom(StreamDoc, 0);
+        //FHTTP.Document.CopyFrom(StreamDoc, 0);
         sUTF := StreamDoc.DataString;
       end
       else begin
@@ -684,6 +696,7 @@ begin
       end;
     end
     else begin
+      {
       FHTTP.Document.LoadFromFile(ParsPost.JSONSrc);
       LStrings := TStringList.Create;
       try
@@ -692,6 +705,8 @@ begin
       finally
         FreeAndNil(LStrings);
       end;
+      }
+      MemoRead(ParsPost.JSONSrc, AnsiString(sUTF));
     end;
 
     if (Secure.CreateESign(sUTF, Secure.SignMode, sErr) = True) then begin
@@ -700,9 +715,14 @@ begin
       FHTTP.Headers.Add('sign:' + Secure.Sign);
       FHTTP.Headers.Add('certificate:' + Secure.Certif);
       FHTTP.MimeType := 'application/json;charset=UTF-8';
+
+      s := SetCert(FHTTP.Headers, 'sign');
+
       StreamDoc.Seek(0, soBeginning);
       StreamDoc.WriteString(sUTF);
       FHTTP.Document.CopyFrom(StreamDoc, 0);
+
+      BRet := Secure.VerifyESign(sUTF, DecodeBase64(Secure.Sign), DecodeBase64(Secure.Certif), sErr);
 
       Ret := SetRetCode(FHTTP.HTTPMethod('POST', ParsPost.FullURL), sErr);
 

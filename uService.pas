@@ -65,6 +65,13 @@ const
   DEB_SAMELINE = 3;
 }
 
+  // Режим формирования ЭЦП
+  SIGN_WITH_DATA  = 1;
+  SIGN_WITH_CERT  = 2;
+  SIGN_ONLY       = 3;
+
+
+
   // Коды ошибок
   UERR_GET_NSI = 600;
   UERR_CVRT_NSI = 650;
