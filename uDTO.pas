@@ -24,6 +24,7 @@ type
   private
     FMeta : TSasaIniFile;
     FSign : string;
+    FSignRaw : string;
     FCertif : string;
     FPubKey : string;
     FAvest : TAvest;
@@ -34,6 +35,9 @@ type
 
     procedure DebSec(FileDeb: String; x: Variant);
     function AvestReady(var strErr: String): Boolean;
+    function TryOpenSess(var hSession: AvCmHc; UseDef : Boolean = True) : DWORD;
+    function SignTextRaw(var sText, sSign: ANSIString; var sCert:String; lOpenDefSession: Boolean; AsnMode : DWORD): DWORD;
+    function VerifyTextRaw(sText: ANSIString; sSign: ANSIString; sCert: String; lOpenDefSession: Boolean; AsnMode : DWORD): DWORD;
 
   protected
   public
@@ -41,6 +45,9 @@ type
     property Sign : string read FSign write FSign;
     property Certif : string read FCertif write FCertif;
     property PubKey : string read FPubKey write FPubKey;
+    property SignRaw : string read FSignRaw write FSignRaw;
+
+
     property Meta : TSasaIniFile read FMeta write FMeta;
     property SignPost : Boolean read FSignPost write FSignPost;
     property SignMode : Integer read FSignMode write FSignMode;
@@ -991,10 +998,85 @@ end;
 
 
 
+
+
+
+
+
+
+
+
+
+function TSecureExchg.TryOpenSess(var hSession: AvCmHc; UseDef: Boolean = True): DWORD;
+begin
+  if (UseDef = True) then begin
+    Result := Avest.InitSession(True);   // если сессия не открыта, то откроем, но закрывать не будем !!!
+    if (Result = AVCMR_SUCCESS) then
+      hSession := Avest.hDefSession;
+  end else
+    Result := Avest.ActivateSession(hSession, True);
+end;
+
+
+//-------------------------------------------------------
+function TSecureExchg.SignTextRaw(var sText, sSign: ANSIString; var sCert:String; lOpenDefSession: Boolean; AsnMode : DWORD): DWORD;
+var
+  hSession: AvCmHc;
+  w, res: DWORD;
+begin
+  res := TryOpenSess(hSession, lOpenDefSession);
+  if (res = AVCMR_SUCCESS) then begin
+    res := AvCmSignRawData(hSession, nil, @sText[1], Length(sText), 0, w, AsnMode);
+    SetLength(sSign, w);
+    res := AvCmSignRawData(hSession, nil, @sText[1], Length(sText), @sSign[1], w, AsnMode);
+    if (res = AVCMR_SUCCESS) and (sCert = '+') then begin
+      sCert := '';
+      res := Avest.GetCert(hSession, sCert);
+    end;
+    if (NOT lOpenDefSession) then
+      Avest.DeactivateSession(hSession);
+  end;
+  Result := res;
+end;
+
+//-------------------------------------------------------
+function TSecureExchg.VerifyTextRaw(sText: ANSIString; sSign: ANSIString; sCert: String; lOpenDefSession: Boolean; AsnMode : DWORD): DWORD;
+var
+  hSession: AvCmHc;
+  w, res: DWORD;
+  hMycert: AvCmHcert;
+begin
+  res := TryOpenSess(hSession, lOpenDefSession);
+  if (res = AVCMR_SUCCESS) then begin
+    if sCert = '' then begin
+      w := SizeOf(hMycert);
+      res := AvCmGetObjectInfo(hSession, AVCM_MY_CERT, @hMycert, w, 0);
+    end
+    else
+      res := AvCmOpenCert(hSession, @sCert[1], Length(sCert), hMycert, 0);
+    if (res = AVCMR_SUCCESS) then
+      res := AvCmVerifyRawDataSign(hMycert, nil, @sText[1], Length(sText), @sSign[1], Length(sSign), AsnMode);
+    if (NOT lOpenDefSession) then
+      Avest.DeactivateSession(hSession);
+  end;
+  Result := res;
+end;
+
+
+
+
+
+
+
+
+
+
+
 //----------------------------------------------------------------
 // Подписать JSON-документ и преобразовать в Base64
 function TSecureExchg.CreateESign(var sUtf8: Utf8String; SignType : Integer; var strErr: String): Boolean;
 var
+  sSignRaw, sCertRaw,
   sPubKey,
   sCert, sSignedUTF : String;
   res: DWORD;
@@ -1005,6 +1087,8 @@ begin
   sCert   := '';
   sPubKey := '';
   sSignedUTF := '';
+  sSignRaw := '';
+
   if (SignPost = True) then begin
     if (AvestReady(strErr)) then begin
       DebSec('Body.json', sUtf8);
@@ -1016,11 +1100,17 @@ begin
         //AvestSignType := 3; // AVCMF_DETACHED
 
         res := Avest.SignText(ANSIString(sUtf8), sSignedUTF, sCert, lOpenDefSession, SignType, true);
+        sCertRaw := '+';  // !!! вернуть сертификат !!!
+        res := SignTextRaw(ANSIString(sUtf8), sSignRaw, sCertRaw, lOpenDefSession, 0);
         if res = 0 then begin
           // Подписанное сообщение
           DebSec('sign64', sSignedUTF);
+          DebSec('sign64Raw', EncodeBase64(sSignRaw));
+
           // DER-представление сертификата
           DebSec('cert64', sCert);
+          DebSec('cert64Raw', EncodeBase64(sCertRaw));
+
           res := Avest.GetPublicKey(Avest.hDefSession, sPubKey);
           if (res = 0) then begin
             DebSec('PubKey', sPubKey);
@@ -1045,7 +1135,9 @@ begin
   Certif := sCert;
   PubKey := sPubKey;
   Sign   := sSignedUTF;
+  SignRaw := sSignRaw;
 end;
+
 
 //----------------------------------------------------------------
 // Проверить подпись
@@ -1054,6 +1146,7 @@ var
   sUtf8 : Utf8String;
   res: DWORD;
   lOpenDefSession, l: Boolean;
+  //LSign : TStringList;
 begin
   strErr := '';
   Result := True;
@@ -1062,9 +1155,12 @@ begin
       DebSec('SignedBody', sSignedUTF);
       //sUtf8 := DecodeString(sSignedUTF);
       sUtf8 := sSignedUTF;
+      //LSign := TStringList.Create;
+      //LSign.Add(sSign);
       try
         lOpenDefSession := True;
-        res := Avest.VerifyTextSimple(ANSIString(sUtf8), sSign, sCert, lOpenDefSession, '');
+        res := VerifyTextRaw(ANSIString(sUtf8), sSign, sCert, lOpenDefSession, 0);
+
         if res = 0 then begin
           // Подписанное сообщение
           DebSec('BodyUnsigned.JSON', sUtf8);

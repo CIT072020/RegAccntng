@@ -32,8 +32,6 @@ type
     FPublicKey:ANSIString;
     FIgnoreCOC:Boolean;
     PAR_IgnoreCOC:Integer;
-    function ActivateSession(var hSession : AvCmHc; lAuth:Boolean) : DWORD;
-    function DeactivateSession(var hSession : AvCmHc) : DWORD;
     procedure SetOnWriteLog(const Value: TWriteTextToLog);
     procedure SetDebug(const Value: Boolean);
   public
@@ -99,6 +97,8 @@ type
 
     function CloseSession:DWORD;
 
+    function ActivateSession(var hSession : AvCmHc; lAuth:Boolean) : DWORD;
+    function DeactivateSession(var hSession : AvCmHc) : DWORD;
 
     //-------------------------------------------
     procedure CreateForAll;
