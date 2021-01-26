@@ -70,6 +70,9 @@ const
   SIGN_WITH_CERT  = 2;
   SIGN_ONLY       = 3;
 
+  // Режим работы с RAW ЭЦП
+  SIGN_WITH_ASN  = 1;
+  SIGN_NO_ASN    = 2;
 
 
   // Коды ошибок

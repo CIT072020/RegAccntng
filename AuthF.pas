@@ -18,7 +18,7 @@ type
     procedure ParolChange(Sender: TObject);
     procedure ChBClick(Sender: TObject);
 
-    procedure InitPars(Pin : string);
+    procedure InitPars(ParolPin : string);
     procedure SetResult(var UP : string);
     procedure ParolKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
   end;
@@ -30,9 +30,9 @@ implementation
 
 {$R *.dfm}
 
-procedure TFormAuth.InitPars(Pin : string);
+procedure TFormAuth.InitPars(ParolPin : string);
 begin
-  Parol.Text := Pin;
+  Parol.Text := ParolPin;
 end;
 
 procedure TFormAuth.SetResult(var UP : string);

@@ -333,8 +333,10 @@ begin
 
   ShowM := edMemo;
   edOrgan.Text  := '12';
-  dtBegin.Value := StrToDate('01.01.2021');
-  dtEnd.Value   := StrToDate('10.01.2021');
+//  dtBegin.Value := StrToDate('01.01.2021');
+//  dtEnd.Value   := StrToDate('10.01.2021');
+  dtBegin.Value := StrToDate('06.10.2020');
+  dtEnd.Value   := StrToDate('08.10.2020');
   edFirst.Text  := '0';
   edCount.Text  := '10';
   cbSrcPost.ItemIndex := 0;

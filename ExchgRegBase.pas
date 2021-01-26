@@ -162,7 +162,8 @@ begin
     if (Ret = True) then begin
       if (FHTTP.ResultCode <> 200) then begin
 
-        if (FHTTP.ResultCode = 502) then begin
+        if (FHTTP.ResultCode = 502)
+          or (FHTTP.ResultCode = 504) then begin
             sErr := FHTTP.Headers[0];
             raise Exception.Create(sErr);
         end;
@@ -675,7 +676,6 @@ var
   s,
   sErr: string;
   Header: TStringList;
-  LStrings: TStringList;
   DocDTO: TDocSetDTO;
   BRet : Boolean;
 begin
@@ -696,16 +696,6 @@ begin
       end;
     end
     else begin
-      {
-      FHTTP.Document.LoadFromFile(ParsPost.JSONSrc);
-      LStrings := TStringList.Create;
-      try
-        LStrings.Loadfromfile(ParsPost.JSONSrc);
-        sUTF := LStrings.Text;
-      finally
-        FreeAndNil(LStrings);
-      end;
-      }
       MemoRead(ParsPost.JSONSrc, AnsiString(sUTF));
     end;
 

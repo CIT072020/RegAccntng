@@ -23,25 +23,31 @@ type
   TSecureExchg = class
   private
     FMeta : TSasaIniFile;
+    FAvest : TAvest;
+    FPin : string;
+
     FSign : string;
     FSignRaw : string;
     FCertif : string;
     FPubKey : string;
-    FAvest : TAvest;
     FSignPost : Boolean;
+    // Способ формирования ЭЦП для сообщения
     FSignMode : Integer;
+    // Использование формата ASN при формировании ЭЦП для RAW
+    FASNMode : Integer;
+
     FSignGet : Boolean;
-    FPin : string;
 
     procedure DebSec(FileDeb: String; x: Variant);
     function AvestReady(var strErr: String): Boolean;
     function TryOpenSess(var hSession: AvCmHc; UseDef : Boolean = True) : DWORD;
-    function SignTextRaw(var sText, sSign: ANSIString; var sCert:String; lOpenDefSession: Boolean; AsnMode : DWORD): DWORD;
-    function VerifyTextRaw(sText: ANSIString; sSign: ANSIString; sCert: String; lOpenDefSession: Boolean; AsnMode : DWORD): DWORD;
+
+    function SignTextRaw(var sText, sSign: ANSIString; var sCert:String; lOpenDefSession: Boolean; AsnMode : DWORD) : Boolean;
+    function VerifyTextRaw(sText: ANSIString; sSign: ANSIString; sCert: String; lOpenDefSession: Boolean; AsnMode : DWORD) : Boolean;
 
   protected
   public
-    property Pin : string read FPin write FPin;
+    //property Pin : string read FPin write FPin;
     property Sign : string read FSign write FSign;
     property Certif : string read FCertif write FCertif;
     property PubKey : string read FPubKey write FPubKey;
@@ -135,6 +141,7 @@ begin
   // Default - AVCMF_ADD_SIGN_CERT
   SignMode := Meta.ReadInteger(SCT_SECURE, 'SIGNMODE', SIGN_WITH_DATA);
   SignGet  := Meta.ReadBool(SCT_SECURE, 'SIGNGET', False);
+  FASNMode := SIGN_NO_ASN;
 end;
 
 {
@@ -154,7 +161,6 @@ end;
 // Список убывших
 class function TIndNomDTO.GetIndNumList(SOArr: ISuperObject; IndNum : TkbmMemTable; EmpTbl : Boolean = True): Integer;
 var
-  s : string;
   i : Integer;
   FSO: ISuperObject;
 begin
@@ -165,15 +171,14 @@ begin
     i := 0;
     while (i <= SOArr.AsArray.Length - 1) do begin
       FSO := SOArr.AsArray.O[i];
-      //SO := SOArr.AsArray.O[i];
       IndNum.Append;
-      IndNum.FieldByName('IDENTIF').AsString        := FSO.S[CT('IDENTIFIER')];
+      IndNum.FieldByName('IDENTIF').AsString         := FSO.S[CT('IDENTIFIER')];
       IndNum.FieldByName('ORG_WHERE_CODE').AsInteger := FSO.O[CT('SYS_ORGAN_WHERE')].I[CT('CODE')];
-      IndNum.FieldByName('ORG_WHERE_NAME').AsString := FSO.O[CT('SYS_ORGAN_WHERE')].S[CT('LEX')];
+      IndNum.FieldByName('ORG_WHERE_NAME').AsString  := FSO.O[CT('SYS_ORGAN_WHERE')].S[CT('LEX')];
       IndNum.FieldByName('ORG_FROM_CODE').AsInteger  := FSO.O[CT('SYS_ORGAN_FROM')].I[CT('CODE')];
-      IndNum.FieldByName('ORG_FROM_NAME').AsString  := FSO.O[CT('SYS_ORGAN_FROM')].S[CT('LEX')];
-      IndNum.FieldByName('DATEREC').AsDateTime      := sdDateTimeFromString(FSO.S[CT('REG_DATE')], false);
-      IndNum.FieldByName('PID').AsString            := FSO.S[CT('pid')];
+      IndNum.FieldByName('ORG_FROM_NAME').AsString   := FSO.O[CT('SYS_ORGAN_FROM')].S[CT('LEX')];
+      IndNum.FieldByName('DATEREC').AsDateTime       := sdDateTimeFromString(FSO.S[CT('REG_DATE')], false);
+      IndNum.FieldByName('PID').AsString             := FSO.S[CT('pid')];
       IndNum.Post;
       i := i + 1;
     end;
@@ -996,17 +1001,6 @@ begin
 end;
 
 
-
-
-
-
-
-
-
-
-
-
-
 function TSecureExchg.TryOpenSess(var hSession: AvCmHc; UseDef: Boolean = True): DWORD;
 begin
   if (UseDef = True) then begin
@@ -1019,47 +1013,54 @@ end;
 
 
 //-------------------------------------------------------
-function TSecureExchg.SignTextRaw(var sText, sSign: ANSIString; var sCert:String; lOpenDefSession: Boolean; AsnMode : DWORD): DWORD;
+function TSecureExchg.SignTextRaw(var sText, sSign: ANSIString; var sCert:String; lOpenDefSession: Boolean; AsnMode : DWORD) : Boolean;
 var
+  ret : Boolean;
   hSession: AvCmHc;
   w, res: DWORD;
 begin
-  res := TryOpenSess(hSession, lOpenDefSession);
-  if (res = AVCMR_SUCCESS) then begin
-    res := AvCmSignRawData(hSession, nil, @sText[1], Length(sText), 0, w, AsnMode);
+  ret := True;
+  try
+    Avest.CheckMsg(TryOpenSess(hSession, lOpenDefSession), True);
+    Avest.CheckMsg(AvCmSignRawData(hSession, nil, @sText[1], Length(sText), 0, w, AsnMode), True);
     SetLength(sSign, w);
-    res := AvCmSignRawData(hSession, nil, @sText[1], Length(sText), @sSign[1], w, AsnMode);
-    if (res = AVCMR_SUCCESS) and (sCert = '+') then begin
+    Avest.CheckMsg(AvCmSignRawData(hSession, nil, @sText[1], Length(sText), @sSign[1], w, AsnMode), True);
+    if (sCert = '+') then begin
       sCert := '';
-      res := Avest.GetCert(hSession, sCert);
+      Avest.CheckMsg(Avest.GetCert(hSession, sCert), True);
     end;
     if (NOT lOpenDefSession) then
-      Avest.DeactivateSession(hSession);
+      Avest.CheckMsg(Avest.DeactivateSession(hSession), True);
+  except
+    ret := False;
   end;
-  Result := res;
+  Result := ret;
 end;
 
 //-------------------------------------------------------
-function TSecureExchg.VerifyTextRaw(sText: ANSIString; sSign: ANSIString; sCert: String; lOpenDefSession: Boolean; AsnMode : DWORD): DWORD;
+function TSecureExchg.VerifyTextRaw(sText: ANSIString; sSign: ANSIString; sCert: String; lOpenDefSession: Boolean; AsnMode : DWORD): Boolean;
 var
+  ret : Boolean;
+  w : DWORD;
   hSession: AvCmHc;
-  w, res: DWORD;
   hMycert: AvCmHcert;
 begin
-  res := TryOpenSess(hSession, lOpenDefSession);
-  if (res = AVCMR_SUCCESS) then begin
-    if sCert = '' then begin
+  ret := True;
+  try
+    Avest.CheckMsg(TryOpenSess(hSession, lOpenDefSession), True);
+    if (sCert = '') then begin
       w := SizeOf(hMycert);
-      res := AvCmGetObjectInfo(hSession, AVCM_MY_CERT, @hMycert, w, 0);
+      Avest.CheckMsg(AvCmGetObjectInfo(hSession, AVCM_MY_CERT, @hMycert, w, 0), True);
     end
     else
-      res := AvCmOpenCert(hSession, @sCert[1], Length(sCert), hMycert, 0);
-    if (res = AVCMR_SUCCESS) then
-      res := AvCmVerifyRawDataSign(hMycert, nil, @sText[1], Length(sText), @sSign[1], Length(sSign), AsnMode);
+      Avest.CheckMsg(AvCmOpenCert(hSession, @sCert[1], Length(sCert), hMycert, 0), True);
+    Avest.CheckMsg(AvCmVerifyRawDataSign(hMycert, nil, @sText[1], Length(sText), @sSign[1], Length(sSign), AsnMode), True);
     if (NOT lOpenDefSession) then
-      Avest.DeactivateSession(hSession);
+      Avest.CheckMsg(Avest.DeactivateSession(hSession), True);
+  except
+    ret := False;
   end;
-  Result := res;
+  Result := ret;
 end;
 
 
@@ -1079,7 +1080,7 @@ var
   sSignRaw, sCertRaw,
   sPubKey,
   sCert, sSignedUTF : String;
-  res: DWORD;
+  ASNMode : DWORD;
   lOpenDefSession, l: Boolean;
 begin
   strErr  := '';
@@ -1092,17 +1093,22 @@ begin
   if (SignPost = True) then begin
     if (AvestReady(strErr)) then begin
       DebSec('Body.json', sUtf8);
+      Avest.slError.Clear;
       try
-        sCert := '+';  // !!! вернуть сертификат в переменную sCert !!!
         lOpenDefSession := True;
         //AvestSignType := 1; // AVCMF_ADD_SIGN_CERT
         //AvestSignType := 2; // AVCMF_DETACHED + AVCMF_ADD_SIGN_CERT
         //AvestSignType := 3; // AVCMF_DETACHED
 
-        res := Avest.SignText(ANSIString(sUtf8), sSignedUTF, sCert, lOpenDefSession, SignType, true);
+        sCert := '+';  // !!! вернуть сертификат в переменную sCert !!!
+        Avest.CheckMsg(Avest.SignText(ANSIString(sUtf8), sSignedUTF, sCert, lOpenDefSession, SignType, true), True);
         sCertRaw := '+';  // !!! вернуть сертификат !!!
-        res := SignTextRaw(ANSIString(sUtf8), sSignRaw, sCertRaw, lOpenDefSession, 0);
-        if res = 0 then begin
+        if (FASNMode = SIGN_WITH_ASN) then
+          ASNMode := 0
+        else
+          ASNMode := AVCMF_RAW_SIGN;
+
+        if (SignTextRaw(ANSIString(sUtf8), sSignRaw, sCertRaw, lOpenDefSession, ASNMode) = True) then begin
           // Подписанное сообщение
           DebSec('sign64', sSignedUTF);
           DebSec('sign64Raw', EncodeBase64(sSignRaw));
@@ -1111,23 +1117,21 @@ begin
           DebSec('cert64', sCert);
           DebSec('cert64Raw', EncodeBase64(sCertRaw));
 
-          res := Avest.GetPublicKey(Avest.hDefSession, sPubKey);
-          if (res = 0) then begin
-            DebSec('PubKey', sPubKey);
-            sPubKey := Avest.EncodeStringEx(sPubKey);
-            DebSec('PubKeyBase64', sPubKey);
-          end;
+          Avest.CheckMsg(Avest.GetPublicKey(Avest.hDefSession, sPubKey), True);
+          DebSec('PubKey', sPubKey);
+          sPubKey := EncodeBase64(sPubKey);
+          DebSec('PubKeyBase64', sPubKey);
         end
-        else begin
+        else
           Result := false;
-          strErr := 'Ошибка ЭЦП: ' + Avest.ErrorInfo(res);
+      except
+          Result := false;
+      end;
+      if (Result = False) then begin
+          strErr := 'Ошибка ЭЦП: ' + Avest.slError[Avest.slError.Count - 1];
         // получить сертификат не удалось ?
           sCert := ''; // !!!
-        end;
-
-      finally
       end;
-
     end
     else
       Result := False;
@@ -1144,31 +1148,32 @@ end;
 function TSecureExchg.VerifyESign(var sSignedUTF: Utf8String; const sSign, sCert : string; var strErr: String): Boolean;
 var
   sUtf8 : Utf8String;
-  res: DWORD;
+  ASNMode : DWORD;
   lOpenDefSession, l: Boolean;
-  //LSign : TStringList;
 begin
   strErr := '';
   Result := True;
-  if (SignGet = True) then begin
+  if (SignGet = True)
+    AND (Length(sSign) + Length(sCert) > 0) then begin
     if (AvestReady(strErr)) then begin
+      Avest.slError.Clear;
       DebSec('SignedBody', sSignedUTF);
       //sUtf8 := DecodeString(sSignedUTF);
       sUtf8 := sSignedUTF;
-      //LSign := TStringList.Create;
-      //LSign.Add(sSign);
       try
         lOpenDefSession := True;
-        res := VerifyTextRaw(ANSIString(sUtf8), sSign, sCert, lOpenDefSession, 0);
-
-        if res = 0 then begin
+        if (FASNMode = SIGN_WITH_ASN) then
+          ASNMode := 0
+        else
+          ASNMode := AVCMF_RAW_SIGN;
+        if (VerifyTextRaw(ANSIString(sUtf8), sSign, sCert, lOpenDefSession, ASNMode) = True) then begin
           // Подписанное сообщение
           DebSec('BodyUnsigned.JSON', sUtf8);
           sSignedUTF := sUTF8;
         end
         else begin
           Result := false;
-          strErr := 'Ошибка ЭЦП: ' + Avest.ErrorInfo(res);
+          strErr := 'Ошибка ЭЦП: ' + Avest.slError[Avest.slError.Count - 1];
         end;
 
       finally
