@@ -712,7 +712,7 @@ begin
       StreamDoc.WriteString(sUTF);
       FHTTP.Document.CopyFrom(StreamDoc, 0);
 
-      BRet := Secure.VerifyESign(sUTF, Secure.SignRaw, DecodeBase64(Secure.Certif), sErr);
+      BRet := Secure.VerifyESign(sUTF, DecodeBase64(Secure.Sign), DecodeBase64(Secure.Certif), sErr);
       //BRet := Secure.VerifyESign(sUTF, Secure.Sign, Secure.Certif, sErr);
 
       Ret := SetRetCode(FHTTP.HTTPMethod('POST', ParsPost.FullURL), sErr);

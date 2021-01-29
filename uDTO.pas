@@ -1115,7 +1115,7 @@ begin
 
           // DER-представление сертификата
           DebSec('cert64', sCert);
-          DebSec('cert64Raw', EncodeBase64(sCertRaw));
+          //DebSec('cert64Raw', EncodeBase64(sCertRaw));
 
           Avest.CheckMsg(Avest.GetPublicKey(Avest.hDefSession, sPubKey), True);
           DebSec('PubKey', sPubKey);
@@ -1148,8 +1148,12 @@ end;
 function TSecureExchg.VerifyESign(var sSignedUTF: Utf8String; const sSign, sCert : string; var strErr: String): Boolean;
 var
   sUtf8 : Utf8String;
+  RetAv,
   ASNMode : DWORD;
-  lOpenDefSession, l: Boolean;
+  lOpenDefSession,
+  l: Boolean;
+  LSigns : TStringList;
+
 begin
   strErr := '';
   Result := True;
@@ -1166,10 +1170,20 @@ begin
           ASNMode := 0
         else
           ASNMode := AVCMF_RAW_SIGN;
-        if (VerifyTextRaw(ANSIString(sUtf8), sSign, sCert, lOpenDefSession, ASNMode) = True) then begin
+        if (VerifyTextRaw(ANSIString(sUtf8), SignRaw, sCert, lOpenDefSession, ASNMode) = True) then begin
+          LSigns := TStringList.Create;
+          LSigns.Add(sSign);
+          Avest.FBase64 := False;
+          RetAv := Avest.SMDOVerify(AnsiString(sSignedUTF), LSigns, False, 0);
+
           // Подписанное сообщение
           DebSec('BodyUnsigned.JSON', sUtf8);
           sSignedUTF := sUTF8;
+
+
+
+
+
         end
         else begin
           Result := false;
