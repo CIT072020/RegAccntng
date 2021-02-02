@@ -29,6 +29,8 @@ type
     FSign : string;
     FSignRaw : string;
     FCertif : string;
+    FAuth : string;
+
     FPubKey : string;
     FSignPost : Boolean;
     // Способ формирования ЭЦП для сообщения
@@ -52,7 +54,7 @@ type
     property Certif : string read FCertif write FCertif;
     property PubKey : string read FPubKey write FPubKey;
     property SignRaw : string read FSignRaw write FSignRaw;
-
+    property Auth : string read FAuth write FAuth;
 
     property Meta : TSasaIniFile read FMeta write FMeta;
     property SignPost : Boolean read FSignPost write FSignPost;
@@ -137,6 +139,7 @@ begin
   Meta     := MetaINI;
   Avest    := TAvest.Create;
   Avest.FDeleteCRLF := True;
+  FAuth    := Meta.ReadString(SCT_SECURE, 'Authorization', '');
   SignPost := Meta.ReadBool(SCT_SECURE, 'SIGNPOST', False);
   // Default - AVCMF_ADD_SIGN_CERT
   SignMode := Meta.ReadInteger(SCT_SECURE, 'SIGNMODE', SIGN_WITH_DATA);

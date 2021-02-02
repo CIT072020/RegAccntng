@@ -92,6 +92,12 @@ type
     Ver      : string;
   end;
 
+type
+  TAHTTPSend = class(THTTPSend)
+  public
+    function AHTTPMethod(const Method, URL: string; Auth : string = '') : Boolean;
+  end;
+
 
 function CT(s: string) : string;
 function UnixStrToDateTime(sDate:String):TDateTime;
@@ -117,7 +123,16 @@ uses
   FileUtil,
   StrUtils;
 
-// Обработка имен полей  
+
+function TAHTTPSend.AHTTPMethod(const Method, URL: string; Auth : string = '') : Boolean;
+begin
+  if (Auth <> '') then
+    Self.Headers.Add('Authorization:' + Auth);
+  Result := inherited HTTPMethod(Method, URL);
+end;
+
+
+// Обработка имен полей
 function CT(s: string): string;
 begin
   Result := s;

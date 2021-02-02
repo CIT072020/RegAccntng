@@ -65,6 +65,8 @@ type
     cbAdsCvrt: TDBCheckBoxEh;
     cbESTP: TDBCheckBoxEh;
     cbClearLog: TDBCheckBoxEh;
+    lblFirst: TLabel;
+    lblCount: TLabel;
     procedure btnGetActualClick(Sender: TObject);
     procedure btnGetListClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -332,17 +334,18 @@ begin
   tbTalonPribDeti.Open;
 
   ShowM := edMemo;
-  edOrgan.Text  := '12';
+  edOrgan.Text  := '26';
 //  dtBegin.Value := StrToDate('01.01.2021');
 //  dtEnd.Value   := StrToDate('10.01.2021');
-  dtBegin.Value := StrToDate('06.10.2020');
-  dtEnd.Value   := StrToDate('08.10.2020');
+  dtBegin.Value := StrToDate('20.01.2021');
+  dtEnd.Value   := StrToDate('30.01.2021');
   edFirst.Text  := '0';
   edCount.Text  := '10';
   cbSrcPost.ItemIndex := 0;
 
   //Pars := TParsExchg.Create();
   BlackBox := TExchgRegCitizens.Create(INI_NAME);
+  //Self.Caption := BlackBox.BBPars.
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
@@ -634,18 +637,30 @@ end;
 // ”ехавшие из Sys_Organ
 procedure TForm1.btnGetDocsClick(Sender: TObject);
 var
+  First, Count : Integer;
   D1, D2: TDateTime;
   P: TParsGet;
 begin
   D1 := dtBegin.Value;
   D2 := dtEnd.Value;
-  if (Integer(edFirst.Value) = 0) AND (Integer(edCount.Value) = 0) then
+  try
+    First := Integer(edFirst.Value);
+    except
+    First := 0;
+      end;
+
+  try
+    Count := Integer(edCount.Value);
+    except
+    Count := 0;
+      end;
+
+  if (First = 0) AND (Count = 0) then
     BlackBox.ResGet := BlackBox.GetDeparted(D1, D2, edOrgan.Text)
   else begin
-
     P := TParsGet.Create(D1, D2, edOrgan.Text);
-    P.First := edFirst.Value;
-    P.Count := edCount.Value;
+    P.First := First;
+    P.Count := Count;
     BlackBox.ResGet := BlackBox.GetDeparted(P);
   end;
   GETRes := BlackBox.ResGet;

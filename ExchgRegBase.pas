@@ -23,7 +23,7 @@ type
     FHost   : THostReg;
     FResGet : TResultGet;
     FResSet : TResultPost;
-    FHTTP   : THTTPSend;
+    FHTTP   : TAHTTPSend;
     Fsecure : TSecureExchg;
 
     function ReadIni : Boolean;
@@ -61,7 +61,7 @@ type
     (* Получить содержимое справочника
     *)
     function GetNSI(ParsNsi : TParsNsi) : TResultGet;
-    
+
     (* Перегнать справочник (MemTable) в ADS-таблицу
     *)
     function CreateADST(MT: TkbmMemTable; TType: integer; Conn: TAdsConnection; ResGet : TResultGet): Integer;
@@ -316,7 +316,7 @@ begin
   end;
 
     try
-       Ret := SetRetCode(FHTTP.HTTPMethod('GET', ParsGet.FullURL), sErr);
+       Ret := SetRetCode(FHTTP.AHTTPMethod('GET', ParsGet.FullURL, Secure.Auth), sErr);
       if (Ret = 0) then begin
         sErr := Utf8Decode(MemStream2Str(FHTTP.Document));
         SOList := SO(MakeNumAsStr('pid', sErr));
@@ -374,7 +374,7 @@ begin
     URL := FullPath(FHost, GET_LIST_DOC, Pars4GET);
 
     FHTTP.Headers.Clear;
-    Ret := SetRetCode(FHTTP.HTTPMethod('GET', URL), sErr);
+    Ret := SetRetCode(FHTTP.AHTTPMethod('GET', URL, Secure.Auth), sErr);
     if (Ret = 0) then begin
       sBody := MemStream2Str(FHTTP.Document);
       sCert := SetCert(FHTTP.Headers, 'certificate');
@@ -515,7 +515,7 @@ var
   ResOneIN: TResultGet;
 begin
   ResGet := TResultGet.Create(FPars);
-  FHTTP := THTTPSend.Create;
+  FHTTP := TAHTTPSend.Create;
   try
 
   // Fill MemTable with IndNums
@@ -631,10 +631,10 @@ begin
   else
     URL := ParsNsi.FullURL;
 
-  FHTTP := THTTPSend.Create;
+  FHTTP := TAHTTPSend.Create;
   try
     try
-      Ret := SetRetCode(FHTTP.HTTPMethod('GET', URL), sErr);
+      Ret := SetRetCode(FHTTP.AHTTPMethod('GET', URL, Secure.Auth), sErr);
       if (Ret = 0) then begin
         sErr := MemStream2Str(FHTTP.Document);
         SOList := SO(Utf8Decode(sErr));
@@ -704,6 +704,7 @@ begin
       //FHTTP.Headers.Add('sign:');
       FHTTP.Headers.Add('sign:' + Secure.Sign);
       FHTTP.Headers.Add('certificate:' + Secure.Certif);
+      //FHTTP.Headers.Add('Authorization:' + Secure.Auth);
       FHTTP.MimeType := 'application/json;charset=UTF-8';
 
       s := SetCert(FHTTP.Headers, 'sign');
@@ -715,7 +716,7 @@ begin
       BRet := Secure.VerifyESign(sUTF, DecodeBase64(Secure.Sign), DecodeBase64(Secure.Certif), sErr);
       //BRet := Secure.VerifyESign(sUTF, Secure.Sign, Secure.Certif, sErr);
 
-      Ret := SetRetCode(FHTTP.HTTPMethod('POST', ParsPost.FullURL), sErr);
+      Ret := SetRetCode(FHTTP.AHTTPMethod('POST', ParsPost.FullURL, Secure.Auth), sErr);
 
     end
     else
@@ -744,7 +745,7 @@ begin
   Result := TResultPost.Create;
 
   StreamDoc := TStringStream.Create('');
-  FHTTP := THTTPSend.Create;
+  FHTTP := TAHTTPSend.Create;
   try
     try
       ParsPost.FullURL := FullPath(FHost, POST_DOC, '');
