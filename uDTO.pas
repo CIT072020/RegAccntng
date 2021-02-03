@@ -331,6 +331,7 @@ end;
 // Форма 19-20
 procedure TDocSetDTO.GetForm19_20(SOf20: ISuperObject; MasterI: integer);
 var
+  s : string;
   IsF20: Boolean;
   NCh: Integer;
   OldSO, SOChild: ISuperObject;
@@ -344,7 +345,11 @@ begin
       FDoc.FieldByName('GOSUD_O_NAME').AsString := GetName('countryPu');
       FDoc.FieldByName('OBL_O_NAME').AsString := SOf20.S[CT('areaPu')];
       FDoc.FieldByName('RAION_O_NAME').AsString := SOf20.S[CT('regionPu')];
-      FDoc.FieldByName('GOROD_O_NAME').AsString := SOf20.S[CT('cityPu')];
+
+      //FDoc.FieldByName('GOROD_O_NAME').AsString := SOf20.S[CT('cityPu')];
+      s := SOf20.S[CT('cityPu')];
+      FDoc.FieldByName('GOROD_O_NAME').AsString := s;
+
       FDoc.FieldByName('typeCityPu').AsInteger := GetCode('typeCityPu');
       FDoc.FieldByName('typeCityPu_NAME').AsString := GetName('typeCityPu');
 
@@ -384,7 +389,7 @@ begin
     for j := 0 to SOA.AsArray.Length - 1 do begin
       SO := SOA.AsArray.O[j];
       FChild.Append;
-      FChild.FieldByName('ID').AsInteger := MasterI;
+      FChild.FieldByName('MID').AsInteger := MasterI;
       FChild.FieldByName('PID').AsString := SO.S[CT('pid')];
       FChild.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
       FChild.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];

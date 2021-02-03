@@ -21,11 +21,11 @@ type
     procedure PEGenCreate;
   public
     MetaName : string;
-    SectADM : string;
-    SectINs : string;
-    SectDocs : string;
-    SectChild : string;
-    SectNsi : string;
+    //SectADM : string;
+    //SectINs : string;
+    //SectDocs : string;
+    //SectChild : string;
+    //SectNsi : string;
     // Код органа регистрации (ГиМ)
     Organ : string;
 
@@ -134,11 +134,11 @@ uses
 procedure TParsExchg.PEGenCreate;
 begin
   // Имена секций со структурами таблиц по умолчанию
-  SectADM   := SCT_ADMIN;
-  SectINs   := SCT_TBL_INS;
-  SectDocs  := SCT_TBL_DOC;
-  SectChild := SCT_TBL_CLD;
-  SectNsi   := SCT_TBL_NSI;
+  //SectADM   := SCT_ADMIN;
+  //SectINs   := SCT_TBL_INS;
+  //SectDocs  := SCT_TBL_DOC;
+  //SectChild := SCT_TBL_CLD;
+  //SectNsi   := SCT_TBL_NSI;
 end;
 
 constructor TParsExchg.Create(MName : string);
@@ -185,18 +185,22 @@ begin
 end;
 
 
-
 // Результат GET
-constructor TResultGet.Create(Pars: TParsExchg; WhatMT : Integer = DATA_ONLY);
+constructor TResultGet.Create(Pars: TParsExchg; WhatMT: Integer = DATA_ONLY);
 begin
   if (WhatMT <> NO_DATA) then begin
-  if (WhatMT = DATA_ONLY) then begin
-    INs := TkbmMemTable(CreateMemTable(MT_INS, Pars.Meta, Pars.SectINs));
-    Docs := TkbmMemTable(CreateMemTable(MT_DOCS, Pars.Meta, Pars.SectDocs));
-    Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, Pars.SectChild));
-  end else
-    Nsi := TkbmMemTable(CreateMemTable(MT_NSI, Pars.Meta, Pars.SectNsi));
-    end;
+    if (WhatMT = DATA_ONLY) then begin
+    //INs := TkbmMemTable(CreateMemTable(MT_INS, Pars.Meta, Pars.SectINs));
+    //Docs := TkbmMemTable(CreateMemTable(MT_DOCS, Pars.Meta, Pars.SectDocs));
+    //Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, Pars.SectChild));
+      INs   := TkbmMemTable(CreateMemTable(MT_INS, Pars.Meta, SCT_TBL_INS));
+      Docs  := TkbmMemTable(CreateMemTable(MT_DOCS, Pars.Meta, SCT_TBL_DOC));
+      Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, SCT_TBL_CLD));
+    end
+    else
+    //Nsi := TkbmMemTable(CreateMemTable(MT_NSI, Pars.Meta, Pars.SectNsi));
+      Nsi := TkbmMemTable(CreateMemTable(MT_NSI, Pars.Meta, SCT_TBL_NSI));
+  end;
 end;
 
 constructor TParsPost.Create(DSign, Cert : string; URL : string = '');

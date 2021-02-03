@@ -19,6 +19,7 @@ type
   // "черный ящик" обмена с REST-сервисом
   TExchgRegCitizens = class(TInterfacedObject)
   private
+    FMeta   : TSasaIniFile;
     FPars   : TParsExchg;
     FHost   : THostReg;
     FResGet : TResultGet;
@@ -134,6 +135,7 @@ end;
 
 destructor TExchgRegCitizens.Destroy;
 begin
+  FreeAndNil(FPars);
   FreeAndNil(FSecure);
 end;
 
