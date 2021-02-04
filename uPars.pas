@@ -12,29 +12,7 @@ uses
   SasaINiFile,
   uService;
 
-
 type
-  // параметры для создания объекта обмена с ROC
-  TParsExchg = class(TObject)
-  private
-    FMeta : TSasaIniFile;
-    procedure PEGenCreate;
-  public
-    MetaName : string;
-    //SectADM : string;
-    //SectINs : string;
-    //SectDocs : string;
-    //SectChild : string;
-    //SectNsi : string;
-    // Код органа регистрации (ГиМ)
-    Organ : string;
-
-    property Meta : TSasaIniFile read FMeta write FMeta;
-
-    constructor Create(MName : string); overload;
-    constructor Create(MetaINI : TSasaIniFile); overload;
-  end;
-
   // параметры для GetDocs
   TParsGet = class
     Organ   : string;
@@ -66,7 +44,7 @@ type
     ConnADS : TAdsConnection;
     ADSCopy : Boolean;
 
-    constructor Create(NType : Integer; Conn : TAdsConnection); overload;
+    constructor Create(NType : Integer; Conn : TAdsConnection);
   end;
 
   // параметры для PostDocs
@@ -91,8 +69,8 @@ type
  Выходные результаты
 *)
 
-  // Результат для GET
-  TResultGet = class
+  // Результат для GET/POST
+  TResultHTTP = class
   private
     FNsi,
     FChild,
@@ -108,51 +86,17 @@ type
     property Nsi   : TkbmMemTable read FNsi write FNsi;
 
     property ResCode : Integer read FCode write FCode;
-    property ResMsg : string read FMsg write FMsg;
+    property ResMsg  : string read FMsg write FMsg;
 
-    constructor Create(Pars: TParsExchg; WhatMT : Integer = DATA_ONLY);
+    constructor Create; overload;
+    constructor Create(Meta : TSasaIniFile; WhatMT: Integer = DATA_ONLY); overload;
   end;
-
-  TResultPost = class
-  private
-    FCode : Integer;
-    FMsg : string;
-  protected
-  public
-
-    property ResCode : Integer read FCode write FCode;
-    property ResMsg : string read FMsg write FMsg;
-  end;
-
 
 implementation
 
 uses
   SysUtils,
   NativeXml;
-
-procedure TParsExchg.PEGenCreate;
-begin
-  // Имена секций со структурами таблиц по умолчанию
-  //SectADM   := SCT_ADMIN;
-  //SectINs   := SCT_TBL_INS;
-  //SectDocs  := SCT_TBL_DOC;
-  //SectChild := SCT_TBL_CLD;
-  //SectNsi   := SCT_TBL_NSI;
-end;
-
-constructor TParsExchg.Create(MName : string);
-begin
-  PEGenCreate;
-  MetaName := MName;
-end;
-
-constructor TParsExchg.Create(MetaINI : TSasaIniFile);
-begin
-  PEGenCreate;
-  Meta := MetaINI;
-  MetaName := MetaINI.FileName;
-end;
 
 // параметры для GetDocs
 constructor TParsGet.Create(DBeg, DEnd : TDateTime; OrgCode : string = '');
@@ -185,21 +129,26 @@ begin
 end;
 
 
-// Результат GET
-constructor TResultGet.Create(Pars: TParsExchg; WhatMT: Integer = DATA_ONLY);
+// Результат GET/POST
+constructor TResultHTTP.Create;
+begin
+  inherited Create;
+end;
+
+constructor TResultHTTP.Create(Meta : TSasaIniFile; WhatMT: Integer = DATA_ONLY);
 begin
   if (WhatMT <> NO_DATA) then begin
     if (WhatMT = DATA_ONLY) then begin
     //INs := TkbmMemTable(CreateMemTable(MT_INS, Pars.Meta, Pars.SectINs));
     //Docs := TkbmMemTable(CreateMemTable(MT_DOCS, Pars.Meta, Pars.SectDocs));
     //Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, Pars.SectChild));
-      INs   := TkbmMemTable(CreateMemTable(MT_INS, Pars.Meta, SCT_TBL_INS));
-      Docs  := TkbmMemTable(CreateMemTable(MT_DOCS, Pars.Meta, SCT_TBL_DOC));
-      Child := TkbmMemTable(CreateMemTable(MT_CHILD, Pars.Meta, SCT_TBL_CLD));
+      INs   := TkbmMemTable(CreateMemTable(MT_INS, Meta, SCT_TBL_INS));
+      Docs  := TkbmMemTable(CreateMemTable(MT_DOCS, Meta, SCT_TBL_DOC));
+      Child := TkbmMemTable(CreateMemTable(MT_CHILD, Meta, SCT_TBL_CLD));
     end
     else
     //Nsi := TkbmMemTable(CreateMemTable(MT_NSI, Pars.Meta, Pars.SectNsi));
-      Nsi := TkbmMemTable(CreateMemTable(MT_NSI, Pars.Meta, SCT_TBL_NSI));
+      Nsi := TkbmMemTable(CreateMemTable(MT_NSI, Meta, SCT_TBL_NSI));
   end;
 end;
 

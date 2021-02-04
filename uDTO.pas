@@ -634,9 +634,10 @@ var
 
 
   // Вставить строку
-
   procedure AddStr(const ss1: string; ss2: String = '');
   begin
+    if (Pos('"', ss2) > 0) then
+    ss2 := StringReplace(ss2, '"', '\"', [rfReplaceAll]);
     ss2 := '"' + ss2 + '"';
     StreamDoc.WriteString('"' + ss1 + '": ' + ss2 + ',');
   end;

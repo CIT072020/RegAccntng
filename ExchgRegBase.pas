@@ -19,58 +19,60 @@ type
   // "черный ящик" обмена с REST-сервисом
   TExchgRegCitizens = class(TInterfacedObject)
   private
+    FMetaName : string;
     FMeta   : TSasaIniFile;
-    FPars   : TParsExchg;
-    FHost   : THostReg;
-    FResGet : TResultGet;
-    FResSet : TResultPost;
-    FHTTP   : TAHTTPSend;
-    Fsecure : TSecureExchg;
 
-    function ReadIni : Boolean;
+    FHost   : THostReg;
+    FHTTP   : TAHTTPSend;
+    FSecure : TSecureExchg;
+
+    // Код органа регистрации (ГиМ)
+    Organ : string;
+
+    FResGetPost : TResultHTTP;
+
+    procedure ReadIni;
     procedure GenCreate;
     function StoreINsInRes(Pars : TParsGet) : integer;
     function GetINsFromSrv(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
-    function Docs4CurIN(Pars4GET : string; DocDTO : TDocSetDTO) : TResultGet;
-    function Post1Doc(ParsPost: TParsPost; StreamDoc : TStringStream) : TResultPost;
+    function Docs4CurIN(Pars4GET : string; DocDTO : TDocSetDTO) : TResultHTTP;
+    function Post1Doc(ParsPost: TParsPost; StreamDoc : TStringStream) : TResultHTTP;
     function SetRetCode(Ret: Boolean; var sErr: string): integer;
-    function GetDSDList(ParsGet: TParsGet): TResultGet;
+    function GetDSDList(ParsGet: TParsGet): TResultHTTP;
   public
-    // Параметры обмена
-    property BBPars : TParsExchg read FPars write FPars;
-    // Результат запроса данных (GET)
-    property ResGet : TResultGet read FResGet write FResGet;
-    // Результат отправки данных (POST)
-    property ResPost : TResultPost read FResSet write FResSet;
+    // Параметры и настройки
+    property Meta : TSasaIniFile read FMeta write FMeta;
+    // Параметры безопасности
     property Secure : TSecureExchg read Fsecure write Fsecure;
+    // Результат запроса данных (GET/POST)
+    property ResHTTP : TResultHTTP read FResGetPost write FResGetPost;
 
     (* Получить список документов [убытия]
     *)
-    function GetDeparted(DBeg, DEnd : TDateTime; OrgCode : string = '') : TResultGet; overload;
-    function GetDeparted(ParsGet : TParsGet) : TResultGet; overload;
+    function GetDeparted(DBeg, DEnd : TDateTime; OrgCode : string = '') : TResultHTTP; overload;
+    function GetDeparted(ParsGet : TParsGet) : TResultHTTP; overload;
 
     (* Получить документ актуальной регистрации
     *)
-    function GetActualReg(INum : string) : TResultGet; overload;
-    function GetActualReg(IndNs: TStringList) : TResultGet;  overload;
-    function GetActualReg(ParsGet : TParsGet) : TResultGet;  overload;
+    function GetActualReg(INum : string) : TResultHTTP; overload;
+    function GetActualReg(IndNs: TStringList) : TResultHTTP;  overload;
+    function GetActualReg(ParsGet : TParsGet) : TResultHTTP;  overload;
 
     (* Записать сведения о регистрации
     *)
-    function PostRegDocs(ParsPost: TParsPost) : TResultPost;
+    function PostRegDocs(ParsPost: TParsPost) : TResultHTTP;
 
     (* Получить содержимое справочника
     *)
-    function GetNSI(ParsNsi : TParsNsi) : TResultGet;
+    function GetNSI(ParsNsi : TParsNsi) : TResultHTTP;
 
     (* Перегнать справочник (MemTable) в ADS-таблицу
     *)
-    function CreateADST(MT: TkbmMemTable; TType: integer; Conn: TAdsConnection; ResGet : TResultGet): Integer;
+    function CreateADST(MT: TkbmMemTable; TType: integer; Conn: TAdsConnection; ResHTTP : TResultHTTP): Integer;
 
     constructor Create(MName : string); overload;
     constructor Create(MetaINI : TSasaIniFile); overload;
-    constructor Create(Pars : TParsExchg); overload;
-    destructor Destroy; override;
+    destructor Destroy;
   published
   end;
 
@@ -85,60 +87,61 @@ uses
   NativeXml;
 
 // Заполнение параметров из INI-файла
-function TExchgRegCitizens.ReadIni: Boolean;
+procedure TExchgRegCitizens.ReadIni;
 begin
   // Установки из INI или по умолчанию
-  FHost := THostReg.Create;
-  FHost.URL      := FPars.Meta.ReadString(SCT_HOST, 'URL', RES_HOST);
-  FHost.GenPoint := FPars.Meta.ReadString(SCT_HOST, 'RESPATH', RES_GENPOINT);
-  FHost.NsiPoint := FPars.Meta.ReadString(SCT_HOST, 'NSIPATH', RES_NSI);
-  FHost.Ver      := FPars.Meta.ReadString(SCT_HOST, 'VER', RES_VER);
+  FHost.URL      := Meta.ReadString(SCT_HOST, 'URL', RES_HOST);
+  FHost.GenPoint := Meta.ReadString(SCT_HOST, 'RESPATH', RES_GENPOINT);
+  FHost.NsiPoint := Meta.ReadString(SCT_HOST, 'NSIPATH', RES_NSI);
+  FHost.Ver      := Meta.ReadString(SCT_HOST, 'VER', RES_VER);
+
+  Organ := Meta.ReadString(SCT_ADMIN, 'ORGAN', '');
 end;
 
 
 // Общая часть для всех конструкторов
 procedure TExchgRegCitizens.GenCreate;
 begin
-  if (NOT Assigned(FPars.Meta)) then begin
-    if ( NOT FileExists(FPars.MetaName) ) then
-      raise Exception.Create('Bad INI-file:' + FPars.MetaName);
-    FPars.Meta := TSasaIniFile.Create(FPars.MetaName);
+  if (NOT Assigned(Meta)) then begin
+    if ( NOT FileExists(FMetaName) ) then
+      raise Exception.Create('Bad INI-file:' + FMetaName);
+    Meta := TSasaIniFile.Create(FMetaName);
   end;
+  FHost := THostReg.Create;
   ReadIni;
-  Secure := TSecureExchg.Create(FPars.Meta);
-end;
-
-
-constructor TExchgRegCitizens.Create(Pars: TParsExchg);
-begin
-  inherited Create;
-  FPars := Pars;
-  GenCreate;
+  Secure := TSecureExchg.Create(Meta);
 end;
 
 // Имя INI-файла
 constructor TExchgRegCitizens.Create(MName : string);
 begin
   inherited Create;
-  FPars := TParsExchg.Create(MName);
+  FMetaName := MName;
   GenCreate;
 end;
 
-
+// Передан готовый INI
 constructor TExchgRegCitizens.Create(MetaINI : TSasaIniFile);
 begin
   inherited Create;
-  FPars := TParsExchg.Create(MetaINI);
+  Meta := MetaINI;
+  // Флаг того, что создавалось не мной
+  FMetaName := '';
   GenCreate;
 end;
 
 
 destructor TExchgRegCitizens.Destroy;
 begin
-  FreeAndNil(FPars);
+  if (FMetaName <> '') then
+  // Передавалось имя, INI-объект создавал сам
+    FreeAndNil(FMeta);
+  FreeAndNil(FHost);
   FreeAndNil(FSecure);
 end;
 
+
+// В качестве ответа может свалиться XML
 function IsJSON(const s: string): Boolean;
 var
   l: Integer;
@@ -231,16 +234,16 @@ var
 begin
   Result := Pars.FIOrINs.Count;
   if (Pars.ListType = TLIST_FIO) then begin
-    ResGet.INs.Append;
-    ResGet.INs.FieldValues['IDENTIF'] := Pars.FIOrINs[0];
-    ResGet.INs.Post;
+    ResHTTP.INs.Append;
+    ResHTTP.INs.FieldValues['IDENTIF'] := Pars.FIOrINs[0];
+    ResHTTP.INs.Post;
     Result := 1;
   end
   else
     for i := 1 to Result do begin
-      FResGet.INs.Append;
-      FResGet.INs.FieldValues['IDENTIF'] := Pars.FIOrINs[i - 1];
-      FResGet.INs.Post;
+      FResGetPost.INs.Append;
+      FResGetPost.INs.FieldValues['IDENTIF'] := Pars.FIOrINs[i - 1];
+      FResGetPost.INs.Post;
     end;
 end;
 
@@ -337,8 +340,8 @@ begin
         if (sErr = '') then
           sErr := E.Message;
         Ret := UERR_GET_INDNOMS;
-        ResGet.ResCode := Ret;
-        ResGet.ResMsg  := sErr;
+        ResHTTP.ResCode := Ret;
+        ResHTTP.ResMsg  := sErr;
       end;
     end;
     Result := Ret;
@@ -364,14 +367,14 @@ end;
 
 
 // Получить документы для текущего в списке ID
-function TExchgRegCitizens.Docs4CurIN(Pars4GET: string; DocDTO: TDocSetDTO): TResultGet;
+function TExchgRegCitizens.Docs4CurIN(Pars4GET: string; DocDTO: TDocSetDTO): TResultHTTP;
 var
   Ret: Integer;
   sBody: Utf8String;
   sSign, sCert, sErr, URL: string;
   SOList: ISuperObject;
 begin
-  Result := TResultGet.Create(FPars, NO_DATA);
+  Result := TResultHTTP.Create(Meta, NO_DATA);
   try
     URL := FullPath(FHost, GET_LIST_DOC, Pars4GET);
 
@@ -419,19 +422,19 @@ end;
 
 
 // Список убывших для сельсовета (параметры)
-function TExchgRegCitizens.GetDeparted(ParsGet: TParsGet): TResultGet;
+function TExchgRegCitizens.GetDeparted(ParsGet: TParsGet): TResultHTTP;
 begin
   ParsGet.NeedActual := False;
   Result := GetDSDList(ParsGet);
 end;
 
 // Список убывших для сельсовета (период-сельсовет)
-function TExchgRegCitizens.GetDeparted(DBeg, DEnd: TDateTime; OrgCode: string = ''): TResultGet;
+function TExchgRegCitizens.GetDeparted(DBeg, DEnd: TDateTime; OrgCode: string = ''): TResultHTTP;
 var
   P: TParsGet;
 begin
   if (OrgCode = '') then
-    OrgCode := FPars.Organ;
+    OrgCode := Organ;
   P := TParsGet.Create(DBeg, DEnd, OrgCode);
   try
     Result := GetDeparted(P);
@@ -441,7 +444,7 @@ begin
 end;
 
 // Актуальный документ регистрации для единственного ИН
-function TExchgRegCitizens.GetActualReg(INum: string): TResultGet;
+function TExchgRegCitizens.GetActualReg(INum: string): TResultHTTP;
 var
   IndNums: TStringList;
 begin
@@ -456,7 +459,7 @@ end;
 
 
 // Получить актуальный документ регистрации для списка ИН
-function TExchgRegCitizens.GetActualReg(IndNs: TStringList): TResultGet;
+function TExchgRegCitizens.GetActualReg(IndNs: TStringList): TResultHTTP;
 var
   ParsGet: TParsGet;
 begin
@@ -469,7 +472,7 @@ begin
 end;
 
 // Получить актуальный документ регистрации для ИН
-function TExchgRegCitizens.GetActualReg(ParsGet: TParsGet) : TResultGet;
+function TExchgRegCitizens.GetActualReg(ParsGet: TParsGet) : TResultHTTP;
 begin
   ParsGet.NeedActual := True;
   Result := GetDSDList(ParsGet);
@@ -509,14 +512,14 @@ end;
 
 // Список DSD по одному/списку ИН
 // актуальные/убывшие -
-function TExchgRegCitizens.GetDSDList(ParsGet: TParsGet): TResultGet;
+function TExchgRegCitizens.GetDSDList(ParsGet: TParsGet): TResultHTTP;
 var
   nINs: Integer;
   sErr: string;
   DocDTO: TDocSetDTO;
-  ResOneIN: TResultGet;
+  ResOneIN: TResultHTTP;
 begin
-  ResGet := TResultGet.Create(FPars);
+  ResHTTP := TResultHTTP.Create(Meta);
   FHTTP := TAHTTPSend.Create;
   try
 
@@ -527,28 +530,28 @@ begin
       nINs := StoreINsInRes(ParsGet)
     else begin
     // Во входном списке - пусто, надо брать с сервера, нужны уехавшие
-      nINs := GetINsFromSrv(ParsGet, ResGet.INs);
+      nINs := GetINsFromSrv(ParsGet, ResHTTP.INs);
       if (nINs = 0) then
-        nINs := ResGet.INs.RecordCount
+        nINs := ResHTTP.INs.RecordCount
       else begin
-        Result := ResGet;
+        Result := ResHTTP;
         Exit;
       end;
     end;
 
     if (nINs > 0) then begin
-      DocDTO := TDocSetDTO.Create(ResGet.Docs, ResGet.Child);
+      DocDTO := TDocSetDTO.Create(ResHTTP.Docs, ResHTTP.Child);
       try
-        ResGet.ResCode := 0;
-        ResGet.INs.First;
-        while not ResGet.INs.Eof do begin
-          ResOneIN := Docs4CurIN(SetPars4GetDSD(ParsGet, ResGet.INs), DocDTO);
+        ResHTTP.ResCode := 0;
+        ResHTTP.INs.First;
+        while not ResHTTP.INs.Eof do begin
+          ResOneIN := Docs4CurIN(SetPars4GetDSD(ParsGet, ResHTTP.INs), DocDTO);
           if (ResOneIN.ResCode <> 0) then begin
-            sErr := SetErr4GetDSD(ParsGet, ResGet.INs);
-            ResGet.ResMsg := ResGet.ResMsg + CRLF + sErr + ResOneIN.ResMsg;;
-            ResGet.ResCode := ResGet.ResCode + 1;
+            sErr := SetErr4GetDSD(ParsGet, ResHTTP.INs);
+            ResHTTP.ResMsg := ResHTTP.ResMsg + CRLF + sErr + ResOneIN.ResMsg;;
+            ResHTTP.ResCode := ResHTTP.ResCode + 1;
           end;
-          ResGet.INs.Next;
+          ResHTTP.INs.Next;
         end;
       finally
         DocDTO.Free;
@@ -557,11 +560,11 @@ begin
   finally
     FHTTP.Free;
   end;
-  Result := ResGet;
+  Result := ResHTTP;
 end;
 
 // Полученный справочник - в ADS
-function TExchgRegCitizens.CreateADST(MT: TkbmMemTable; TType: integer; Conn: TAdsConnection; ResGet: TResultGet): Integer;
+function TExchgRegCitizens.CreateADST(MT: TkbmMemTable; TType: integer; Conn: TAdsConnection; ResHTTP: TResultHTTP): Integer;
 var
   Ret, i, MaxF, n: Integer;
   CurName, sErr, StrucInStr, TName, FName, sSQL: string;
@@ -609,19 +612,19 @@ begin
     t.Free;
   end;
   Result := Ret;
-  ResGet.ResCode := Ret;
-  ResGet.ResMsg := sErr;
+  ResHTTP.ResCode := Ret;
+  ResHTTP.ResMsg := sErr;
 end;
 
 // Получить содержимое справочника
-function TExchgRegCitizens.GetNSI(ParsNsi : TParsNsi) : TResultGet;
+function TExchgRegCitizens.GetNSI(ParsNsi : TParsNsi) : TResultHTTP;
 var
   Ret: Integer;
   SOList: ISuperObject;
   URL,
   sType, sCode, sErr: string;
 begin
-  Result := TResultGet.Create(FPars, NSI_ONLY);
+  Result := TResultHTTP.Create(Meta, NSI_ONLY);
   if (ParsNsi.FullURL = '') then begin
     if (ParsNsi.NsiCode = 0) then
       sCode := ''
@@ -666,12 +669,12 @@ begin
   end;
   Result.ResCode := Ret;
   Result.ResMsg := sErr;
-  ResGet := Result;
+  ResHTTP := Result;
 end;
 
 
 // Передача одного документа
-function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc: TStringStream): TResultPost;
+function TExchgRegCitizens.Post1Doc(ParsPost: TParsPost; StreamDoc: TStringStream): TResultHTTP;
 var
   Ret: Integer;
   sUTF: UTF8String;
@@ -682,7 +685,7 @@ var
   BRet : Boolean;
 begin
   sErr := '';
-  Result := TResultPost.Create;
+  Result := TResultHTTP.Create;
 
   try
     if (ParsPost.JSONSrc = '') then begin
@@ -738,13 +741,13 @@ end;
 
 
 // Передать документы регистрации
-function TExchgRegCitizens.PostRegDocs(ParsPost: TParsPost): TResultPost;
+function TExchgRegCitizens.PostRegDocs(ParsPost: TParsPost): TResultHTTP;
 var
   sErr: string;
   Header: TStringList;
   StreamDoc: TStringStream;
 begin
-  Result := TResultPost.Create;
+  Result := TResultHTTP.Create;
 
   StreamDoc := TStringStream.Create('');
   FHTTP := TAHTTPSend.Create;
@@ -773,7 +776,7 @@ begin
     StreamDoc.Free;
     FHTTP.Free;
   end;
-  ResPost := Result;
+  ResHTTP := Result;
 end;
 
 

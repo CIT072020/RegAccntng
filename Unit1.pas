@@ -103,7 +103,7 @@ const
 var
   Form1: TForm1;
   // дл€ отладки POST
-  GETRes : TResultGet;
+  GETRes : TResultHTTP;
 
 
 implementation
@@ -324,8 +324,8 @@ begin
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
-var
-  Pars : TParsExchg;
+//var
+  //Pars : TParsExchg;
 begin
   dm:=TDvigMen.Create;
   //dm.ReadParams;
@@ -656,26 +656,26 @@ begin
       end;
 
   if (First = 0) AND (Count = 0) then
-    BlackBox.ResGet := BlackBox.GetDeparted(D1, D2, edOrgan.Text)
+    BlackBox.ResHTTP := BlackBox.GetDeparted(D1, D2, edOrgan.Text)
   else begin
     P := TParsGet.Create(D1, D2, edOrgan.Text);
     P.First := First;
     P.Count := Count;
-    BlackBox.ResGet := BlackBox.GetDeparted(P);
+    BlackBox.ResHTTP := BlackBox.GetDeparted(P);
   end;
-  GETRes := BlackBox.ResGet;
+  GETRes := BlackBox.ResHTTP;
   ShowDeb(IntToStr(GETRes.ResCode) + ' ' + GETRes.ResMsg, cbClearLog.Checked);
 
   if (GETRes.INs.RecordCount > 0) then begin
-    DataSource1.DataSet := BlackBox.ResGet.INs;
-    dsDocs.DataSet := BlackBox.ResGet.Docs;
-    dsChild.DataSet := BlackBox.ResGet.Child;
-    BlackBox.ResGet.INs.First;
-    while (NOT BlackBox.ResGet.INs.Eof) do begin
-      if (BlackBox.ResGet.INs.Bof) then
+    DataSource1.DataSet := BlackBox.ResHTTP.INs;
+    dsDocs.DataSet := BlackBox.ResHTTP.Docs;
+    dsChild.DataSet := BlackBox.ResHTTP.Child;
+    BlackBox.ResHTTP.INs.First;
+    while (NOT BlackBox.ResHTTP.INs.Eof) do begin
+      if (BlackBox.ResHTTP.INs.Bof) then
         lstINs.Clear;
-      lstINs.Items.Add(BlackBox.ResGet.INs.FieldValues['IDENTIF']);
-      BlackBox.ResGet.INs.Next;
+      lstINs.Items.Add(BlackBox.ResHTTP.INs.FieldValues['IDENTIF']);
+      BlackBox.ResHTTP.INs.Next;
     end;
 
   end;
@@ -727,7 +727,7 @@ const
 var
   iSrc: Integer;
   PPost: TParsPost;
-  Res: TResultPost;
+  Res: TResultHTTP;
 begin
   //edMemo.Clear;
   PPost := TParsPost.Create(exmSign, exmSert);
@@ -735,8 +735,8 @@ begin
   if (cbSrcPost.ItemIndex in [0..1]) then begin
     // из MemTable
     PPost.JSONSrc := '';
-    PPost.Docs := BlackBox.ResGet.Docs;
-    PPost.Child := BlackBox.ResGet.Child;
+    PPost.Docs := BlackBox.ResHTTP.Docs;
+    PPost.Child := BlackBox.ResHTTP.Child;
     if (cbSrcPost.ItemIndex = 0) then
     // передача только текущей
       LeaveOnly1(dsDocs.DataSet);
@@ -753,8 +753,8 @@ begin
       Exit;
 
   BlackBox.Secure.Avest.Debug := True;
-  BlackBox.ResPost := BlackBox.PostRegDocs(PPost);
-  ShowDeb(IntToStr(BlackBox.ResPost.ResCode) + ' ' + BlackBox.ResPost.ResMsg, cbClearLog.Checked);
+  BlackBox.ResHTTP := BlackBox.PostRegDocs(PPost);
+  ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg, cbClearLog.Checked);
 
 end;
 
@@ -768,7 +768,7 @@ begin
   if (lstINs.SelCount > 0) then begin
     if (lstINs.SelCount = 1) then
       // ¬ыбран единственный - передаетс€ строка
-      BlackBox.ResGet := BlackBox.GetActualReg(lstINs.Items[lstINs.ItemIndex])
+      BlackBox.ResHTTP := BlackBox.GetActualReg(lstINs.Items[lstINs.ItemIndex])
     else begin
       // ¬ыбрано несколько - передаетс€ список
       IndNums := TStringList.Create;
@@ -776,16 +776,16 @@ begin
         if (lstINs.Selected[i]) then
           IndNums.Add(lstINs.Items[i]);
       end;
-      BlackBox.ResGet := BlackBox.GetActualReg(IndNums);
+      BlackBox.ResHTTP := BlackBox.GetActualReg(IndNums);
     end;
   end
   else
       // Ќичего не выбрано, берем из TextBox
-    BlackBox.ResGet := BlackBox.GetActualReg(edtIN.Text);
-  ShowDeb(IntToStr(BlackBox.ResGet.ResCode) + ' ' + BlackBox.ResGet.ResMsg, cbClearLog.Checked);
-  if (Assigned(BlackBox.ResGet)) then begin
-    dsDocs.DataSet := BlackBox.ResGet.Docs;
-    dsChild.DataSet := BlackBox.ResGet.Child;
+    BlackBox.ResHTTP := BlackBox.GetActualReg(edtIN.Text);
+  ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg, cbClearLog.Checked);
+  if (Assigned(BlackBox.ResHTTP)) then begin
+    dsDocs.DataSet := BlackBox.ResHTTP.Docs;
+    dsChild.DataSet := BlackBox.ResHTTP.Child;
   end;
 
 end;
@@ -811,16 +811,16 @@ begin
   end;
   if (ValidPars = True) then begin
       cnctNsi.IsConnected := False;
-      cnctNsi.ConnectPath := IncludeTrailingBackslash(BlackBox.BBPars.Meta.ReadString(SCT_ADMIN, 'ADSPATH', '.'));
+      cnctNsi.ConnectPath := IncludeTrailingBackslash(BlackBox.Meta.ReadString(SCT_ADMIN, 'ADSPATH', '.'));
     ParsNsi := TParsNsi.Create(NsiType, cnctNsi);
     ParsNsi.ADSCopy := cbAdsCvrt.Checked;
     ParsNsi.NsiCode := NsiCode;
-    BlackBox.ResGet := BlackBox.GetNSI(ParsNsi);
-    if (BlackBox.ResGet.ResCode = 0) then begin
-      dsNsi.DataSet := BlackBox.ResGet.Nsi;
-      BlackBox.ResGet.Nsi.First;
+    BlackBox.ResHTTP := BlackBox.GetNSI(ParsNsi);
+    if (BlackBox.ResHTTP.ResCode = 0) then begin
+      dsNsi.DataSet := BlackBox.ResHTTP.Nsi;
+      BlackBox.ResHTTP.Nsi.First;
     end;
-    ShowDeb(IntToStr(BlackBox.ResGet.ResCode) + ' ' + BlackBox.ResGet.ResMsg, cbClearLog.Checked);
+    ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg, cbClearLog.Checked);
   end;
 end;
 

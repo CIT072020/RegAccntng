@@ -91,7 +91,7 @@ type
     NsiPoint : string;
     Ver      : string;
   end;
-
+  
 type
   TAHTTPSend = class(THTTPSend)
   public
