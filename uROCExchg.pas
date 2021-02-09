@@ -111,8 +111,8 @@ type
 
     procedure ReadIni;
     procedure GenCreate;
-    function StoreINsInRes(Pars : TParsGet) : integer;
-    function GetINsFromSrv(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
+    function StoreIndNum(Pars : TParsGet) : integer;
+    function GetIndNum(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
     function Docs4CurIN(Pars4GET : string; DocDTO : TDocSetDTO) : TResultHTTP;
     function Post1Doc(ParsPost: TParsPost; StreamDoc : TStringStream) : TResultHTTP;
     function SetRetCode(Ret: Boolean; var sErr: string): integer;
@@ -366,7 +366,7 @@ begin
 end;
 
 // Скопировать список ИН в выходную таблицу
-function TROCExchg.StoreINsInRes(Pars: TParsGet): integer;
+function TROCExchg.StoreIndNum(Pars: TParsGet): integer;
 var
   i: Integer;
 begin
@@ -441,7 +441,7 @@ end;
 
 
 // Индивидуальные номера граждан за период
-function TROCExchg.GetINsFromSrv(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
+function TROCExchg.GetIndNum(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
 var
   Ret : Integer;
   sErr : string;
@@ -665,10 +665,10 @@ begin
     if (ParsGet.NeedActual = True) then
     // Во входном списке - ИН
     //    или ФИО (получение актуального)
-      nINs := StoreINsInRes(ParsGet)
+      nINs := StoreIndNum(ParsGet)
     else begin
     // Во входном списке - пусто, надо брать с сервера, нужны уехавшие
-      nINs := GetINsFromSrv(ParsGet, ResHTTP.INs);
+      nINs := GetIndNum(ParsGet, ResHTTP.INs);
       if (nINs = 0) then
         nINs := ResHTTP.INs.RecordCount
       else begin

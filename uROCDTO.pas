@@ -382,32 +382,47 @@ end;
 // Данные по детям из внутреннего массива
 procedure TDocSetDTO.GetChild(SOA: ISuperObject; MasterI: integer);
 var
-  j: Integer;
-  SO: ISuperObject;
+  iV, j: Integer;
+  s: string;
+  Prev, SO: ISuperObject;
 begin
+  Prev := FSO;
   try
-    for j := 0 to SOA.AsArray.Length - 1 do begin
-      SO := SOA.AsArray.O[j];
-      FChild.Append;
-      FChild.FieldByName('MID').AsInteger := MasterI;
-      FChild.FieldByName('PID').AsString := SO.S[CT('pid')];
-      FChild.FieldByName('IDENTIF').AsString := SO.S[CT('identif')];
-      FChild.FieldByName('FAMILIA').AsString := SO.S[CT('surname')];
-      FChild.FieldByName('NAME').AsString := SO.S[CT('name')];
-      FChild.FieldByName('BDATE').AsString := SO.S[CT('bdate')];
-      FChild.FieldByName('DATER').AsDateTime := UnixStrToDateTime(SO.S[CT('dateRec')]);
-      FChild.Post;
+    try
+      for j := 0 to SOA.AsArray.Length - 1 do begin
+        FSO := SOA.AsArray.O[j];
+        FChild.Append;
+        FChild.FieldByName('MID').AsInteger := MasterI;
+        FChild.FieldByName('PID').AsString := FSO.S[CT('pid')];
+      //FChild.FieldByName('IDENTIF').AsString := FSO.S[CT('identif')];
+        FChild.FieldByName('FAMILIA').AsString := FSO.S[CT('surname')];
+        FChild.FieldByName('NAME').AsString := FSO.S[CT('name')];
+        FChild.FieldByName('OTCH').AsString := FSO.S[CT('sname')];
+
+        FChild.FieldByName('POL').AsString := TNsiRoc.Sex(GetCode('sex'), GET_VAL);
+
+        FChild.FieldByName('BDATE').AsDateTime := STOD(FSO.S[CT('bdate')]);
+        FChild.FieldByName('DATER').AsDateTime := UnixStrToDateTime(FSO.S[CT('dateRec')]);
+        FChild.FieldByName('OTNOSH').AsInteger := GetCode('rel');
+        FChild.FieldByName('OTNOSH_NAME').AsString := GetName('rel');
+
+        FChild.Post;
+      end;
+    except
     end;
-  except
+  finally
+    FSO := Prev;
   end;
 end;
+
+
 
 
 // Список DSD
 function TDocSetDTO.GetDocList(SOArr: ISuperObject): Integer;
 var
   s: string;
-  iV, i: Integer;
+  i: Integer;
   d: TDateTime;
   v: Variant;
 begin
@@ -427,12 +442,7 @@ begin
       FDoc.FieldByName('Name').AsString := FSO.S[CT('name')];
       FDoc.FieldByName('Otch').AsString := FSO.S[CT('sname')];
 
-      iV := GetCode('sex');
-      if (iV = 21000002) then
-        s := 'Ж'
-      else
-        s := 'М';
-      FDoc.FieldByName('POL').AsString := s;
+      FDoc.FieldByName('POL').AsString := TNsiRoc.Sex(GetCode('sex'), GET_VAL);
 
       FDoc.FieldByName('sysOrgan').AsInteger := GetCode('sysOrgan');
       FDoc.FieldByName('ORGAN').AsString := GetName('sysOrgan');
@@ -514,39 +524,7 @@ begin
     Result := Format('{"klUniPK":{"type":%d,"code":0}}', [nType]);
 end;
 
-// SYS-Тип документа
-{
-function VarKeySysDocType(ICode : Integer = 8) : String;
-begin
-  Result := VarKey(-2, ICode);
-end;
-}
 
-// Мужской/женский
-{
-function VarKeyPol(sType : string = 'М') : String;
-var
-  n : Int64;
-begin
-  if (sType = 'М') then n := 21000001 else n := 21000002;
-  Result := VarKey(32, n);
-end;
-}
-// Код гражданства
-{
-function VarKeyCountry(ICode : Integer = 11200001) : String;
-begin
-  Result := VarKey(8, ICode);
-end;
-}
-
-// Код регистрирующего органа
-{
-function VarKeySysOrgan(ICode : Integer = 0) : String;
-begin
-  Result := VarKey(-5, ICode);
-end;
-}
 
 // Код типа населенного пункта
 function VarKeyTypeCity(ICode : Integer = 0) : String;

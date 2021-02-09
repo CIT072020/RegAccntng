@@ -33,7 +33,7 @@ type
     property SO : ISuperObject read RSupObj write WSupObj;
 
     class function SysDocType(ICode : Integer = 8; Func : Integer = SET_VAL) : String;
-    class function Sex(SCode : string; Func : Integer = SET_VAL) : String;
+    class function Sex(xCode: Variant; Func: Integer = SET_VAL): String;
     class function Country(ICode : Integer = 11200001; Func : Integer = SET_VAL) : String;
     class function SysOrgan(ICode : Integer = 0) : String;
     class function DocType(ICode : Integer = 54100001) : String;
@@ -57,7 +57,7 @@ begin
 end;
 
 //-------------------------------------------------------
-// Строка для значения ключевого реквизита
+// Строка JSON-формата для значения ключевого реквизита
 function UniKey(nType : Integer; nValue : Int64; ValType : integer = KEY_VAL) : String;
 begin
   Result := 'null';
@@ -81,16 +81,19 @@ begin
 end;
 
 // Мужской/женский
-class function TNsiRoc.Sex(SCode : string; Func : Integer = SET_VAL) : String;
+class function TNsiRoc.Sex(xCode: Variant; Func: Integer = SET_VAL): String;
 var
   n : Int64;
 begin
   if (Func = SET_VAL) then begin
-    if (UpperCase(SCode) = 'М') then n := 21000001
+    if (UpperCase(xCode) = 'М') then n := 21000001
     else n := 21000002;
     Result := UniKey(S_SEX, n);
   end else begin
-
+    if (xCode = 21000001) then
+      Result := 'М'
+    else
+      Result := 'Ж';
   end;
 end;
 
