@@ -105,7 +105,7 @@ type
     FSecure : TSecureExchg;
 
     // Код органа регистрации (ГиМ)
-    Organ : string;
+    FOrgan  : string;
 
     FResGetPost : TResultHTTP;
 
@@ -156,14 +156,15 @@ type
   published
   end;
 
-var
-  BlackBox : TROCExchg = nil;
+//var
+//  BlackBox : TROCExchg = nil;
 
 implementation
 
 uses
   SysUtils,
   StrUtils,
+  DateUtils,
   NativeXml;
 
 // параметры для GetDocs
@@ -232,8 +233,9 @@ begin
   FHost.NsiURL   := Meta.ReadString(SCT_HOST, 'NSIURL', RES_HOST);
   FHost.NsiPoint := Meta.ReadString(SCT_HOST, 'NSIPATH', RES_NSI);
   FHost.Ver      := Meta.ReadString(SCT_HOST, 'VER', RES_VER);
+  FHost.MaxDays  := Meta.ReadInteger(SCT_HOST, 'MAXPERIOD', 100000);
 
-  Organ := Meta.ReadString(SCT_ADMIN, 'ORGAN', '');
+  FOrgan := Meta.ReadString(SCT_ADMIN, 'ORGAN', '');
 end;
 
 
@@ -441,59 +443,104 @@ end;
 
 
 // Индивидуальные номера граждан за период
-function TROCExchg.GetIndNum(ParsGet : TParsGet; MT : TkbmMemTable) : Integer;
+function TROCExchg.GetIndNum(ParsGet: TParsGet; MT: TkbmMemTable): Integer;
 var
-  Ret : Integer;
-  sErr : string;
-  Pars : TStringList;
-  SOList : ISuperObject;
+  Quit: Boolean;
+  i, Periods, LastPeiod, DaysTotal, Ret: Integer;
+  sErr: string;
+  Day1st, DayLast: TDateTime;
+  Pars: TStringList;
+  SOList: ISuperObject;
 begin
-  if (Length(ParsGet.FullURL) = 0) then begin
-    Pars := TStringList.Create;
-    Pars.Add(ParsGet.Organ);
-    Pars.Add(DateToStr(ParsGet.DateBeg));
-    Pars.Add(DateToStr(ParsGet.DateEnd));
-    Pars.Add(IntToStr(ParsGet.First));
-    Pars.Add(IntToStr(ParsGet.Count));
-    ParsGet.FullURL := FullPath(FHost, GET_LIST_ID, SetPars4GetIDs(Pars));
-  end;
 
+  MT.EmptyTable;
+  Pars := TStringList.Create;
+  try
     try
-       Ret := SetRetCode(FHTTP.AHTTPMethod('GET', ParsGet.FullURL, Secure.Auth), sErr);
-      if (Ret = 0) then begin
-        sErr := Utf8Decode(MemStream2Str(FHTTP.Document));
-        SOList := SO(MakeNumAsStr('pid', sErr));
-        if Assigned(SOList) and (SOList.DataType = stArray) then begin
-          sErr := 'Error converting INs';
-          if (TIndNomDTO.GetIndNumList(SOList, MT) = 0) then
-            raise Exception.Create('Departed are absent');
-        end
-        else
-          raise Exception.Create('No departed');
+      if (Length(ParsGet.FullURL) = 0) then begin
+        DaysTotal := DaysBetween(ParsGet.DateBeg, ParsGet.DateEnd);
+        if (DaysTotal <= 0) then
+          raise Exception.Create('Некоррктный интервал!');
+        Periods   := (DaysTotal + (FHost.MaxDays - 1)) div FHost.MaxDays;
+        LastPeiod := DaysTotal mod FHost.MaxDays;
+        i := 1;
       end
-      else
-        raise Exception.Create(sErr);
+      else begin
+        i := -1;
+        Periods := -1;
+      end;
+      while (i <= Periods) do begin
+        if (i > 0) then begin
+          Day1st := IncDay(ParsGet.DateBeg, (i - 1) * FHost.MaxDays);
+          if (i = Periods) then
+            DayLast := IncDay(Day1st, LastPeiod)
+          else
+            DayLast := IncDay(Day1st, FHost.MaxDays);
+
+          Pars.Clear;
+          Pars.Add(ParsGet.Organ);
+          Pars.Add(DateToStr(Day1st));
+          Pars.Add(DateToStr(DayLast));
+          if (Periods = 1) then begin
+            Pars.Add(IntToStr(ParsGet.First));
+            Pars.Add(IntToStr(ParsGet.Count));
+          end
+          else begin
+            Pars.Add('');
+            Pars.Add('');
+          end;
+          ParsGet.FullURL := FullPath(FHost, GET_LIST_ID, SetPars4GetIDs(Pars));
+        end;
+
+        Ret := SetRetCode(FHTTP.AHTTPMethod('GET', ParsGet.FullURL, Secure.Auth), sErr);
+        if (Ret = 0) then begin
+          sErr := Utf8Decode(MemStream2Str(FHTTP.Document));
+          SOList := SO(MakeNumAsStr('pid', sErr));
+          if Assigned(SOList) and (SOList.DataType = stArray) then begin
+            sErr := 'Error converting INs';
+            if (TIndNomDTO.GetIndNumList(SOList, MT, False) = 0) then
+              raise Exception.Create('Departed are absent');
+          end
+          else
+            raise Exception.Create('No departed');
+        end
+        else begin
+          if (FHTTP.ResultCode = 204) then begin
+            if (i < 0) or (Periods = 1) then
+              raise Exception.Create(sErr);
+            if (i + 1 = Periods) AND (MT.RecordCount = 0) then
+              raise Exception.Create(sErr);
+              Ret := 0;
+          end
+          else
+              raise Exception.Create(sErr);
+        end;
+        i := i + 1;
+      end;
+
     except
       on E: Exception do begin
         if (sErr = '') then
           sErr := E.Message;
         Ret := UERR_GET_INDNOMS;
         ResHTTP.ResCode := Ret;
-        ResHTTP.ResMsg  := sErr;
+        ResHTTP.ResMsg := sErr;
       end;
     end;
-    Result := Ret;
+  finally
+    FreeAndNil(Pars);
+  end;
+  Result := Ret;
 end;
 
-function SetCert(Headers : TStringList; Cert : string) : string;
+function SetCert(Headers: TStringList; Cert: string): string;
 var
-  CertLen,
-  i : Integer;
-  p : string;
+  CertLen, i: Integer;
+  p: string;
 begin
   Result := '';
   CertLen := Length(Cert);
-  for i := 0 to Headers.Count -1 do begin
+  for i := 0 to Headers.Count - 1 do begin
     if (Pos(Cert, Headers[i]) = 1) then begin
       p := Copy(Headers[i], CertLen + 2, Length(Headers[i]) - CertLen - 1);
       Result := DecodeBase64(p);
@@ -502,6 +549,8 @@ begin
   end;
   //MemoRead(Cert + '64', p);
 end;
+
+
 
 
 // Получить документы для текущего в списке ID
@@ -572,7 +621,7 @@ var
   P: TParsGet;
 begin
   if (OrgCode = '') then
-    OrgCode := Organ;
+    OrgCode := FOrgan;
   P := TParsGet.Create(DBeg, DEnd, OrgCode);
   try
     Result := GetDeparted(P);
@@ -652,6 +701,7 @@ end;
 // актуальные/убывшие -
 function TROCExchg.GetDSDList(ParsGet: TParsGet): TResultHTTP;
 var
+  i,
   nINs: Integer;
   sErr: string;
   DocDTO: TDocSetDTO;
@@ -682,6 +732,7 @@ begin
       try
         ResHTTP.ResCode := 0;
         ResHTTP.INs.First;
+        i := 0;
         while not ResHTTP.INs.Eof do begin
           ResOneIN := Docs4CurIN(SetPars4GetDSD(ParsGet, ResHTTP.INs), DocDTO);
           if (ResOneIN.ResCode <> 0) then begin
@@ -689,7 +740,12 @@ begin
             ResHTTP.ResMsg := ResHTTP.ResMsg + CRLF + sErr + ResOneIN.ResMsg;;
             ResHTTP.ResCode := ResHTTP.ResCode + 1;
           end;
+          // !!!
+          if (i >= 20) then
+            ResHTTP.INs.Last;
+          // !!!
           ResHTTP.INs.Next;
+          i := i + 1;
         end;
       finally
         DocDTO.Free;

@@ -5,11 +5,11 @@ uses
   ExceptionLog,
   Forms,
   Unit1 in 'Unit1.pas' {Form1},
-  uROCService in '..\uROCService.pas',
-  uROCDTO in '..\uROCDTO.pas',
-  uROCNSI in '..\uROCNSI.pas',
   fPIN4Av in 'fPIN4Av.pas' {fPINGet},
-  uROCExchg in '..\uROCExchg.pas';
+  uROCService in '..\..\Lais7\RegUch\uROCService.pas',
+  uROCNSI in '..\..\Lais7\RegUch\uROCNSI.pas',
+  uROCExchg in '..\..\Lais7\RegUch\uROCExchg.pas',
+  uROCDTO in '..\..\Lais7\RegUch\uROCDTO.pas';
 
 {$R *.res}
 

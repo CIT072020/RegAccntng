@@ -2,6 +2,8 @@ unit uROCService;
 
 interface
 
+{$DEFINE SYNA}
+
 uses
  Classes, DB,
  StdCtrls,
@@ -91,6 +93,7 @@ type
     NsiURL   : string;
     NsiPoint : string;
     Ver      : string;
+    MaxDays  : Integer;
   end;
   
 type
