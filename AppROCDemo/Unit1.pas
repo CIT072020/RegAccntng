@@ -88,8 +88,8 @@ procedure TForm1.FormCreate(Sender: TObject);
 begin
   ShowM := edMemo;
   edOrgan.Text  := '26';
-  dtBegin.Value := StrToDate('06.10.2020');
-  dtEnd.Value   := StrToDate('08.10.2020');
+  dtBegin.Value := StrToDate('09.10.2020');
+  dtEnd.Value   := StrToDate('31.12.2020');
 //  dtBegin.Value := StrToDate('28.01.2021');
 //  dtEnd.Value   := StrToDate('31.01.2021');
   edFirst.Text  := '0';
