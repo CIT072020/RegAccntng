@@ -90,7 +90,7 @@ begin
   edOrgan.Text  := '26';
   dtBegin.Value := StrToDate('09.10.2020');
   dtEnd.Value   := StrToDate('31.12.2020');
-//  dtBegin.Value := StrToDate('28.01.2021');
+//  dtBegin.Value := StrToDate('01.01.2021');
 //  dtEnd.Value   := StrToDate('31.01.2021');
   edFirst.Text  := '0';
   edCount.Text  := '10';
