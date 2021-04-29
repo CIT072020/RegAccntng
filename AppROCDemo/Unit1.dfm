@@ -359,7 +359,7 @@ object Form1: TForm1
   object cnctNsi: TAdsConnection
     ConnectPath = 'D:\App\'#1051#1040#1048#1057#1095'\Spr\ROC\'
     AdsServerTypes = [stADS_LOCAL]
-    Left = 584
-    Top = 640
+    Left = 1183
+    Top = 9
   end
 end
