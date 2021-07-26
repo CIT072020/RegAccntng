@@ -1,5 +1,5 @@
-GET /MVD-35003/v1/movements/sys_organ/26/period/09.10.2020/19.10.2020?first=&count= HTTP/1.0
-Host: 127.0.0.1:10446
+GET /village-council-service/api/v1/data?identifier=3110179A016PB5&name=&surname=&patronymic=&pid=90034150 HTTP/1.0
+Host: a.todes.by:13555
 Keep-Alive: 300
 Connection: keep-alive
 User-Agent: Mozilla/4.0 (compatible; Synapse)

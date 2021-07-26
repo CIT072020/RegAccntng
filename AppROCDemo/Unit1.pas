@@ -70,6 +70,7 @@ type
 var
   Form1: TForm1;
   BlackBox : TROCExchg;
+  ShowM : TMemo;
   // для отладки POST
   //GETRes : TResultHTTP;
 
@@ -79,13 +80,28 @@ uses
   kbmMemTable,
   SasaINiFile,
   uAvest,
-  uROCService,
+  uRestService,
   fPIN4Av;
 
 {$R *.dfm}
 
+
+// Вывод отладки в Memo
+procedure ShowDeb(const s: string; const ClearAll: Boolean = True);
+var
+  AddS: string;
+begin
+  AddS := '';
+  if (ClearAll = True) then
+    ShowM.Text := ''
+  else
+    AddS := CRLF;
+  ShowM.Text := ShowM.Text + AddS + s;
+end;
+
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+  // ???
   ShowM := edMemo;
   edOrgan.Text  := '26';
   dtBegin.Value := StrToDate('09.10.2020');
