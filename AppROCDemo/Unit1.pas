@@ -15,6 +15,11 @@ uses
   ssl_openssl, ssl_openssl_lib,
   uROCExchg;
 
+const  
+  INI_NAME = '..\..\Lais7\Service\RegUch.ini';
+
+ 
+
 type
   TForm1 = class(TForm)
     edMemo: TMemo;
@@ -81,6 +86,7 @@ uses
   SasaINiFile,
   uAvest,
   uRestService,
+  uROCDTO,
   fPIN4Av;
 
 {$R *.dfm}
@@ -104,10 +110,10 @@ begin
   // ???
   ShowM := edMemo;
   edOrgan.Text  := '26';
-  dtBegin.Value := StrToDate('09.10.2020');
-  dtEnd.Value   := StrToDate('31.12.2020');
-//  dtBegin.Value := StrToDate('01.01.2021');
-//  dtEnd.Value   := StrToDate('31.01.2021');
+  //dtBegin.Value := StrToDate('09.10.2020');
+  //dtEnd.Value   := StrToDate('31.12.2020');
+  dtBegin.Value := StrToDate('05.05.2021');
+  dtEnd.Value   := StrToDate('08.05.2021');
   edFirst.Text  := '0';
   edCount.Text  := '10';
   cbSrcPost.ItemIndex := 0;

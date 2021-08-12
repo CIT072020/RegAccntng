@@ -324,6 +324,8 @@ object Form1: TForm1
     Width = 121
     Height = 17
     Caption = #1069#1062#1055' '#1076#1083#1103' POST'
+    Checked = True
+    State = cbChecked
     TabOrder = 20
     ValueChecked = 'True'
     ValueUnchecked = 'False'
@@ -334,8 +336,6 @@ object Form1: TForm1
     Width = 97
     Height = 17
     Caption = #1054#1095#1080#1089#1090#1082#1072' '#1083#1086#1075#1072
-    Checked = True
-    State = cbChecked
     TabOrder = 21
     ValueChecked = 'True'
     ValueUnchecked = 'False'

@@ -6,9 +6,9 @@ uses
   Forms,
   Unit1 in 'Unit1.pas' {Form1},
   fPIN4Av in 'fPIN4Av.pas' {fPINGet},
-  uROCExchg in '..\..\Lais7\RegUch\uROCExchg.pas',
-  uROCDTO in '..\..\Lais7\RegUch\uROCDTO.pas',
-  uRestService in '..\..\Lais7\RegUch\uRestService.pas';
+  uROCExchg in '..\..\Lais7\OAIS\uROCExchg.pas',
+  uROCDTO in '..\..\Lais7\OAIS\uROCDTO.pas',
+  uRestService in '..\..\Lais7\OAIS\uRestService.pas';
 
 {$R *.res}
 
