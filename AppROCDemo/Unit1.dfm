@@ -314,6 +314,8 @@ object Form1: TForm1
     Width = 97
     Height = 17
     Caption = 'ADS-'#1082#1086#1087#1080#1103
+    Checked = True
+    State = cbChecked
     TabOrder = 19
     ValueChecked = 'True'
     ValueUnchecked = 'False'
