@@ -262,6 +262,7 @@ object Form1: TForm1
     Height = 21
     EditButtons = <>
     TabOrder = 15
+    Text = '1'
     Visible = True
   end
   object gdNsi: TDBGridEh

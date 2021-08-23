@@ -1,7 +1,10 @@
-GET /MVD-35000/v1/kl_uni/type/-5?code=&active=true&first&count HTTP/1.0
-Host: 127.0.0.1:10446
+POST /village-council-service/api/v1/data/save HTTP/1.0
+Host: a.todes.by:13555
 Keep-Alive: 300
 Connection: keep-alive
 User-Agent: Mozilla/4.0 (compatible; Synapse)
-Authorization:Bearer a3dc27f5-9c88-3e3e-955b-fa6fe013d212 
+Content-Type: application/json;charset=UTF-8
+Content-Length: 1013
+sign:
+certificate:
 

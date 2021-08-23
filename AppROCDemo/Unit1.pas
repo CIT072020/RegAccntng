@@ -175,6 +175,19 @@ begin
 
 end;
 
+procedure SetAdditionalData(ds : TDataSet);
+begin
+  ds.Edit;
+  ds['organDocCode']    := 17608178;
+  ds['sysDocType']      := 8;
+  ds['inputOldAddress'] := true;
+  ds['areaL']           := 11300001;
+  ds['typeCityL']       := 11100001;
+  ds['cityL']           := 11904366;
+  ds['streetL']         := 11904366;
+  ds['DATEZ']           := StrToDate('12.08.2021');
+  ds.Post;
+end;
 
 // Актуальные установочные данные для ИН
 procedure TForm1.btnGetActualClick(Sender: TObject);
@@ -204,6 +217,7 @@ begin
   if (Assigned(BlackBox.ResHTTP)) then begin
     dsDocs.DataSet := BlackBox.ResHTTP.Docs;
     dsChild.DataSet := BlackBox.ResHTTP.Child;
+    SetAdditionalData(BlackBox.ResHTTP.Docs);
   end;
 
 end;
@@ -300,12 +314,15 @@ begin
     ValidPars := False;
   end;
   if (ValidPars = True) then begin
-    cnctNsi.IsConnected := False;
-    cnctNsi.ConnectPath := IncludeTrailingBackslash(BlackBox.Meta.ReadString(SCT_ADMIN, 'ADSPATH', '.'));
-    ParsNsi := TParsNsi.Create(NsiType, nil, Owner);
-    ParsNsi.ADSCopy := cbAdsCvrt.Checked;
-    ParsNsi.NsiCode := NsiCode;
-    BlackBox.ResHTTP := BlackBox.GetNSI(ParsNsi);
+    //cnctNsi.IsConnected := False;
+    //cnctNsi.ConnectPath := IncludeTrailingBackslash(BlackBox.Meta.ReadString(SCT_ADMIN, 'ADSPATH', '.'));
+    //ParsNsi := TParsNsi.Create(NsiType, BlackBox.Meta, nil, Owner);
+    //ParsNsi.ADSCopy := cbAdsCvrt.Checked;
+    //ParsNsi.NsiCode := NsiCode;
+    //BlackBox.ResHTTP := BlackBox.GetNSI(ParsNsi);
+
+    //BlackBox.ResHTTP := BlackBox.GetROCNSI(NsiType, nil, 'RegUch7');
+    BlackBox.ResHTTP := BlackBox.GetROCNSI(NsiType);
     if (BlackBox.ResHTTP.ResCode = 0) then begin
       dsNsi.DataSet := BlackBox.ResHTTP.Nsi;
       BlackBox.ResHTTP.Nsi.First;
