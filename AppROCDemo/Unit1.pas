@@ -59,12 +59,21 @@ type
     lblDSD: TLabel;
     lblChilds: TLabel;
     lblNSI: TLabel;
+    btnGetTempIN: TButton;
+    btnServReady: TButton;
+    btnCursWait: TButton;
+    btnCursNorm: TButton;
+    edJavaDate: TDBEditEh;
+    procedure btnCursNormClick(Sender: TObject);
+    procedure btnCursWaitClick(Sender: TObject);
     procedure btnGetActualClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnGetDocsClick(Sender: TObject);
     procedure btnGetNSIClick(Sender: TObject);
     procedure btnPostDocClick(Sender: TObject);
+    procedure btnGetTempINClick(Sender: TObject);
+    procedure btnServReadyClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -76,6 +85,7 @@ var
   Form1: TForm1;
   BlackBox : TROCExchg;
   ShowM : TMemo;
+  OldCurs : HICON;
   // для отладки POST
   //GETRes : TResultHTTP;
 
@@ -110,10 +120,12 @@ begin
   // ???
   ShowM := edMemo;
   edOrgan.Text  := '26';
-  //dtBegin.Value := StrToDate('09.10.2020');
-  //dtEnd.Value   := StrToDate('31.12.2020');
-  dtBegin.Value := StrToDate('05.05.2021');
-  dtEnd.Value   := StrToDate('08.05.2021');
+  // Todes
+  //dtBegin.Value := StrToDate('01.08.2021');
+  //dtEnd.Value   := StrToDate('03.08.2021');
+  // OAIS
+  dtBegin.Value := StrToDate('12.05.2021');
+  dtEnd.Value   := StrToDate('17.05.2021');
   edFirst.Text  := '0';
   edCount.Text  := '10';
   cbSrcPost.ItemIndex := 0;
@@ -193,31 +205,38 @@ end;
 procedure TForm1.btnGetActualClick(Sender: TObject);
 var
   i: Integer;
+  s : string;
   IndNums: TStringList;
   P: TParsGet;
 begin
+  IndNums := TStringList.Create;
   if (lstINs.SelCount > 0) then begin
+    // Отмечено 1 или несколько, берем из списка ИН
     if (lstINs.SelCount = 1) then
       // Выбран единственный - передается строка
       BlackBox.ResHTTP := BlackBox.GetActualReg(lstINs.Items[lstINs.ItemIndex])
     else begin
       // Выбрано несколько - передается список
-      IndNums := TStringList.Create;
       for i := 1 to lstINs.SelCount do begin
         if (lstINs.Selected[i]) then
           IndNums.Add(lstINs.Items[i]);
       end;
-      BlackBox.ResHTTP := BlackBox.GetActualReg(IndNums);
+      BlackBox.ResHTTP := BlackBox.GetActualReg(IndNums, TLIST_INS);
     end;
   end
-  else
-      // Ничего не выбрано, берем из TextBox
-    BlackBox.ResHTTP := BlackBox.GetActualReg(edtIN.Text);
+  else begin
+    // Ничего не отмечено, берем из TextBox ИН или ФИО
+    IndNums := Split(' ', edtIN.Text);
+    if (IndNums.Count = 1) then
+      BlackBox.ResHTTP := BlackBox.GetActualReg(edtIN.Text)
+    else
+      BlackBox.ResHTTP := BlackBox.GetActualReg(IndNums, TLIST_FIO);
+  end;
   ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg, cbClearLog.Checked);
   if (Assigned(BlackBox.ResHTTP)) then begin
     dsDocs.DataSet := BlackBox.ResHTTP.Docs;
     dsChild.DataSet := BlackBox.ResHTTP.Child;
-    SetAdditionalData(BlackBox.ResHTTP.Docs);
+    //SetAdditionalData(BlackBox.ResHTTP.Docs);
   end;
 
 end;
@@ -250,6 +269,7 @@ begin
 end;
 
 
+
 // Записать Актуальные установочные данные для ИН
 procedure TForm1.btnPostDocClick(Sender: TObject);
 const
@@ -261,7 +281,7 @@ var
   Res: TResultHTTP;
 begin
   //edMemo.Clear;
-  PPost := TParsPost.Create(exmSign, exmSert);
+  PPost := TParsPost.Create(CHILD_FREE);
   iSrc := cbSrcPost.ItemIndex;
   if (cbSrcPost.ItemIndex in [0..1]) then begin
     // из MemTable
@@ -323,10 +343,9 @@ begin
 
     //BlackBox.ResHTTP := BlackBox.GetROCNSI(NsiType, nil, 'RegUch7');
     BlackBox.ResHTTP := BlackBox.GetROCNSI(NsiType);
-    if (BlackBox.ResHTTP.ResCode = 0) then begin
-      dsNsi.DataSet := BlackBox.ResHTTP.Nsi;
-      BlackBox.ResHTTP.Nsi.First;
-    end;
+    dsNsi.DataSet := BlackBox.ResHTTP.Nsi;
+    BlackBox.ResHTTP.Nsi.First;
+    lblNSI.Caption := Format('Справочник (%s) - Всего записей - %d', [NsiTypeStr, BlackBox.ResHTTP.Nsi.RecordCount]);
     ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg, cbClearLog.Checked);
   end;
 end;
@@ -335,6 +354,42 @@ end;
 
 
 //
+procedure TForm1.btnGetTempINClick(Sender: TObject);
+var
+  s : string;
+begin
+  s := 'IDENTIF';
+  //s := 'PASSPORT';
+  BlackBox.ResHTTP := BlackBox.GetTempIN(s);
+  ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg + ' ' + BlackBox.ResHTTP.StrInf, cbClearLog.Checked);
+
+end;
+
+procedure TForm1.btnServReadyClick(Sender: TObject);
+var
+  Ret : Boolean;
+  s : string;
+begin
+  s := 'IDENTIF';
+  //s := 'PASSPORT';
+  Ret := BlackBox.ServiceReady;
+  ShowDeb('Готовность севера: ' + Iif(Ret = True, 'Да', 'Нет'));
+
+end;
+
+procedure TForm1.btnCursWaitClick(Sender: TObject);
+begin
+  OldCurs := SetCursor(OCR_WAIT);
+  Application.ProcessMessages;
+end;
+
+procedure TForm1.btnCursNormClick(Sender: TObject);
+var
+  JD : LongInt;
+begin
+  TButton(Sender).Caption := DateTimeToStr(JavaToDelphiDateTime(StrToInt64(edJavaDate.Text)));;
+end;
+
 end.
 
 

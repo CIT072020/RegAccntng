@@ -1,10 +1,8 @@
-POST /village-council-service/api/v1/data/save HTTP/1.0
-Host: a.todes.by:13555
+GET /MVD-35003/v1/data?identifier=7590225A001PB1&name=&surname=&patronymic=&pid=18021102216091757350 HTTP/1.0
+Host: 127.0.0.1:10446
 Keep-Alive: 300
 Connection: keep-alive
+Cookie: route=fb308c1d5638f36d8096e36245e76903
 User-Agent: Mozilla/4.0 (compatible; Synapse)
-Content-Type: application/json;charset=UTF-8
-Content-Length: 1013
-sign:
-certificate:
+Authorization: Bearer a3dc27f5-9c88-3e3e-955b-fa6fe013d212
 

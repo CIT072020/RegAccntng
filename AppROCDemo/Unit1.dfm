@@ -2,7 +2,7 @@ object Form1: TForm1
   Left = 426
   Top = 101
   Width = 1237
-  Height = 756
+  Height = 783
   Caption = 'Form1'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -304,7 +304,9 @@ object Form1: TForm1
       #1042#1089#1077' DSD'
       'J4Post.json'
       'J4PostNoPasp.json'
-      'J4PostNoIN.json')
+      'J4PostNoIN.json'
+      'J4Post-OAIS.json'
+      'J4Post-OAIS-ATE.json')
     TabOrder = 18
     Text = 'cbSrcPost'
     Visible = True
@@ -335,13 +337,59 @@ object Form1: TForm1
   end
   object cbClearLog: TDBCheckBoxEh
     Left = 344
-    Top = 296
+    Top = 712
     Width = 97
     Height = 17
     Caption = #1054#1095#1080#1089#1090#1082#1072' '#1083#1086#1075#1072
     TabOrder = 21
     ValueChecked = 'True'
     ValueUnchecked = 'False'
+  end
+  object btnGetTempIN: TButton
+    Left = 160
+    Top = 275
+    Width = 121
+    Height = 25
+    Caption = 'GET- '#1048#1053
+    TabOrder = 22
+    OnClick = btnGetTempINClick
+  end
+  object btnServReady: TButton
+    Left = 304
+    Top = 275
+    Width = 121
+    Height = 25
+    Caption = 'ServiceReady'
+    TabOrder = 23
+    OnClick = btnServReadyClick
+  end
+  object btnCursWait: TButton
+    Left = 656
+    Top = 707
+    Width = 121
+    Height = 25
+    Caption = 'Wait-Cursor'
+    TabOrder = 24
+    OnClick = btnCursWaitClick
+  end
+  object btnCursNorm: TButton
+    Left = 800
+    Top = 707
+    Width = 121
+    Height = 25
+    Caption = 'JavaDT->Delphi'
+    TabOrder = 25
+    OnClick = btnCursNormClick
+  end
+  object edJavaDate: TDBEditEh
+    Left = 936
+    Top = 710
+    Width = 121
+    Height = 21
+    EditButtons = <>
+    TabOrder = 26
+    Text = '1628629200000'
+    Visible = True
   end
   object DataSource1: TDataSource
     Left = 664
@@ -362,6 +410,7 @@ object Form1: TForm1
   object cnctNsi: TAdsConnection
     ConnectPath = 'D:\App\'#1051#1040#1048#1057#1095'\Spr\ROC\'
     AdsServerTypes = [stADS_LOCAL]
+    AdsCollation = 'ANSI:ru_RU_ADS_CI'
     Left = 1183
     Top = 9
   end
