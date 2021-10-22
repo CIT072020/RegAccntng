@@ -1,11 +1,7 @@
 HTTP/1.1 200 OK
-Server: nginx/1.14.0
-Date: Fri, 22 Oct 2021 13:12:25 GMT
-Content-Type: application/json; charset=UTF-8
+Server: nginx/1.20.1
+Content-Type: application/json
 Connection: close
-activityID: 2860843221584508590488776
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET
-Access-Control-Allow-Headers: authorization,Access-Control-Allow-Origin,Content-Type,SOAPAction
-Strict-Transport-Security: max-age=63072000; includeSubdomains; preload
+Date: Fri, 22 Oct 2021 14:29:01 GMT
+Front-End-Https: on
 
