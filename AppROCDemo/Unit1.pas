@@ -286,8 +286,8 @@ begin
   if (cbSrcPost.ItemIndex in [0..1]) then begin
     // из MemTable
     PPost.JSONSrc := '';
-    PPost.Docs := BlackBox.ResHTTP.Docs;
-    PPost.Child := BlackBox.ResHTTP.Child;
+    PPost.Docs := TkbmMemTable(dsDocs.DataSet);
+    PPost.Child := TkbmMemTable(dsChild.DataSet);
     if (cbSrcPost.ItemIndex = 0) then
     // передача только текущей
       LeaveOnly1(dsDocs.DataSet);
