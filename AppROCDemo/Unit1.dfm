@@ -391,6 +391,24 @@ object Form1: TForm1
     Text = '1628629200000'
     Visible = True
   end
+  object btnGetINsOnly: TButton
+    Left = 16
+    Top = 707
+    Width = 121
+    Height = 25
+    Caption = 'GET- '#1048#1053'-'#1091#1073#1099#1074#1096#1080#1077
+    TabOrder = 27
+  end
+  object cbINsOnly: TDBCheckBoxEh
+    Left = 16
+    Top = 293
+    Width = 121
+    Height = 17
+    Caption = #1058#1086#1083#1100#1082#1086' '#1048#1053
+    TabOrder = 28
+    ValueChecked = 'True'
+    ValueUnchecked = 'False'
+  end
   object DataSource1: TDataSource
     Left = 664
     Top = 74

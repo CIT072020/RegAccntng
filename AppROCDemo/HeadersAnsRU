@@ -1,11 +1,21 @@
 HTTP/1.1 200 OK
 Server: nginx/1.14.0
-Date: Wed, 27 Oct 2021 12:35:11 GMT
+Date: Tue, 02 Nov 2021 13:56:36 GMT
 Content-Type: application/json; charset=UTF-8
 Connection: close
-activityID: 2903661302867051255928636
+Set-Cookie: route=24c1230bb4ea4ccb00b1906163acee54; Path=/
+X-Frame-Options: DENY
+activityID: 295620828810602988689791
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
 Access-Control-Allow-Origin: *
 Access-Control-Allow-Methods: GET
+X-Content-Type-Options: nosniff
+Vary: Access-Control-Request-Headers
+Vary: Access-Control-Request-Method
+Vary: Origin
+Expires: 0
+Pragma: no-cache
+X-XSS-Protection: 1; mode=block
 Access-Control-Allow-Headers: authorization,Access-Control-Allow-Origin,Content-Type,SOAPAction
 Strict-Transport-Security: max-age=63072000; includeSubdomains; preload
 

@@ -64,6 +64,8 @@ type
     btnCursWait: TButton;
     btnCursNorm: TButton;
     edJavaDate: TDBEditEh;
+    btnGetINsOnly: TButton;
+    cbINsOnly: TDBCheckBoxEh;
     procedure btnCursNormClick(Sender: TObject);
     procedure btnCursWaitClick(Sender: TObject);
     procedure btnGetActualClick(Sender: TObject);
@@ -161,17 +163,18 @@ begin
       end;
 
   if (First = 0) AND (Count = 0) then
-    BlackBox.ResHTTP := BlackBox.GetDeparted(D1, D2, edOrgan.Text)
+    BlackBox.ResHTTP := BlackBox.GetDeparted(D1, D2, cbINsOnly.Checked, edOrgan.Text)
   else begin
     P := TParsGet.Create(D1, D2, edOrgan.Text);
     P.First := First;
     P.Count := Count;
+    P.NeedINsOnly := cbINsOnly.Checked;
     BlackBox.ResHTTP := BlackBox.GetDeparted(P);
   end;
   //GETRes := BlackBox.ResHTTP;
   ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg, cbClearLog.Checked);
 
-  if (BlackBox.ResHTTP.INs.RecordCount > 0) then begin
+  //if (BlackBox.ResHTTP.INs.RecordCount > 0) then begin
     DataSource1.DataSet := BlackBox.ResHTTP.INs;
     dsDocs.DataSet := BlackBox.ResHTTP.Docs;
     dsChild.DataSet := BlackBox.ResHTTP.Child;
@@ -183,7 +186,7 @@ begin
       BlackBox.ResHTTP.INs.Next;
     end;
 
-  end;
+  //end;
 
 end;
 
