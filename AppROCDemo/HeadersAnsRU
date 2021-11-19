@@ -1,11 +1,10 @@
 HTTP/1.1 200 OK
 Server: nginx/1.14.0
-Date: Tue, 02 Nov 2021 13:56:36 GMT
+Date: Fri, 19 Nov 2021 14:20:02 GMT
 Content-Type: application/json; charset=UTF-8
 Connection: close
-Set-Cookie: route=24c1230bb4ea4ccb00b1906163acee54; Path=/
 X-Frame-Options: DENY
-activityID: 295620828810602988689791
+activityID: 3103228575548794825481596
 Cache-Control: no-cache, no-store, max-age=0, must-revalidate
 Access-Control-Allow-Origin: *
 Access-Control-Allow-Methods: GET

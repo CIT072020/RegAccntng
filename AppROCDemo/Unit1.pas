@@ -126,10 +126,10 @@ begin
   //dtBegin.Value := StrToDate('01.08.2021');
   //dtEnd.Value   := StrToDate('03.08.2021');
   // OAIS
-  dtBegin.Value := StrToDate('12.05.2021');
-  dtEnd.Value   := StrToDate('17.05.2021');
+  dtBegin.Value := StrToDate('01.07.2021');
+  dtEnd.Value   := StrToDate('01.01.2022');
   edFirst.Text  := '0';
-  edCount.Text  := '10';
+  edCount.Text  := '100';
   cbSrcPost.ItemIndex := 0;
 
   BlackBox := TROCExchg.Create(INI_NAME);
@@ -208,9 +208,9 @@ end;
 procedure TForm1.btnGetActualClick(Sender: TObject);
 var
   i: Integer;
-  s : string;
+  //s : string;
   IndNums: TStringList;
-  P: TParsGet;
+  //P: TParsGet;
 begin
   IndNums := TStringList.Create;
   if (lstINs.SelCount > 0) then begin
@@ -281,12 +281,12 @@ const
 var
   iSrc: Integer;
   PPost: TParsPost;
-  Res: TResultHTTP;
+  //Res: TResultHTTP;
 begin
   //edMemo.Clear;
   PPost := TParsPost.Create(CHILD_FREE);
-  iSrc := cbSrcPost.ItemIndex;
-  if (cbSrcPost.ItemIndex in [0..1]) then begin
+  iSrc  := cbSrcPost.ItemIndex;
+  if (iSrc in [0..1]) then begin
     // из MemTable
     PPost.JSONSrc := '';
     PPost.Docs := TkbmMemTable(dsDocs.DataSet);
@@ -297,7 +297,7 @@ begin
   end
   else begin
     // из JSON-файла
-    PPost.JSONSrc := cbSrcPost.Items[cbSrcPost.ItemIndex];
+    PPost.JSONSrc := cbSrcPost.Items[iSrc];
     //PPost.Docs := nil;
   end;
 
@@ -318,6 +318,7 @@ procedure TForm1.btnGetNSIClick(Sender: TObject);
 var
   ValidPars: Boolean;
   NsiCode, NsiType: integer;
+  TName,
   NsiTypeStr, Path2Nsi: string;
   ParsNsi: TParsNsi;
 begin
@@ -345,7 +346,14 @@ begin
     //BlackBox.ResHTTP := BlackBox.GetNSI(ParsNsi);
 
     //BlackBox.ResHTTP := BlackBox.GetROCNSI(NsiType, nil, 'RegUch7');
-    BlackBox.ResHTTP := BlackBox.GetROCNSI(NsiType);
+    TName := Trim(edtIN.Text);
+    if Right(TName, 1) = '*' then
+      TName := DelRight(TName, 1)
+    else
+      TName := '';
+    BlackBox.SetProgressVisible;
+    //BlackBox.SetProgressVisible(False);
+    BlackBox.ResHTTP := BlackBox.GetROCNSI(NsiType, nil, TName);
     dsNsi.DataSet := BlackBox.ResHTTP.Nsi;
     BlackBox.ResHTTP.Nsi.First;
     lblNSI.Caption := Format('Справочник (%s) - Всего записей - %d', [NsiTypeStr, BlackBox.ResHTTP.Nsi.RecordCount]);
