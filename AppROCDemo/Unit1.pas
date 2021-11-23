@@ -162,6 +162,7 @@ begin
     Count := 0;
       end;
 
+  BlackBox.SetProgressVisible;
   if (First = 0) AND (Count = 0) then
     BlackBox.ResHTTP := BlackBox.GetDeparted(D1, D2, cbINsOnly.Checked, edOrgan.Text)
   else begin
@@ -212,6 +213,7 @@ var
   IndNums: TStringList;
   //P: TParsGet;
 begin
+  BlackBox.SetProgressVisible;
   IndNums := TStringList.Create;
   if (lstINs.SelCount > 0) then begin
     // Отмечено 1 или несколько, берем из списка ИН
@@ -220,7 +222,7 @@ begin
       BlackBox.ResHTTP := BlackBox.GetActualReg(lstINs.Items[lstINs.ItemIndex])
     else begin
       // Выбрано несколько - передается список
-      for i := 1 to lstINs.SelCount do begin
+      for i := 0 to lstINs.SelCount - 1 do begin
         if (lstINs.Selected[i]) then
           IndNums.Add(lstINs.Items[i]);
       end;
