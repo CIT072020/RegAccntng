@@ -265,6 +265,11 @@ function HttpPostURL(const URL, URLData: string; const Data: TStream): Boolean;
  in the ResultData Stringlist. Returns boolean TRUE if all went well.}
 function HttpPostFile(const URL, FieldName, FileName: string;
   const Data: TStream; const ResultData: TStrings): Boolean;
+  
+type
+  TLogHeaders = procedure(HeadersList : TStringList) of object;
+var
+  LogHeaders : TLogHeaders;
 
 implementation
 
@@ -509,10 +514,14 @@ begin
     FAlivePort := '';
     Exit;
   end;
+  
+  //!!!
   try
-    FHeaders.SaveToFile('headers'); // !!! vadim
+    if (Assigned(LogHeaders)) then 
+	  LogHeaders(FHeaders);
   except
   end;
+
   { reading Status }
   FDocument.Position := 0;
   Status100Error := '';
@@ -844,5 +853,8 @@ begin
     HTTP.Free;
   end;
 end;
+
+initialization
+  LogHeaders := nil;
 
 end.

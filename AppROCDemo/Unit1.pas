@@ -72,6 +72,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnGetDocsClick(Sender: TObject);
+    procedure btnGetINsOnlyClick(Sender: TObject);
     procedure btnGetNSIClick(Sender: TObject);
     procedure btnPostDocClick(Sender: TObject);
     procedure btnGetTempINClick(Sender: TObject);
@@ -96,6 +97,7 @@ implementation
 uses
   kbmMemTable,
   SasaINiFile,
+  DBFunc,
   uAvest,
   uRestService,
   uROCDTO,
@@ -126,7 +128,7 @@ begin
   //dtBegin.Value := StrToDate('01.08.2021');
   //dtEnd.Value   := StrToDate('03.08.2021');
   // OAIS
-  dtBegin.Value := StrToDate('01.07.2021');
+  dtBegin.Value := StrToDate('01.10.2021');
   dtEnd.Value   := StrToDate('01.01.2022');
   edFirst.Text  := '0';
   edCount.Text  := '100';
@@ -145,6 +147,7 @@ end;
 procedure TForm1.btnGetDocsClick(Sender: TObject);
 var
   First, Count : Integer;
+  s : string;
   D1, D2: TDateTime;
   P: TParsGet;
 begin
@@ -183,7 +186,9 @@ begin
     while (NOT BlackBox.ResHTTP.INs.Eof) do begin
       if (BlackBox.ResHTTP.INs.Bof) then
         lstINs.Clear;
+      s := BlackBox.ResHTTP.INs.FieldValues['IDENTIF'] + '=' + BlackBox.ResHTTP.INs.FieldValues['PID'];
       lstINs.Items.Add(BlackBox.ResHTTP.INs.FieldValues['IDENTIF']);
+      //lstINs.Items.Add(s);
       BlackBox.ResHTTP.INs.Next;
     end;
 
@@ -215,6 +220,7 @@ var
 begin
   BlackBox.SetProgressVisible;
   IndNums := TStringList.Create;
+  //IndNums.Delimiter 
   if (lstINs.SelCount > 0) then begin
     // Отмечено 1 или несколько, берем из списка ИН
     if (lstINs.SelCount = 1) then
@@ -222,7 +228,7 @@ begin
       BlackBox.ResHTTP := BlackBox.GetActualReg(lstINs.Items[lstINs.ItemIndex])
     else begin
       // Выбрано несколько - передается список
-      for i := 0 to lstINs.SelCount - 1 do begin
+      for i := 0 to lstINs.Count - 1 do begin
         if (lstINs.Selected[i]) then
           IndNums.Add(lstINs.Items[i]);
       end;
@@ -273,7 +279,37 @@ begin
     Result := True;
 end;
 
+procedure LeaveOnly1(ds: TDataSet);
+var
+  x : Variant;
+begin
 
+  x := DS.FieldValues['MID'];
+  ds.First;
+  while (ds.RecordCount > 1)AND(not ds.Eof) do begin
+    if (ds.FieldValues['MID'] = x) then
+      ds.Next
+    else
+      ds.Delete;
+  end;
+end;
+
+//----------------------------------------------
+function DSet4Post(MemTableCode : string = MT_DOCS; CurDS : Boolean = False) : TkbmMemTable;
+var
+  Sect : string;
+begin
+  if (MemTableCode = MT_DOCS) then
+    if (CurDS = True) then
+      Result := BlackBox.ResHTTP.Docs
+    else
+      Result := TkbmMemTable(CreateMemTable(MemTableCode, BlackBox.Meta, SCT_TBL_DOC))
+  else
+    if (CurDS = True) then
+      Result := BlackBox.ResHTTP.Child
+    else
+      Result := TkbmMemTable(CreateMemTable(MemTableCode, BlackBox.Meta, SCT_TBL_CLD));
+end;
 
 // Записать Актуальные установочные данные для ИН
 procedure TForm1.btnPostDocClick(Sender: TObject);
@@ -281,8 +317,9 @@ const
   exmSign = 'amlsnandwkn&@871099udlaukbdeslfug12p91883y1hpd91h';
   exmSert = '109uu21nu0t17togdy70-fuib';
 var
-  iSrc: Integer;
-  PPost: TParsPost;
+  iSrc  : Integer;
+  PPost : TParsPost;
+  aRec  : TCurrentRecord;
   //Res: TResultHTTP;
 begin
   //edMemo.Clear;
@@ -291,11 +328,14 @@ begin
   if (iSrc in [0..1]) then begin
     // из MemTable
     PPost.JSONSrc := '';
-    PPost.Docs := TkbmMemTable(dsDocs.DataSet);
-    PPost.Child := TkbmMemTable(dsChild.DataSet);
-    if (cbSrcPost.ItemIndex = 0) then
+    PPost.Docs := DSet4Post(MT_DOCS);
+    //PPost.Child := DSet4Post(MT_CHILD);
+    if (cbSrcPost.ItemIndex = 0) then begin
     // передача только текущей
-      LeaveOnly1(dsDocs.DataSet);
+      GetCurrentRecord(dsDocs.DataSet, '', aRec);
+      AddCurrentRecord(PPost.Docs, aRec);
+      //LeaveOnly1(dsDocs.DataSet);
+    end;
   end
   else begin
     // из JSON-файла
@@ -310,7 +350,8 @@ begin
 
   BlackBox.Secure.Avest.Debug := True;
   BlackBox.ResHTTP := BlackBox.PostRegDocs(PPost);
-  ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg, cbClearLog.Checked);
+  ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg +
+    ' ' + BlackBox.ResHTTP.StrInf, cbClearLog.Checked);
 
 end;
 
@@ -323,6 +364,7 @@ var
   TName,
   NsiTypeStr, Path2Nsi: string;
   ParsNsi: TParsNsi;
+  cAds : TAdsConnection;
 begin
   try
     NsiCode := 0;
@@ -340,8 +382,14 @@ begin
     ValidPars := False;
   end;
   if (ValidPars = True) then begin
-    //cnctNsi.IsConnected := False;
-    //cnctNsi.ConnectPath := IncludeTrailingBackslash(BlackBox.Meta.ReadString(SCT_ADMIN, 'ADSPATH', '.'));
+    cAds := nil;
+
+    cnctNsi.IsConnected := False;
+    //cnctNsi.ConnectPath := IncludeTrailingBackslash(BlackBox.Meta.ReadString(SCT_NSI, 'ADSPATH', '.'));
+    cnctNsi.ConnectPath := BlackBox.Meta.ReadString(SCT_NSI, 'ADSPATH', '.');
+
+    cAds := cnctNsi;
+
     //ParsNsi := TParsNsi.Create(NsiType, BlackBox.Meta, nil, Owner);
     //ParsNsi.ADSCopy := cbAdsCvrt.Checked;
     //ParsNsi.NsiCode := NsiCode;
@@ -355,7 +403,7 @@ begin
       TName := '';
     BlackBox.SetProgressVisible;
     //BlackBox.SetProgressVisible(False);
-    BlackBox.ResHTTP := BlackBox.GetROCNSI(NsiType, nil, TName);
+    BlackBox.ResHTTP := BlackBox.GetROCNSI(NsiType, cAds, TName);
     dsNsi.DataSet := BlackBox.ResHTTP.Nsi;
     BlackBox.ResHTTP.Nsi.First;
     lblNSI.Caption := Format('Справочник (%s) - Всего записей - %d', [NsiTypeStr, BlackBox.ResHTTP.Nsi.RecordCount]);
@@ -401,6 +449,55 @@ var
   JD : LongInt;
 begin
   TButton(Sender).Caption := DateTimeToStr(JavaToDelphiDateTime(StrToInt64(edJavaDate.Text)));;
+end;
+
+procedure TForm1.btnGetINsOnlyClick(Sender: TObject);
+var
+  First, Count : Integer;
+  D1, D2: TDateTime;
+  P: TParsGet;
+begin
+  D1 := dtBegin.Value;
+  D2 := dtEnd.Value;
+  try
+    First := Integer(edFirst.Value);
+    except
+    First := 0;
+      end;
+
+  try
+    Count := Integer(edCount.Value);
+    except
+    Count := 0;
+      end;
+
+  BlackBox.SetProgressVisible;
+  if (First = 0) AND (Count = 0) then
+    BlackBox.ResHTTP := BlackBox.GetDeparted(D1, D2, cbINsOnly.Checked, edOrgan.Text)
+  else begin
+    P := TParsGet.Create(D1, D2, edOrgan.Text);
+    P.First := First;
+    P.Count := Count;
+    P.NeedINsOnly := cbINsOnly.Checked;
+    BlackBox.ResHTTP := BlackBox.GetDeparted(P);
+  end;
+  //GETRes := BlackBox.ResHTTP;
+  ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg, cbClearLog.Checked);
+
+  //if (BlackBox.ResHTTP.INs.RecordCount > 0) then begin
+    DataSource1.DataSet := BlackBox.ResHTTP.INs;
+    dsDocs.DataSet := BlackBox.ResHTTP.Docs;
+    dsChild.DataSet := BlackBox.ResHTTP.Child;
+    BlackBox.ResHTTP.INs.First;
+    while (NOT BlackBox.ResHTTP.INs.Eof) do begin
+      if (BlackBox.ResHTTP.INs.Bof) then
+        lstINs.Clear;
+      lstINs.Items.Add(BlackBox.ResHTTP.INs.FieldValues['IDENTIF']);
+      BlackBox.ResHTTP.INs.Next;
+    end;
+
+  //end;
+
 end;
 
 end.

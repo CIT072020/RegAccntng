@@ -398,6 +398,7 @@ object Form1: TForm1
     Height = 25
     Caption = 'GET- '#1048#1053'-'#1091#1073#1099#1074#1096#1080#1077
     TabOrder = 27
+    OnClick = btnGetINsOnlyClick
   end
   object cbINsOnly: TDBCheckBoxEh
     Left = 16

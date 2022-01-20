@@ -96,7 +96,7 @@ PackageDLLOutputDir=
 PackageDCPOutputDir=
 SearchPath=$(CMPNTS)\SuperObject;c:\Program Files (x86)\Advantage 10.10\TDataset\Delphi7\Source;$(PRJCTS)\AVEST;..\..\Lais7\OAIS
 Packages=vcl;rtl;vclx;indy;inet;xmlrtl;vclie;inetdbbde;inetdbxpress;dbrtl;dsnap;dsnapcon;vcldb;soaprtl;VclSmp;dbexpress;dbxcds;inetdb;bdertl;vcldbx;webdsnap;websnap;adortl;ibxpress;teeui;teedb;tee;dss;visualclx;visualdbclx;vclactnband;vclshlctrls;IntrawebDB_50_70;Intraweb_50_70;dclOfficeXP;fs7;frx7;fsDB7;frxDB7;fsBDE7;frxBDE7;fsADO7;frxADO7;fsIBX7;frxIBX7;frxDBX7;frxe7;fsTee7;frxTee7;vclZipForged7;Ehlib70;SynEdit_R7;RxCtl7;RxDB7;RxBDE7;tb2k_d7;adsd70;elpackD7;vdb
-Conditionals=EUREKALOG;EUREKALOG_VER6;SYNA;DEMOAPP
+Conditionals=EUREKALOG;EUREKALOG_VER6;SYNA;DEMOAPP;SSL;DELAYED_SSL_INIT
 DebugSourceDirs=D:\Soft\Delphi\AppROC\
 UsePackages=0
 [Parameters]
@@ -140,12 +140,15 @@ Item0=D:\Soft\Delphi\AppROC\
 Item1=E:\Delphi7\Source\Vcl;E:\Projects\Selsovet7\RegDoc;E:\Projects\Selsovet7\AVEST
 Item2=E:\Delphi7\Source\Vcl
 [HistoryLists\hlConditionals]
-Count=5
-Item0=EUREKALOG;EUREKALOG_VER6;SYNA;DEMOAPP
-Item1=EUREKALOG;EUREKALOG_VER6;SYNA
-Item2=EUREKALOG;EUREKALOG_VER6
-Item3=CLEANUP_SOAP_HEADERS;FIX_ELEM_NODE_NS;
-Item4=CLEANUP_SOAP_HEADERS;FIX_ELEM_NODE_NS;EUREKALOG;EUREKALOG_VER6
+Count=8
+Item0=EUREKALOG;EUREKALOG_VER6;SYNA;DEMOAPP;SSL;DELAYED_SSL_INIT
+Item1=EUREKALOG;EUREKALOG_VER6;SYNA;DEMOAPP;DELAYED_SSL_INIT
+Item2=EUREKALOG;EUREKALOG_VER6;SYNA;DEMOAPP;SSL
+Item3=EUREKALOG;EUREKALOG_VER6;SYNA;DEMOAPP
+Item4=EUREKALOG;EUREKALOG_VER6;SYNA
+Item5=EUREKALOG;EUREKALOG_VER6
+Item6=CLEANUP_SOAP_HEADERS;FIX_ELEM_NODE_NS;
+Item7=CLEANUP_SOAP_HEADERS;FIX_ELEM_NODE_NS;EUREKALOG;EUREKALOG_VER6
 [HistoryLists\hlUnitAliases]
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
