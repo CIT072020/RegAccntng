@@ -100,6 +100,7 @@ uses
   DBFunc,
   uAvest,
   uRestService,
+  uLoggerThr,
   uROCDTO,
   fPIN4Av;
 
@@ -120,6 +121,12 @@ begin
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
+const
+  LOG_GISRU = 'RegUch.log';
+var
+  FFileLog : string;
+  FEnableTextLog : Boolean;
+  FLogger  : TLoggerThread;
 begin
   // ???
   ShowM := edMemo;
@@ -134,7 +141,12 @@ begin
   edCount.Text  := '100';
   cbSrcPost.ItemIndex := 0;
 
+  FFileLog   := '1';
+  FLogger    := TLoggerThread.Create(FFileLog, LOG_GISRU, True, FEnableTextLog);
+
   BlackBox := TROCExchg.Create(INI_NAME);
+  BlackBox.Logger := FLogger;
+
   Self.Caption := '־בלום ס אהנוסמל: ' + BlackBox.Host.URL;
 end;
 
@@ -345,10 +357,10 @@ begin
 
   BlackBox.Secure.SignPost := cbESTP.Checked;
   if (BlackBox.Secure.SignPost = True) then
-    if (SetAvestPass(BlackBox.Secure.Avest) = False) then
+    if (SetAvestPass(BlackBox.Secure.xAvest) = False) then
       Exit;
 
-  BlackBox.Secure.Avest.Debug := True;
+  BlackBox.Secure.xAvest.Debug := True;
   BlackBox.ResHTTP := BlackBox.PostRegDocs(PPost);
   ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg +
     ' ' + BlackBox.ResHTTP.StrInf, cbClearLog.Checked);
