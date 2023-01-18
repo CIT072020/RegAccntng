@@ -89,6 +89,7 @@ type
     FHeaders: TStringList;
     FDocument: TMemoryStream;
     FFileDocument: TFileStream;
+    FBodySize: Int64;
     FMimeType: string;
     FProtocol: string;
     FKeepAlive: Boolean;
@@ -228,6 +229,8 @@ type
     {:To have possibility to switch off port number in 'Host:' HTTP header, by
     default @TRUE. Some buggy servers not like port informations in this header.}
     property AddPortNumberToHost: Boolean read FAddPortNumberToHost write FAddPortNumberToHost;
+    {If download to File}
+    property BodySize: Int64 read FBodySize write FBodySize;
   end;
 
 {:A very usefull function, and example of use can be found in the THTTPSend
@@ -713,8 +716,10 @@ begin
   FResultString := '';
   FDownloadSize := 0;
   FUploadSize := 0;
+  FBodySize := 0;
 
   FFileDocument := TFileStream.Create(FileName, fmCreate);
+  FFileDocument.CopyFrom(FDocument, 0);
   try
     URI := ParseURL(URL, Prot, User, Pass, Host, Port, Path, Para);
     User := DecodeURL(user);
@@ -995,6 +1000,7 @@ begin
     end;
     ParseCookies;
   finally
+    FBodySize := FFileDocument.Size;
     FFileDocument.Free
   end;
 end;

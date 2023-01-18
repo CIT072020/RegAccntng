@@ -364,7 +364,7 @@ object Form1: TForm1
     OnClick = btnServReadyClick
   end
   object btnCursWait: TButton
-    Left = 656
+    Left = 792
     Top = 707
     Width = 121
     Height = 25
@@ -373,7 +373,7 @@ object Form1: TForm1
     OnClick = btnCursWaitClick
   end
   object btnCursNorm: TButton
-    Left = 800
+    Left = 936
     Top = 707
     Width = 121
     Height = 25
@@ -382,13 +382,13 @@ object Form1: TForm1
     OnClick = btnCursNormClick
   end
   object edJavaDate: TDBEditEh
-    Left = 936
+    Left = 1072
     Top = 710
     Width = 121
     Height = 21
     EditButtons = <>
     TabOrder = 26
-    Text = '1628629200000'
+    Text = '1370'
     Visible = True
   end
   object btnGetINsOnly: TButton
@@ -396,7 +396,7 @@ object Form1: TForm1
     Top = 707
     Width = 121
     Height = 25
-    Caption = 'GET- '#1048#1053'-'#1091#1073#1099#1074#1096#1080#1077
+    Caption = 'GET- '#1059#1073#1099#1074#1096#1080#1077'-I'
     TabOrder = 27
     OnClick = btnGetINsOnlyClick
   end
@@ -409,6 +409,33 @@ object Form1: TForm1
     TabOrder = 28
     ValueChecked = 'True'
     ValueUnchecked = 'False'
+  end
+  object btnGetDprtII: TButton
+    Left = 168
+    Top = 707
+    Width = 121
+    Height = 25
+    Caption = 'GET- '#1059#1073#1099#1074#1096#1080#1077'-II'
+    TabOrder = 29
+    OnClick = btnGetDprtIIClick
+  end
+  object btnKADGetReq: TButton
+    Left = 472
+    Top = 707
+    Width = 121
+    Height = 25
+    Caption = 'KAD - GET Req '#8470
+    TabOrder = 30
+    OnClick = btnKADGetReqClick
+  end
+  object btnFileKAD: TButton
+    Left = 605
+    Top = 708
+    Width = 121
+    Height = 25
+    Caption = 'KAD - GET File'
+    TabOrder = 31
+    OnClick = btnFileKADClick
   end
   object DataSource1: TDataSource
     Left = 664

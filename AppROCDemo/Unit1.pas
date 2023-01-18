@@ -66,16 +66,22 @@ type
     edJavaDate: TDBEditEh;
     btnGetINsOnly: TButton;
     cbINsOnly: TDBCheckBoxEh;
+    btnGetDprtII: TButton;
+    btnKADGetReq: TButton;
+    btnFileKAD: TButton;
     procedure btnCursNormClick(Sender: TObject);
     procedure btnCursWaitClick(Sender: TObject);
+    procedure btnFileKADClick(Sender: TObject);
     procedure btnGetActualClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnGetDocsClick(Sender: TObject);
+    procedure btnGetDprtIIClick(Sender: TObject);
     procedure btnGetINsOnlyClick(Sender: TObject);
     procedure btnGetNSIClick(Sender: TObject);
     procedure btnPostDocClick(Sender: TObject);
     procedure btnGetTempINClick(Sender: TObject);
+    procedure btnKADGetReqClick(Sender: TObject);
     procedure btnServReadyClick(Sender: TObject);
   private
     { Private declarations }
@@ -98,7 +104,10 @@ uses
   kbmMemTable,
   SasaINiFile,
   DBFunc,
+  SynCommons,
+
   uAvest,
+  uUseful,
   uRestService,
   uLoggerThr,
   uROCDTO,
@@ -106,6 +115,8 @@ uses
 
 {$R *.dfm}
 
+var
+  ROCLogger  : TLoggerThread;
 
 // Вывод отладки в Memo
 procedure ShowDeb(const s: string; const ClearAll: Boolean = True);
@@ -126,7 +137,6 @@ const
 var
   FFileLog : string;
   FEnableTextLog : Boolean;
-  FLogger  : TLoggerThread;
 begin
   // ???
   ShowM := edMemo;
@@ -135,23 +145,26 @@ begin
   //dtBegin.Value := StrToDate('01.08.2021');
   //dtEnd.Value   := StrToDate('03.08.2021');
   // OAIS
-  dtBegin.Value := StrToDate('01.10.2021');
-  dtEnd.Value   := StrToDate('01.01.2022');
+  dtBegin.Value := StrToDate('01.01.2022');
+  dtEnd.Value   := StrToDate('01.01.2023');
   edFirst.Text  := '0';
   edCount.Text  := '100';
   cbSrcPost.ItemIndex := 0;
 
   FFileLog   := '1';
-  FLogger    := TLoggerThread.Create(FFileLog, LOG_GISRU, True, FEnableTextLog);
+  FEnableTextLog := True;
+  ROCLogger    := TLoggerThread.Create(FFileLog, LOG_GISRU, False, FEnableTextLog);
 
   BlackBox := TROCExchg.Create(INI_NAME);
-  BlackBox.Logger := FLogger;
+  BlackBox.Logger := ROCLogger;
 
   Self.Caption := 'Обмен с адресом: ' + BlackBox.Host.URL;
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
+  FreeAndNil(ROCLogger);
+  FreeAndNil(BlackBox);
 end;
 
 
@@ -244,7 +257,7 @@ begin
         if (lstINs.Selected[i]) then
           IndNums.Add(lstINs.Items[i]);
       end;
-      BlackBox.ResHTTP := BlackBox.GetActualReg(IndNums, TLIST_INS);
+      BlackBox.ResHTTP := BlackBox.GetActualReg(IndNums, REG_TYPE_CONST, TLIST_INDNUMS);
     end;
   end
   else begin
@@ -253,7 +266,7 @@ begin
     if (IndNums.Count = 1) then
       BlackBox.ResHTTP := BlackBox.GetActualReg(edtIN.Text)
     else
-      BlackBox.ResHTTP := BlackBox.GetActualReg(IndNums, TLIST_FIO);
+      BlackBox.ResHTTP := BlackBox.GetActualReg(IndNums, REG_TYPE_CONST, TLIST_FIO);
   end;
   ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg, cbClearLog.Checked);
   if (Assigned(BlackBox.ResHTTP)) then begin
@@ -362,8 +375,8 @@ begin
 
   BlackBox.Secure.xAvest.Debug := True;
   BlackBox.ResHTTP := BlackBox.PostRegDocs(PPost);
-  ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' ' + BlackBox.ResHTTP.ResMsg +
-    ' ' + BlackBox.ResHTTP.StrInf, cbClearLog.Checked);
+  ShowDeb(IntToStr(BlackBox.ResHTTP.ResCode) + ' MSG: =' + BlackBox.ResHTTP.ResMsg + '=' + CRLF +
+          'Inf: =' + BlackBox.ResHTTP.StrInf + '=', cbClearLog.Checked);
 
 end;
 
@@ -451,16 +464,45 @@ begin
 end;
 
 procedure TForm1.btnCursWaitClick(Sender: TObject);
+const
+  FileJson = 'J4Post-OAIS.json';
+var
+  s : string;
+  sU : UTF8String;
+  jsNotFmt,new: RawUTF8;
 begin
+(*
   OldCurs := SetCursor(OCR_WAIT);
   Application.ProcessMessages;
+*)
+
+  jsNotFmt := StringFromFile(FileJson);
+  MemoRead(FileJson, s);
+  new := JSONReformat(jsNotFmt, jsonHumanReadable);
+  ShowDeb(UTF8ToString(new));
 end;
+
+
 
 procedure TForm1.btnCursNormClick(Sender: TObject);
 var
   JD : LongInt;
 begin
   TButton(Sender).Caption := DateTimeToStr(JavaToDelphiDateTime(StrToInt64(edJavaDate.Text)));;
+end;
+
+procedure TForm1.btnGetDprtIIClick(Sender: TObject);
+var
+  First, Count : Integer;
+  s : string;
+  Res: TResultHTTP;
+begin
+  if (BlackBox.ResHTTP.INs.RecordCount > 0) then begin
+    Res := BlackBox.GetActualReg(BlackBox.ResHTTP.INs);
+    s := Format( 'Код завершения: %d, %s', [Res.ResCode, Res.ResMsg]);
+  end else
+    s := 'ИН убывших не заданы!';
+  ShowDeb(s);
 end;
 
 procedure TForm1.btnGetINsOnlyClick(Sender: TObject);
@@ -485,12 +527,12 @@ begin
 
   BlackBox.SetProgressVisible;
   if (First = 0) AND (Count = 0) then
-    BlackBox.ResHTTP := BlackBox.GetDeparted(D1, D2, cbINsOnly.Checked, edOrgan.Text)
+    BlackBox.ResHTTP := BlackBox.GetDeparted(D1, D2, True, edOrgan.Text)
   else begin
     P := TParsGet.Create(D1, D2, edOrgan.Text);
     P.First := First;
     P.Count := Count;
-    P.NeedINsOnly := cbINsOnly.Checked;
+    P.NeedINsOnly := True;
     BlackBox.ResHTTP := BlackBox.GetDeparted(P);
   end;
   //GETRes := BlackBox.ResHTTP;
@@ -510,6 +552,101 @@ begin
 
   //end;
 
+end;
+
+
+//-----------------------------------
+function GetKADFile(RegionId, ZipFullName : string; UserId: string = ''; UrlKad: string = ''; AuthToken: string = '' ): Boolean;
+const
+  URL_KAD_REQ  = 'https://apimgw.core.oais.by:40003/nca-34609/v1/api/address/v1/addressesExtendedFlatsByRegion';
+  URL_KAD_FILE = 'https://apimgw.core.oais.by:40003/nca-34609/v1/api/address/v1/loadFile';
+  ATOKEN       = 'Bearer c6eff146-8fbc-356b-ba41-0a10d94630f5';
+  USERID_KAD   = 'DL_290050294_00000_BS';
+var
+  RequestId: int64;
+  s: string;
+  Ret : TResultHTTP;
+begin
+  Result := False;
+  if (UserId = '') then
+    UserId := USERID_KAD;
+  if (UrlKad = '') then
+    UrlKad := URL_KAD_REQ;
+  if (AuthToken = '') then
+    AuthToken := ATOKEN;
+
+  Ret := BlackBox.GetKADReq(RegionId, UserId, UrlKad, AuthToken);
+  if (Ret.ResCode = 0) then begin
+    try
+      RequestId := Ret.SOAnswer.I['requestId'];
+      UrlKad    := URL_KAD_FILE;
+      Sleep(1000 * 60);
+      Ret := BlackBox.GetKADFileATE(IntToStr(RequestId), ZipFullName, UserId, UrlKad, AuthToken);
+      if (Ret.ResCode = 0) then begin
+        Result := True;
+      end;
+    except
+    end;
+    //WriteTextLog(GetError(True,True))
+  end else begin
+    //Result := Ret.StrInf;
+  end;
+end;
+
+
+procedure TForm1.btnKADGetReqClick(Sender: TObject);
+const
+  ATEZIP    = 'C:\Users\Alex\Documents\Агат-Тодес\ATE';
+  // 1370-Кобрин, 2073-Пружаны
+  // 608-Дрогичин, 2-Барановичи
+  // 20834-Несвиж
+  REGION_ID = '20834';
+var
+  bRet: Boolean;
+  RegionId,
+  sF,
+  s : string;
+begin
+  RegionId := edJavaDate.Text;
+  if (RegionId = '') then
+    RegionId := REGION_ID;
+  //sF   := Format('%s-%s-%s.zip', [ATEZIP, RegionId, IntToStr(DelphiToJavaDateTime(Now))]);
+  sF   := Format('%s-%s.zip', [ATEZIP, RegionId]);
+  bRet := GetKADFile(RegionId, sF);
+  if (bRet = True) then begin
+    s := Format('Адреса для региона %s загружены: %s , размер-%d', [RegionId, sF, FileSize(sF)]);
+  end else
+    s := Format('Код возврата: %d %s', [BlackBox.ResHTTP.ResCode, BlackBox.ResHTTP.ResMsg + ' *** ' + BlackBox.ResHTTP.StrInf]);
+  ShowDeb(s);
+end;
+
+
+procedure TForm1.btnFileKADClick(Sender: TObject);
+const
+  ATEZIP    = 'C:\Users\Alex\Documents\Агат-Тодес\ATE';
+  URL_KAD_FILE = 'https://apimgw.core.oais.by:40003/nca-34609/v1/api/address/v1/loadFile';
+  USERID_KAD   = 'DL_290050294_00000_BS';
+  ATOKEN       = 'Bearer c6eff146-8fbc-356b-ba41-0a10d94630f5';
+  REQ_ID = '189281';
+var
+  ZipFullName,
+  RequestId,
+  s: string;
+  Ret : TResultHTTP;
+begin
+  //ZipFullName := Format('%s-%s-%s.zip', [ATEZIP, 'XXX', IntToStr(DelphiToJavaDateTime(Now))]);
+
+  RequestId := edJavaDate.Text;
+  if (RequestId = '') then
+    RequestId := REQ_ID;
+  ZipFullName := Format('%s-%s.zip', [ATEZIP, RequestId]);
+
+  Ret := BlackBox.GetKADFileATE(RequestId, ZipFullName, USERID_KAD, URL_KAD_FILE, ATOKEN);
+  if (Ret.ResCode = 0) then begin
+    s := Format('Адреса для региона %s загружены: %s , размер-%d', ['XXX', ZipFullName, FileSize(ZipFullName)]);
+  end else
+    s := Format('Код возврата: %d %s', [BlackBox.ResHTTP.ResCode, BlackBox.ResHTTP.ResMsg + ' *** ' + BlackBox.ResHTTP.StrInf]);
+  ShowDeb(s);
 end;
 
 end.
